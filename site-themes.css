@@ -106,3 +106,11 @@ html[data-style=tech] .rgb-frame{box-shadow:0 0 18px #00eaff28,0 0 24px #ff39dc2
 html[data-style=tech] main header img[data-specimen]{mix-blend-mode:normal!important;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
 #rgb-object-lights{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;pointer-events:none!important;z-index:1!important;background:transparent!important;filter:none!important;border:0!important;margin:0!important;padding:0!important;box-shadow:none!important}
 @media(prefers-reduced-motion:reduce){html[data-style=tech] .rgb-frame::after{animation:none!important}}
+
+/* Keep perimeter light behind readable content, within the existing border. */
+html[data-style=tech] .rgb-frame::after{z-index:-1!important}
+
+#rgb-object-lights[hidden]{display:none!important}
+
+/* Viewport-anchored rims avoid scrolling through panel content. */
+html[data-style=tech] .rgb-frame::after{display:none!important;animation:none!important}
