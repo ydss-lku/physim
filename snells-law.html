@@ -122,9 +122,17 @@ function change(key,value){
 const canvas=$('canvas'),ctx=canvas.getContext('2d');
 function resize(){const rect=canvas.getBoundingClientRect(),dpr=devicePixelRatio||1;canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);geom={w:rect.width,h:rect.height,cx:rect.width/2,cy:rect.height/2,L:Math.min(rect.width*.41,rect.height*.36)};draw();}
 function world(x,y,angle=state.rotation){const a=angle*D;return {x:geom.cx+x*Math.cos(a)-y*Math.sin(a),y:geom.cy+x*Math.sin(a)+y*Math.cos(a)};}
+function extendToEdge(point){
+ const {cx,cy,w,h}=geom;
+ const dx=point.x-cx,dy=point.y-cy;
+ const tx=dx===0?Infinity:(dx>0?w-cx:-cx)/dx;
+ const ty=dy===0?Infinity:(dy>0?h-cy:-cy)/dy;
+ const factor=Math.min(tx,ty);
+ return {x:cx+dx*factor,y:cy+dy*factor};
+}
 function sceneGeometry(){
  const {L}=geom,effective=state.rotation+(result.side===2?180:0),i=state.i*D,r=(result.r??0)*D,side=state.i<0?-1:1;
- return {effective,source:{x:geom.cx+L*Math.cos(state.sourceAngle*D),y:geom.cy+L*Math.sin(state.sourceAngle*D)},reflected:world(L*Math.sin(i),-L*Math.cos(i),effective),refracted:world(side*L*Math.sin(r),L*Math.cos(r),effective),normal:world(0,-L,effective),handle:world(Math.min(geom.w,geom.h)*.42,0)};
+ return {effective,source:{x:geom.cx+L*Math.cos(state.sourceAngle*D),y:geom.cy+L*Math.sin(state.sourceAngle*D)},reflected:extendToEdge(world(L*Math.sin(i),-L*Math.cos(i),effective)),refracted:extendToEdge(world(side*L*Math.sin(r),L*Math.cos(r),effective)),normal:world(0,-L,effective),handle:world(Math.min(geom.w,geom.h)*.42,0)};
 }
 let paper=document.documentElement.dataset.style==='paper';
 $('style-switch').onclick=()=>{
