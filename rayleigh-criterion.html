@@ -17,6 +17,9 @@ body{font-family:Arial,"Microsoft JhengHei",sans-serif}main{grid-template-column
 .signature{border-top:1px solid #34495a;padding-top:18px;margin-top:28px;color:#264c40;font-size:12px;line-height:1.8}.signature strong{color:#264c40}
 .control>label{align-items:flex-start;flex-wrap:wrap}.control>label>span{margin-left:auto;white-space:nowrap}.toggles label{line-height:1.65}.top h2{line-height:1.6}.badge{line-height:1.6}.explanation{white-space:pre-line}.graph{height:265px}.ray{height:330px}select{font-size:13px}
 @media(max-width:1000px){main{grid-template-columns:290px minmax(0,1fr)}}@media(max-width:800px){main{grid-template-columns:1fr}.brand-row img{width:88px;height:60px}} 
+</style><style>
+html body img:is(.yd-logo,[alt*="YD Physics" i],#logo){filter:grayscale(1) sepia(.82) hue-rotate(36deg) saturate(.72) contrast(1.12)!important;mix-blend-mode:normal!important}
+html body footer.physics-byline{display:block;position:static;grid-column:1/-1;box-sizing:border-box;width:100%;height:auto;margin:16px auto 0;padding:12px 16px;text-align:center;background:#f3eddf;color:#394b3e;border-top:1px solid #b8baa3;font:500 14px/1.55 system-ui,sans-serif}
 </style></head><body><main>
 <aside><h1>Rayleigh criterion / 瑞利判據</h1><label for="mode">Investigate one variable / 探究單一變量</label><select id="mode"><option value="lambda">Wavelength λ / 波長 λ</option><option value="D">Aperture diameter D / 孔徑直徑 D</option><option value="theta">Angular separation θ / 角距 θ</option><option value="s">Source separation s / 光源間距 s</option><option value="L">Observation distance L / 觀察距離 L</option><option value="free">Free exploration / 自由探究</option></select>
 <div id="parameters">
@@ -34,7 +37,7 @@ body{font-family:Arial,"Microsoft JhengHei",sans-serif}main{grid-template-column
 <div class="image-head"><h2>Image plane · front view / 像平面 · 正面觀察</h2><label class="zoom" for="zoom">View zoom / 顯示縮放 <output id="zoomValue">1.0×</output><input id="zoom" type="range" min="0.25" max="3" step="0.05" value="1"></label></div>
 <div id="imagePanel"><canvas id="image" class="image" role="img" aria-label="Combined two-dimensional Airy diffraction image, brighter pixels indicate higher intensity. / 重疊的二維繞射圖案，較亮的像素表示較高強度。"></canvas></div>
 <div id="graphPanel"><h2>Intensity along the line joining the image centres / 沿兩像中心連線的強度</h2><div class="legend"><span class="p">— <i>P</i></span><span class="q">– – <i>Q</i></span><span class="total">━ Total / ━ 總強度</span></div><canvas id="graph" class="graph" role="img" aria-label="Intensity profiles with optional exaggerated side peaks and first-minimum markers / 強度曲線，可選擇放大旁峰及標示第一極小"></canvas></div>
-<footer class="signature">Designed and created by <strong>LKU</strong> · YD Physics<br>設計及製作：<strong>LKU</strong><br><small>Single-file offline simulation · 單檔離線模擬</small></footer></article></main>
+<footer class="signature physics-byline">Designed and created by <strong>LKU</strong> · YD Physics<br>設計及製作：<strong>LKU</strong><br><small>Single-file offline simulation · 單檔離線模擬</small></footer></article></main>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),base={lambda:550,D:4,theta:167.75,s:16.775,L:100},state={...base},focal=100;
