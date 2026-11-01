@@ -71,14 +71,17 @@
   g.shadowBlur=10;g.shadowColor='#18dcff';g.strokeStyle=gradient;g.lineWidth=2.5;segment(pts,0,len);
   for(let j=0;j<3;j++){const start=((shift+j/3+index*.07)%1)*len,travel=Math.min(65,len*.18);g.strokeStyle=['#b9ffff','#ffd5fa','#ddffb7'][j];g.shadowColor=['#00eaff','#ff28e7','#aaff00'][j];g.shadowBlur=14;g.lineWidth=3;segment(pts,start,Math.min(len,start+travel));if(start+travel>len)segment(pts,0,start+travel-len);}
  }
- function roundedFrame(r,radius){const points=[],a=Math.min(radius,r.width/2,r.height/2);for(const [x,y,start]of [[r.right-a,r.top+a,-Math.PI/2],[r.right-a,r.bottom-a,0],[r.left+a,r.bottom-a,Math.PI/2],[r.left+a,r.top+a,Math.PI]])for(let i=0;i<=8;i++)points.push([x+a*Math.cos(start+i*Math.PI/16),y+a*Math.sin(start+i*Math.PI/16)]);points.push(points[0]);return points}
  function paint(now){requestAnimationFrame(paint);if(!enabled||document.hidden||now-last<(reduced.matches?250:33))return;last=now;
-  const d=Math.min(devicePixelRatio||1,2);if(overlay.width!==Math.round(innerWidth*d)||overlay.height!==Math.round(innerHeight*d)){overlay.width=Math.round(innerWidth*d);overlay.height=Math.round(innerHeight*d)}g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,innerWidth,innerHeight);g.lineCap='round';g.lineJoin='round';
-  const frameRects=[];let frameIndex=0;
-  for(const el of frames){if(!el.isConnected||!el.checkVisibility())continue;const r=el.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight||r.width<1||r.height<1)continue;
-   let l=0,t=0,right=innerWidth,bottom=innerHeight;for(let p=el.parentElement;p&&p!==document.body;p=p.parentElement){const s=getComputedStyle(p),b=p.getBoundingClientRect();if(/auto|scroll|hidden|clip/.test(s.overflowX)){l=Math.max(l,b.left);right=Math.min(right,b.right)}if(/auto|scroll|hidden|clip/.test(s.overflowY)){t=Math.max(t,b.top);bottom=Math.min(bottom,b.bottom)}}
-   if(right<=l||bottom<=t)continue;g.save();g.beginPath();g.rect(l,t,right-l,bottom-t);g.clip();lightPath(roundedFrame(r,parseFloat(getComputedStyle(el).borderTopLeftRadius)||3),frameIndex++,now);g.restore();frameRects.push(r);
-  }
+  const rect=overlay.getBoundingClientRect();
+  if(!rect.width || !rect.height)return;
+  const density=Math.min(devicePixelRatio || 1,2);
+  const width=Math.round(rect.width*density),height=Math.round(rect.height*density);
+  if(overlay.width!==width || overlay.height!==height){overlay.width=width;overlay.height=height}
+  g.resetTransform();
+  g.clearRect(0,0,width,height);
+  const sx=width/rect.width,sy=height/rect.height;
+  g.setTransform(sx,0,0,sy,-rect.left*sx,-rect.top*sy);
+  g.lineCap='round';g.lineJoin='round';
   let index=0;const visible=[];for(const [canvas,paths]of objects){if(!canvas.isConnected||!canvas.checkVisibility())continue;const r=canvas.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight||r.width<1||r.height<1)continue;visible.push([canvas,r]);
    g.save();g.beginPath();g.rect(r.left,r.top,r.width,r.height);g.clip();
    for(const path of paths){const pts=path.map(([x,y])=>[r.left+x*r.width,r.top+y*r.height]);lightPath(pts,index,now);
@@ -89,8 +92,8 @@
   lastProtected=[];g.save();g.shadowBlur=0;g.globalCompositeOperation='destination-out';g.fillStyle='#000';
   function protect(left,top,right,bottom){const pad=5;const rect=[left-pad,top-pad,right-left+pad*2,bottom-top+pad*2];if(rect.every(Number.isFinite)&&rect[2]>0&&rect[3]>0){g.fillRect(...rect);lastProtected.push(rect)}}
   for(const canvas of document.querySelectorAll("canvas")){if(canvas===overlay||!canvas.checkVisibility()||!textZones.has(canvas))continue;const r=canvas.getBoundingClientRect();for(const pts of textZones.get(canvas)?.values()||[]){const xs=pts.map(p=>r.left+p[0]*r.width),ys=pts.map(p=>r.top+p[1]*r.height);protect(Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys))}}
-  const litRects=[...frameRects,...visible.map(([,r])=>r)];for(const range of textRanges){if(!range.startContainer.isConnected)continue;for(const r of range.getClientRects()){if(r.width&&r.height&&litRects.some(c=>r.right>c.left&&r.left<c.right&&r.bottom>c.top&&r.top<c.bottom))protect(r.left,r.top,r.right,r.bottom)}}
-  g.restore();frameCount++;overlay.dataset.frames=String(frameCount);overlay.dataset.paths=String(index);overlay.dataset.borderPaths=String(frameIndex);overlay.dataset.protectedLabels=String(lastProtected.length);
+  const litRects=visible.map(([,r])=>r);for(const range of textRanges){if(!range.startContainer.isConnected)continue;for(const r of range.getClientRects()){if(r.width&&r.height&&litRects.some(c=>r.right>c.left&&r.left<c.right&&r.bottom>c.top&&r.top<c.bottom))protect(r.left,r.top,r.right,r.bottom)}}
+  g.restore();frameCount++;overlay.dataset.frames=String(frameCount);overlay.dataset.paths=String(index);overlay.dataset.borderPaths='0';overlay.dataset.protectedLabels=String(lastProtected.length);
  }
  window.ydRGB={begin,path,rectangle,ring,three,get active(){return enabled},get objectCount(){return objects.size},get protectedAreas(){return lastProtected.map(r=>r.slice())}};
  function init(){
@@ -99,6 +102,10 @@
    markFrames();
    const style=document.createElement('style');style.textContent='html[data-style=tech] .rgb-frame.rgb-frame::after{display:block!important;inset:0!important;z-index:0!important;padding:2px!important;animation:rgb-edge-flow 4s linear infinite!important}@media(prefers-reduced-motion:reduce){html[data-style=tech] .rgb-frame.rgb-frame::after{animation:none!important}}';document.head.append(style);return;
   }
+  // A shadow follows the panel's own border even when its contents scroll.
+  const panelStyle=document.createElement('style');
+  panelStyle.textContent='@keyframes yd-panel-glow{0%,100%{box-shadow:0 0 0 1px #45ecff,0 0 9px #00dbff80}50%{box-shadow:0 0 0 1px #ff70de,0 0 9px #fd33cc80}}html[data-style=tech] .rgb-frame{animation:yd-panel-glow 5s ease-in-out infinite}@media(prefers-reduced-motion:reduce){html[data-style=tech] .rgb-frame{animation:none}}';
+  document.head.append(panelStyle);
   overlay=document.createElement('canvas');overlay.id='rgb-object-lights';overlay.setAttribute('aria-hidden','true');document.body.append(overlay);g=overlay.getContext('2d');update();requestAnimationFrame(paint);let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;markFrames()})}).observe(document.body,{childList:true,subtree:true});window.addEventListener('lab-theme-change',update)}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
