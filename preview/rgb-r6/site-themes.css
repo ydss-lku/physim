@@ -1,0 +1,96 @@
+/* Keep the component palettes together when a diagram mixes HTML, SVG and canvas. */
+html[data-style=tech]:not([data-page=snells-law]){background:#101927}
+html[data-style=tech]:not([data-page=snells-law]) body{background:#101927!important}
+html[data-style=tech]:not([data-page=snells-law]) body>:not(lab-navigation,script,style,link){filter:invert(1);background-color:#f1e9db}
+html[data-style=tech] :is(input,button,select){accent-color:#397766}
+html[data-style=tech]:not([data-page=snells-law]) :is(img[alt*="YD Physics" i],img.yd-logo,img.logo){background:#fff9e9!important;mix-blend-mode:normal!important;filter:none!important;border-radius:4px}
+html[data-style=tech] :is(.box,.tool){border-radius:6px;box-shadow:inset 0 0 0 1px #a38469}
+html[data-style=tech] :is(h1,.eyebrow,.tag){font-family:ui-monospace,Consolas,monospace;letter-spacing:.015em}
+html[data-style=tech] .box figure img,html[data-style=tech] main header img[data-specimen]{filter:invert(1)}
+html[data-page=index][data-style=tech] main section{background:#ddc8b3;border-color:#bba58b}
+html[data-page=index][data-style=tech] .box{background:#eee1cf;border-color:#c4a88b}
+html[data-style=tech] main header:after{display:none}
+html[data-page=rayleigh-criterion][data-style=tech] #image,html[data-page=mirror-image][data-style=tech] canvas{filter:invert(1)}
+html[data-page=mirror-image][data-style=paper] canvas{filter:invert(1)}
+/* A blue-black instrument panel, with enough light in the shadows to see its edges. */
+html[data-style=tech]:not([data-page=snells-law]) body>:not(lab-navigation,script,style,link){filter:invert(1)}
+html[data-style=tech] body>main:has(a.tool),html[data-style=tech] body>main:has(header img[data-specimen]),html[data-page=index][data-style=tech] body>main{filter:none;background:#101e2e;color:#e8f3fa}
+html[data-style=tech] main:has(header img[data-specimen]) :is(header,li,.tool),html[data-page=index][data-style=tech] .box{color:#edf9ff;background:#192f42;border-color:#4d7585;box-shadow:0 2px 0 #08121c}
+html[data-style=tech] main:has(header img[data-specimen]) ul{background:#3b5667}
+html[data-style=tech] main:has(header img[data-specimen]) :is(.tag,b,small,footer),html[data-page=index][data-style=tech] .box :is(span,footer){color:#b5dbe1}
+html[data-style=tech] main header img[data-specimen],html[data-page=index][data-style=tech] .box figure img{filter:none;mix-blend-mode:normal}
+html[data-page=index][data-style=tech] main section{background:#203649;border-color:#456476}
+html[data-page=snells-law][data-style=tech] body :is(header h1,.law,.section-title,.rotation-hint){color:#d8ecf7}
+html[data-page=snells-law][data-style=tech] body header .eyebrow{color:#85e6ee}
+html[data-page=snells-law][data-style=tech] body :is(.tabs button:not([aria-pressed=true]),.tools label){color:#d1e1ec}
+
+html[data-style=tech]:not([data-page=snells-law]) :is(img[alt*="YD Physics" i],img.yd-logo,img.logo){filter:invert(1)!important;background:#fff!important}
+html[data-page=rayleigh-criterion][data-style=tech] :is(#graph,#ray){filter:invert(1)}
+
+html[data-page=rayleigh-criterion][data-style=tech] .legend{filter:invert(1);background:#fff9ed;padding:6px}
+
+/* Paired scientific specimens: keep generated colours intact. */
+html[data-style=tech] img[data-tech-src]{filter:none!important;mix-blend-mode:normal!important}
+html[data-page=index][data-style=tech] .box figure{background:#101e2e}
+html[data-page=index][data-style=tech] .box figcaption{background:#102638ed;color:#e5f4fa;border:1px solid #52758b}
+html[data-page=index][data-style=tech] .box small{color:#b5dbe1}
+
+/* R5: RGB-lit instrument housings. Scientific plot colours remain separate. */
+html[data-style=tech]{color-scheme:dark;background:#060c1b}
+html[data-style=tech] body{background:#060c1b!important}
+html[data-style=tech] :is(button,a,input,select):focus-visible{outline:2px solid #00eaff;outline-offset:3px}
+/* These simulation housings are beneath the legacy inversion layer; use complementary inks. */
+html[data-style=tech]:not([data-page=index]):not([data-page=snells-law]) main:not(:has(img[data-specimen])) :is(aside,article,.panel,.card){border-color:#e71831;box-shadow:0 0 0 1px #e7183144,0 0 20px #e7183122}
+html[data-style=tech]:not([data-page=index]):not([data-page=snells-law]) main:not(:has(img[data-specimen])) button{border:1px solid #e71831;box-shadow:0 0 9px #e7183133}
+html[data-style=tech] body>main:has(header img[data-specimen]),html[data-page=index][data-style=tech] body>main{background:radial-gradient(ellipse at 5% 0%,#00eaff0e,transparent 48%),radial-gradient(ellipse at 95% 85%,#ff38b812,transparent 45%),#080f20;color:#eef9ff}
+html[data-page=index][data-style=tech] main>header{border-top:2px solid #00eaff;box-shadow:0 -4px 17px -8px #00eaff}
+html[data-style=tech] main:has(header img[data-specimen]) h1,html[data-page=index][data-style=tech] h1{color:#effdff;text-shadow:0 0 18px #00eaff33}
+html[data-page=index][data-style=tech] main>section{border:1px solid #45597f;border-radius:12px;padding:13px;gap:16px;background:#070e1c;box-shadow:0 0 24px #00eaff18,0 0 35px #b54aff12}
+html[data-page=index][data-style=tech] .box{--rgb:#00eaff;border:1px solid #00eaff88;border-bottom:3px solid var(--rgb);border-radius:8px;background:#0d1a2c;box-shadow:0 0 12px #00eaff21,inset 0 -9px 18px -15px var(--rgb);transition:box-shadow .18s,border-color .18s,transform .18s}
+html[data-page=index][data-style=tech] .box:nth-child(3n+2){--rgb:#c586ff;border-color:#b569ff88}
+html[data-page=index][data-style=tech] .box:nth-child(3n){--rgb:#ff67c5;border-color:#ff45b788}
+html[data-page=index][data-style=tech] .box:hover,html[data-page=index][data-style=tech] .box:focus-visible{border-color:var(--rgb);box-shadow:0 0 18px color-mix(in srgb,var(--rgb) 35%,transparent);transform:translateY(-2px)}
+html[data-page=index][data-style=tech] .box :is(small,footer){color:var(--rgb);letter-spacing:.035em}
+html[data-page=index][data-style=tech] .box span{color:#c3d7e9}
+html[data-page=index][data-style=tech] .box figure{border-bottom:1px solid #385173}
+html[data-page=index][data-style=tech] .box figcaption{background:#081726e8;color:#e9f8ff;border-color:#4c6b86}
+/* Match the navy studio backdrop instead of framing the image with a lighter rectangle. */
+html[data-style=tech] main:has(header img[data-specimen]) header{background:#081a2c;border:1px solid #00d9ed;border-top:3px solid #00eaff;border-radius:10px;box-shadow:0 0 20px #00eaff20,6px 6px 0 -5px #e955ff;isolation:isolate}
+html[data-style=tech] main header img[data-specimen]{mix-blend-mode:lighten!important;filter:none!important}
+html[data-style=paper] main:has(header img[data-specimen]) header{background:#f0e4ce}
+html[data-style=tech] main:has(header img[data-specimen]) .tag{color:#72f3ff}
+html[data-style=tech] main:has(header img[data-specimen]) .tool{color:#eefaff;background:#0b1a2d;border:1px solid #00eaff77;border-left:3px solid #00eaff;border-radius:5px;box-shadow:0 0 12px #00eaff18}
+html[data-style=tech] main:has(header img[data-specimen]) .tool:hover{background:#123048;box-shadow:0 0 18px #00eaff33}
+html[data-style=tech] main:has(header img[data-specimen]) h2{color:#e9e3ff;border-left:3px solid #c586ff;padding-left:10px;text-shadow:0 0 14px #bf69ff22}
+html[data-style=tech] main:has(header img[data-specimen]) ul{border-color:#4e3e70;background:#26304b}
+html[data-style=tech] main:has(header img[data-specimen]) li{background:#0c192b}
+html[data-style=tech] main:has(header img[data-specimen]) li b{color:#96eeff}
+html[data-page=snells-law][data-style=tech] :is(.panel,.card,aside){border-color:#00eaff88;box-shadow:0 0 20px #00eaff20}
+html[data-page=snells-law][data-style=tech] button{border:1px solid #00eaff66;box-shadow:0 0 9px #00eaff18}
+@media(prefers-reduced-motion:reduce){html[data-page=index][data-style=tech] .box{transition:none}}
+
+html[data-style=tech]:not([data-page=snells-law]) body{background:#060c1b!important}
+html[data-style=tech] body>main:has(header img[data-specimen]) header{background:#081a2c;border:1px solid #00d9ed;border-top:3px solid #00eaff;box-shadow:0 0 20px #00eaff20,6px 6px 0 -5px #e955ff}
+html[data-style=tech] body>main:has(header img[data-specimen]) li{background:#0c192b}
+
+html[data-style=tech] main:has(header img[data-specimen]) header{background:#081a2c!important;border-color:#00d9ed!important;box-shadow:0 0 20px #00eaff20,6px 6px 0 -5px #e955ff!important}
+html[data-style=tech] main:has(header img[data-specimen]) li{background:#0c192b!important}
+html[data-page=snells-law][data-style=tech] header h1 :is(span,small){color:#b4e4ff!important}
+html[data-page=snells-law][data-style=tech] footer{background:#080f20!important;color:#c3d7e9!important}
+
+/* R6: continuous RGB perimeter lighting and luminous gaming surfaces. */
+html[data-style=tech] body>main:has(header img[data-specimen]),html[data-page=index][data-style=tech] body>main{background:radial-gradient(ellipse at 0 5%,#00eaff28,transparent 45%),radial-gradient(ellipse at 100% 35%,#fa20c22b,transparent 48%),radial-gradient(ellipse at 50% 100%,#713dff25,transparent 50%),#060b19}
+html[data-page=index][data-style=tech] main>header{border-top:4px solid transparent;border-image:linear-gradient(90deg,#00f5ff,#784fff,#ff32bd,#00f5ff) 1;box-shadow:0 -5px 25px -8px #00eaff,0 8px 30px -20px #ff32bd}
+html[data-page=index][data-style=tech] h1{color:#efffff;text-shadow:2px 0 #ff32bd88,-2px 0 #00f5ff88,0 0 24px #00eaff66;letter-spacing:.025em}
+html[data-page=index][data-style=tech] main>section{border:0;background:transparent;box-shadow:none;padding:8px 0;gap:20px}
+html[data-page=index][data-style=tech] .box{border:3px solid transparent!important;border-radius:12px;background:linear-gradient(145deg,#081829,#15102f) padding-box,linear-gradient(135deg,#00f5ff 0%,#7653ff 40%,#ff32bd 72%,#00f5ff 100%) border-box;box-shadow:-4px -3px 19px #00eaff33,5px 5px 22px #ff32bd33,inset 0 -22px 30px -28px #00f5ff}
+html[data-page=index][data-style=tech] .box:nth-child(even){background:linear-gradient(145deg,#11102c,#071d2b) padding-box,linear-gradient(135deg,#ff32bd,#7953ff 40%,#00f5ff 72%,#ff32bd) border-box}
+html[data-page=index][data-style=tech] .box:hover,html[data-page=index][data-style=tech] .box:focus-visible{box-shadow:-4px -3px 26px #00eaff77,5px 5px 30px #ff32bd77}
+html[data-page=index][data-style=tech] .box h2{color:#f3faff}
+html[data-page=index][data-style=tech] .box footer{margin:6px 10px 10px;padding:7px 9px;background:linear-gradient(100deg,#00eaff22,#bd47ff33);border:1px solid #7580bb;border-radius:4px;color:#d9fbff;text-shadow:0 0 8px #00eaff44}
+html[data-page=index][data-style=tech] .box figure{border-bottom:2px solid #00eaff77}
+html[data-style=tech] main:has(header img[data-specimen]) header{border:3px solid transparent!important;background:linear-gradient(#081a2c,#081a2c) padding-box,linear-gradient(115deg,#00f5ff,#7554ff,#ff32bd,#00f5ff) border-box!important;box-shadow:-5px 0 24px #00eaff33,5px 4px 26px #ff32bd33!important}
+html[data-style=tech] main:has(header img[data-specimen]) .tool{border:2px solid transparent;background:linear-gradient(110deg,#092433,#1a1230) padding-box,linear-gradient(100deg,#00eaff,#ba55ff,#ff52c8) border-box;box-shadow:0 0 16px #00eaff22}
+html[data-style=tech]:not([data-page=index]):not([data-page=snells-law]) main:not(:has(img[data-specimen])) :is(aside,article,.panel,.card){border:2px solid #ff0a00;box-shadow:-3px 0 16px #ff0a0055,3px 2px 18px #00cd4255}
+html[data-page=snells-law][data-style=tech] :is(.panel,.card,aside){border:2px solid #00eaff99;box-shadow:-3px 0 18px #00eaff44,3px 2px 22px #ff32bd44}
+@media(max-width:520px){html[data-page=index][data-style=tech] main>section{gap:14px 10px}html[data-page=index][data-style=tech] .box footer{margin:4px;padding:6px 4px;letter-spacing:0;font-size:11px}}
