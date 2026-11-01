@@ -94,3 +94,15 @@ html[data-style=tech] main:has(header img[data-specimen]) .tool{border:2px solid
 html[data-style=tech]:not([data-page=index]):not([data-page=snells-law]) main:not(:has(img[data-specimen])) :is(aside,article,.panel,.card){border:2px solid #ff0a00;box-shadow:-3px 0 16px #ff0a0055,3px 2px 18px #00cd4255}
 html[data-page=snells-law][data-style=tech] :is(.panel,.card,aside){border:2px solid #00eaff99;box-shadow:-3px 0 18px #00eaff44,3px 2px 22px #ff32bd44}
 @media(max-width:520px){html[data-page=index][data-style=tech] main>section{gap:14px 10px}html[data-page=index][data-style=tech] .box footer{margin:4px;padding:6px 4px;letter-spacing:0;font-size:11px}}
+
+@property --rgb-orbit{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes rgb-edge-flow{to{--rgb-orbit:360deg}}
+html[data-style=tech] .rgb-frame{isolation:isolate}
+html[data-style=tech] .rgb-frame::after{content:''!important;display:block!important;position:absolute!important;inset:0!important;width:auto!important;height:auto!important;right:0!important;top:0!important;border:0!important;box-sizing:border-box;padding:3px;border-radius:inherit;pointer-events:none;z-index:1;background:conic-gradient(from var(--rgb-orbit),#00f5ff 0deg,#234c9f 35deg,#8864ff 65deg,#ff31ed 100deg,#6b195d 150deg,#ff76bb 180deg,#e1ff8a 220deg,#7ff500 250deg,#143d66 300deg,#00f5ff 360deg)!important;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:rgb-edge-flow 4s linear infinite;filter:drop-shadow(0 0 6px #00eaff)}
+html[data-style=tech] .rgb-frame.rgb-inverted::after{filter:invert(1)}
+html[data-style=tech] .box.rgb-frame::after{padding:4px;animation-duration:3.5s}
+html[data-style=tech] .box:nth-child(even)::after{animation-direction:reverse}
+html[data-style=tech] .rgb-frame{box-shadow:0 0 18px #00eaff28,0 0 24px #ff39dc20}
+html[data-style=tech] main header img[data-specimen]{mix-blend-mode:normal!important;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+#rgb-object-lights{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;pointer-events:none!important;z-index:1!important;background:transparent!important;filter:none!important;border:0!important;margin:0!important;padding:0!important;box-shadow:none!important}
+@media(prefers-reduced-motion:reduce){html[data-style=tech] .rgb-frame::after{animation:none!important}}
