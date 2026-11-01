@@ -1,4 +1,4 @@
-<!doctype html><html data-page="mirror-image-2" lang="en"><meta name="yd-site-build" content="rgb-r7-production-4"><script>/* Lighting is drawn on a separate transparent layer. Model state and ray paths are untouched. */
+<!doctype html><html data-page="mirror-image-2" lang="en"><meta name="yd-site-build" content="rgb-r7-production-5"><script>/* Lighting is drawn on a separate transparent layer. Model state and ray paths are untouched. */
 (()=>{
  const objects=new Map(),textZones=new WeakMap(),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let textRanges=[],lastProtected=[],frames=[];
@@ -104,7 +104,19 @@
   }
   // A shadow follows the panel's own border even when its contents scroll.
   const panelStyle=document.createElement('style');
-  panelStyle.textContent='@keyframes yd-panel-glow{0%,100%{box-shadow:0 0 0 1px #45ecff,0 0 9px #00dbff80}50%{box-shadow:0 0 0 1px #ff70de,0 0 9px #fd33cc80}}html[data-style=tech] .rgb-frame{animation:yd-panel-glow 5s ease-in-out infinite}@media(prefers-reduced-motion:reduce){html[data-style=tech] .rgb-frame{animation:none}}';
+  panelStyle.textContent=`
+    @keyframes yd-panel-glow {
+      0% { box-shadow: 0 -3px 1px 0 #00edff, 0 -3px 9px 0 #00edff99, 3px 0 1px 0 #ff36bd, 3px 0 9px 0 #ff36bd99, 0 3px 1px 0 #b5ff29, 0 3px 9px 0 #b5ff2999, -3px 0 1px 0 #8b58ff, -3px 0 9px 0 #8b58ff99; }
+      25% { box-shadow: 3px 0 1px 0 #00edff, 3px 0 9px 0 #00edff99, 0 3px 1px 0 #ff36bd, 0 3px 9px 0 #ff36bd99, -3px 0 1px 0 #b5ff29, -3px 0 9px 0 #b5ff2999, 0 -3px 1px 0 #8b58ff, 0 -3px 9px 0 #8b58ff99; }
+      50% { box-shadow: 0 3px 1px 0 #00edff, 0 3px 9px 0 #00edff99, -3px 0 1px 0 #ff36bd, -3px 0 9px 0 #ff36bd99, 0 -3px 1px 0 #b5ff29, 0 -3px 9px 0 #b5ff2999, 3px 0 1px 0 #8b58ff, 3px 0 9px 0 #8b58ff99; }
+      75% { box-shadow: -3px 0 1px 0 #00edff, -3px 0 9px 0 #00edff99, 0 -3px 1px 0 #ff36bd, 0 -3px 9px 0 #ff36bd99, 3px 0 1px 0 #b5ff29, 3px 0 9px 0 #b5ff2999, 0 3px 1px 0 #8b58ff, 0 3px 9px 0 #8b58ff99; }
+      100% { box-shadow: 0 -3px 1px 0 #00edff, 0 -3px 9px 0 #00edff99, 3px 0 1px 0 #ff36bd, 3px 0 9px 0 #ff36bd99, 0 3px 1px 0 #b5ff29, 0 3px 9px 0 #b5ff2999, -3px 0 1px 0 #8b58ff, -3px 0 9px 0 #8b58ff99; }
+    }
+    html[data-style=tech] .rgb-frame { animation: yd-panel-glow 2.8s linear infinite; }
+    @media (prefers-reduced-motion: reduce) {
+      html[data-style=tech] .rgb-frame { animation: none; box-shadow: 0 -3px 1px 0 #00edff, 0 -3px 9px 0 #00edff99, 3px 0 1px 0 #ff36bd, 3px 0 9px 0 #ff36bd99, 0 3px 1px 0 #b5ff29, 0 3px 9px 0 #b5ff2999, -3px 0 1px 0 #8b58ff, -3px 0 9px 0 #8b58ff99; }
+    }
+  `;
   document.head.append(panelStyle);
   overlay=document.createElement('canvas');overlay.id='rgb-object-lights';overlay.setAttribute('aria-hidden','true');document.body.append(overlay);g=overlay.getContext('2d');update();requestAnimationFrame(paint);let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;markFrames()})}).observe(document.body,{childList:true,subtree:true});window.addEventListener('lab-theme-change',update)}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
