@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>平面鏡 · 3D 光學</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#101c29;color:#eaf3fa;font:15px system-ui,'Microsoft JhengHei',sans-serif}main{display:grid;grid-template-columns:310px 1fr;height:100dvh}aside{padding:24px;overflow:auto;background:#152638;border-right:1px solid #304557}h1{font-size:24px;margin:7px 0}p{line-height:1.65;color:#afc3d3;font-size:13px}small{color:#65d8ce;letter-spacing:2px}section{border-top:1px solid #34495a;margin-top:20px;padding-top:14px}h2{font-size:14px;margin:0 0 13px;color:#b7cedd}label{display:block;margin:11px 0;font-size:14px}label span{float:right;color:#73ded4}input[type=range]{display:block;width:100%;margin-top:9px;accent-color:#62d6cb}input[type=checkbox]{accent-color:#62d6cb;margin-right:9px}button{cursor:pointer;border:1px solid #496378;background:#223b50;color:#eef7ff;border-radius:8px;padding:9px 12px;margin:3px}button:hover,button.active{background:#30645f;border-color:#64d6c8}article{position:relative;min-width:0;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:none}.top{position:absolute;top:18px;left:20px;right:20px;display:flex;justify-content:flex-end;gap:12px;pointer-events:none}.badge{background:#102333dd;padding:9px 13px;border:1px solid #3c5566;border-radius:10px;font-size:13px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}.help{font-size:12px;color:#b3c8d9}@media(max-width:760px){main{grid-template-columns:1fr;height:auto}aside{order:2}article{height:65dvh;min-height:420px}.top{left:10px;right:10px}}
+.ray-options{display:flex;gap:12px;padding-left:22px}.ray-options label{font-size:12px;margin:0 0 12px}.scene-readouts{position:absolute;top:65px;left:20px;display:flex;flex-wrap:wrap;gap:8px;pointer-events:none}.scene-readouts div{background:#102333e8;border:1px solid #496378;border-radius:8px;padding:8px 12px;font-size:13px;line-height:1.6}.view-controls{pointer-events:auto;display:flex;flex-shrink:0}.top{justify-content:space-between;align-items:flex-start;flex-wrap:wrap}</style><main><aside><small>PHYSICS LAB / S3</small><h1>平面鏡光學</h1><section><h2>01 ／ 場景設定</h2><label>鏡子闊度 <span id="widthValue"></span><input id="width" type="range" min="2" max="14" step=".1" value="8"></label><label>鏡子沿中線的位置 <span id="positionValue"></span><input id="position" type="range" min="-3" max="3" step=".1" value="0"></label><label>燭台左右位置 <span id="objectXValue"></span><input id="objectX" type="range" min="-7" max="7" step=".1" value="-2"></label><label>燭台離鏡距離 <span id="distanceValue"></span><input id="distance" type="range" min="1.5" max="8" step=".1" value="4"></label></section><section><h2>02 ／ 三條光線（同一發光點）</h2><label><input id="ray0" type="checkbox" checked><i class="dot" style="background:#ffca69"></i>光線 1</label><div class="ray-options"><label><input id="incident0" type="checkbox" checked>入射</label><label><input id="reflected0" type="checkbox" checked>反射</label></div><label><input id="ray1" type="checkbox" checked><i class="dot" style="background:#68dbff"></i>光線 2</label><div class="ray-options"><label><input id="incident1" type="checkbox" checked>入射</label><label><input id="reflected1" type="checkbox" checked>反射</label></div><label><input id="ray2" type="checkbox" checked><i class="dot" style="background:#fa8bb9"></i>光線 3</label><div class="ray-options"><label><input id="incident2" type="checkbox" checked>入射</label><label><input id="reflected2" type="checkbox" checked>反射</label></div></section><section><h2>03 ／ 顯示內容</h2><label><input id="extensions" type="checkbox">鏡後虛線（反向延長線）</label><label><input id="virtual" type="checkbox">半透明虛像</label><label><input id="incidentAngle" type="checkbox">入射角 i（與法線的夾角）</label><label><input id="reflectionAngle" type="checkbox">反射角 r（與法線的夾角）</label></section><button id="reset">重設全部</button></aside><article><canvas id="scene" aria-label="可拖曳旋轉的平面鏡三維光學模擬"></canvas><div class="top"><div class="view-controls"><button id="perspective" class="active">3D 視角</button><button id="topview">鳥瞰</button></div><div class="badge">物距 = 像距：<b id="equal"></b></div></div></article></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),canvas=$('scene'),ctx=canvas.getContext('2d');
+const ids=['width','position','objectX','distance'],checks=['ray0','ray1','ray2','incident0','reflected0','incident1','reflected1','incident2','reflected2','extensions','virtual','incidentAngle','reflectionAngle'];
+const RAY_HEIGHT=1.4;
+let targets=[-2.72,0,2.72],drag=null,selectedRay=0;
+const RAIL_MIN=-11,RAIL_MAX=11;
+let W,H,dpr,mode='3d',yaw=.36,pitch=.48,zoom=23,dirty=true;
+const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),mul=(a,s)=>a.map(v=>v*s),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>mul(a,1/Math.hypot(...a));
+let eye,right,up,forward;
+function camera(){eye=[zoom*Math.sin(yaw)*Math.cos(pitch),RAY_HEIGHT+zoom*Math.sin(pitch),zoom*Math.cos(yaw)*Math.cos(pitch)];forward=norm(sub([0,RAY_HEIGHT,0],eye));right=norm(cross(forward,[0,1,0]));up=cross(right,forward)}
+function project(v){if(mode==='top')return [W/2-v[2]*Math.min(W/23,H/24)*23/zoom,H/2+v[0]*Math.min(W/23,H/24)*23/zoom,30-v[1]];let p=sub(v,eye),z=dot(p,forward);return [W/2+dot(p,right)*Math.min(W,H)*1.16/z,H/2-dot(p,up)*Math.min(W,H)*1.16/z,z]}
+function path(pts){ctx.beginPath();pts.forEach((p,i)=>{let q=project(p);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])});ctx.closePath()}
+function poly(pts,fill,stroke){path(pts);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}}
+function visibleArrow(p,q){
+ const dx=q[0]-p[0],dy=q[1]-p[1];let lo=0,hi=1;
+ for(const [v,d,min,max] of [[p[0],dx,18,W-18],[p[1],dy,18,H-18]]){
+  if(Math.abs(d)<1e-9){if(v<min||v>max)return null;continue}
+  let a=(min-v)/d,b=(max-v)/d;if(a>b)[a,b]=[b,a];lo=Math.max(lo,a);hi=Math.min(hi,b);if(lo>hi)return null;
+ }
+ const length=Math.hypot(dx,dy);if(length*(hi-lo)<20)return null;
+ const t=lo+Math.min((hi-lo)*.55,125/length);return [p[0]+dx*t,p[1]+dy*t];
+}
+function line(a,b,color,width=1,dash=[],arrow=false){let p=project(a),q=project(b);if(mode!=='top'){if(p[2]<.5&&q[2]<.5)return;if(p[2]<.5){a=add(a,mul(sub(b,a),(.5-p[2])/(q[2]-p[2])));p=project(a)}if(q[2]<.5){b=add(a,mul(sub(b,a),(.5-p[2])/(q[2]-p[2])));q=project(b)}}ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dash);ctx.stroke();ctx.setLineDash([]);if(arrow){const visible=visibleArrow(p,q);if(!visible)return;let [x,y]=visible,t=Math.atan2(q[1]-p[1],q[0]-p[0]);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-10*Math.cos(t-.4),y-10*Math.sin(t-.4));ctx.lineTo(x-10*Math.cos(t+.4),y-10*Math.sin(t+.4));ctx.fillStyle=color;ctx.fill()}}
+function label(p,t,c='#e5f2ff'){let q=project(p);ctx.font='13px system-ui';let w=ctx.measureText(t).width;ctx.fillStyle='#102333dc';ctx.fillRect(q[0]-w/2-7,q[1]-15,w+14,23);ctx.fillStyle=c;ctx.textAlign='center';ctx.fillText(t,q[0],q[1]+1)}
+function candle(x,z,ghost=false){
+ const faces=[],segments=28;
+ function lathe(profile,base){
+  for(let k=0;k<profile.length-1;k++)for(let j=0;j<segments;j++){
+   const t=j*2*Math.PI/segments,u=(j+1)*2*Math.PI/segments;
+   const [y,r]=profile[k],[yy,rr]=profile[k+1];
+   const p=[[x+r*Math.cos(t),y,z+r*Math.sin(t)],[x+r*Math.cos(u),y,z+r*Math.sin(u)],[x+rr*Math.cos(u),yy,z+rr*Math.sin(u)],[x+rr*Math.cos(t),yy,z+rr*Math.sin(t)]];
+   const light=.72+.28*Math.cos(t-.7);
+   faces.push({p,color:'rgb('+base.map(v=>Math.round(v*light)).join(',')+')'});
+  }
+ }
+ // Brass base, stem and drip tray; ivory wax; flame ending at the ray source.
+ lathe([[0,0],[0,.4],[.06,.4],[.13,.3],[.16,.12],[.32,.09],[.36,.29],[.4,.3],[.44,.26],[.44,0]],[221,174,78]);
+ lathe([[.43,0],[.43,.15],[1.04,.15],[1.07,.12],[1.06,0]],[255,237,191]);
+ lathe([[1.06,.018],[1.12,.018],[1.12,0]],[70,46,30]);
+ lathe([[1.09,0],[1.13,.065],[1.2,.09],[1.28,.06],[RAY_HEIGHT,0]],[255,160,40]);
+ faces.sort((a,b)=>b.p.reduce((sum,v)=>sum+project(v)[2],0)-a.p.reduce((sum,v)=>sum+project(v)[2],0));
+ ctx.save();if(ghost)ctx.globalAlpha=.4;faces.forEach(f=>poly(f.p,f.color));
+ const tip=project([x,RAY_HEIGHT,z]);ctx.beginPath();ctx.arc(tip[0],tip[1],2,0,Math.PI*2);ctx.fillStyle='#fff3a6';ctx.fill();ctx.restore();
+}
+function floor(reflection=false){// In the mirror, the front half is reflected into z < 0, so the floor colours swap.
+poly([[-11,0,-10],[11,0,-10],[11,0,0],[-11,0,0]],reflection?'#204b50':'#65506c');poly([[-11,0,0],[11,0,0],[11,0,10],[-11,0,10]],reflection?'#65506c':'#204b50');for(let i=-10;i<=10;i++){line([i,.002,-10],[i,.002,10],'#497074',.7);line([-11,.002,i],[11,.002,i],'#497074',.7)}line([-11,.01,0],[11,.01,0],'#d8e9e1',2);for(let z of [-9,9])line([-10,.01,z],[10,.01,z],'#9bc6bc',2);for(let x of [-10,10])line([x,.01,-9],[x,.01,9],'#9bc6bc',2)}
+function angleArc(hit,theta,radius,color){const points=Array.from({length:33},(_,j)=>add(hit,[radius*Math.sin(theta*j/32),0,radius*Math.cos(theta*j/32)]));for(let j=1;j<points.length;j++)line(points[j-1],points[j],color,2.2);}
+function drawAngleLabels(labels){
+ const placed=[];
+ ctx.save();ctx.font='600 13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ for(const item of labels){
+  const {hit,theta,radius,text,color,side}=item;
+  const origin=project(hit),normal=project(add(hit,[0,0,1]));
+  const anchor=project(add(hit,[radius*Math.sin(theta/2),0,radius*Math.cos(theta/2)]));
+  const n=norm([normal[0]-origin[0],normal[1]-origin[1]]);
+  const positive=project(add(hit,[1,0,0]));
+  let tangent=[n[1],-n[0]];if(dot(tangent,sub(positive.slice(0,2),origin.slice(0,2)))<0)tangent=mul(tangent,-1);
+  const sign=Math.abs(theta)<1e-6?side:Math.sign(theta);
+  let x=anchor[0]+tangent[0]*sign*18+n[0]*8,y=anchor[1]+tangent[1]*sign*18+n[1]*8;
+  const width=ctx.measureText(text).width+8;
+  for(let attempt=0;attempt<15&&placed.some(p=>Math.abs(x-p.x)<(width+p.width)/2&&Math.abs(y-p.y)<19);attempt++){x+=n[0]*10;y+=n[1]*10}
+  placed.push({x,y,width});ctx.strokeStyle='#102333';ctx.lineWidth=4;ctx.lineJoin='round';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
+ }
+ ctx.restore();
+}
+function draw(){camera();ctx.clearRect(0,0,W,H);ctx.fillStyle='#101e2e';ctx.fillRect(0,0,W,H);const s=Object.fromEntries(ids.map(id=>[id,+$(id).value])),a=s.position-s.width/2,b=s.position+s.width/2,front=eye[2]>0;floor();const mirror=[[a,0,0],[b,0,0],[b,4.5,0],[a,4.5,0]];
+if(mode!=='top'){poly(mirror,front?'#91b5c5':'#273544');if(front){ctx.save();path(mirror);ctx.clip();floor(true);candle(s.objectX,-s.distance);ctx.fillStyle='#b0d9f01c';path(mirror);ctx.fill();ctx.restore()}mirror.forEach((p,i)=>line(p,mirror[(i+1)%4],'#c5dce9',4));if(!front)label([s.position,2.3,0],'不透明鏡背');}
+if(mode==='top'){line([a,0,0],[b,0,0],'#bedce8',7);line([a,0,.07],[b,0,.07],'#6fe4dd',2);label([s.position,0,-.6],'平面鏡')}
+// World-space virtual candle; preserve the optical reflection inside the mirror.
+if($('virtual').checked){
+ ctx.save();
+ if(mode!=='top'&&front){ctx.beginPath();ctx.rect(0,0,W,H);const p=mirror.map(project);ctx.moveTo(p[0][0],p[0][1]);p.slice(1).forEach(q=>ctx.lineTo(q[0],q[1]));ctx.closePath();ctx.clip('evenodd')}
+ candle(s.objectX,-s.distance,true);ctx.restore();
+}
+// Mirror occludes the real candle when viewing its opaque rear; clip projected box to the exterior.
+ctx.save();if(mode!=='top'&&!front){ctx.beginPath();ctx.rect(0,0,W,H);const p=mirror.map(project);ctx.moveTo(p[0][0],p[0][1]);p.slice(1).forEach(q=>ctx.lineTo(q[0],q[1]));ctx.closePath();ctx.clip('evenodd')}candle(s.objectX,s.distance);ctx.restore();
+const source=[s.objectX,RAY_HEIGHT,s.distance],virtual=[s.objectX,RAY_HEIGHT,-s.distance],colors=['#ffca69','#68dbff','#fa8bb9'];
+const showI=$('incidentAngle').checked,showR=$('reflectionAngle').checked,angleLabels=[];
+line([RAIL_MIN,RAY_HEIGHT,0],[RAIL_MAX,RAY_HEIGHT,0],'#b6d4e080',1,[4,5]);
+for(let i=0;i<3;i++){
+ if(!$('ray'+i).checked)continue;
+ const hit=[targets[i],RAY_HEIGHT,0],didHit=targets[i]>=a-1e-9&&targets[i]<=b+1e-9;
+ const incoming=norm(sub(hit,source)),outgoing=[incoming[0],0,-incoming[2]];
+ const angle=(Math.atan2(Math.abs(source[0]-hit[0]),s.distance)*180/Math.PI).toFixed(1);
+ ctx.save();
+ if(mode!=='top'&&!front){ctx.beginPath();ctx.rect(0,0,W,H);const p=mirror.map(project);ctx.moveTo(p[0][0],p[0][1]);p.slice(1).forEach(q=>ctx.lineTo(q[0],q[1]));ctx.closePath();ctx.clip('evenodd')}
+ if($('incident'+i).checked){line(source,hit,colors[i],2.5,[],true);if(!didHit)line(hit,add(hit,mul(incoming,16)),colors[i],2.5,[],true)}
+ if(didHit&&$('reflected'+i).checked)line(hit,add(hit,mul(outgoing,16)),colors[i],2.5,[],true);
+ if(didHit&&(showI||showR)){line(hit,add(hit,[0,0,1.7]),'#eaf3fa',1.2,[3,4]);const theta=Math.atan2(source[0]-hit[0],s.distance);if(showI){angleArc(hit,theta,.65,colors[i]);angleLabels.push({hit,theta,radius:.85,text:angle+'°',color:colors[i],side:1})}if(showR){angleArc(hit,-theta,1,colors[i]);angleLabels.push({hit,theta:-theta,radius:1.3,text:angle+'°',color:colors[i],side:-1})}}
+ ctx.restore();
+ if(didHit&&$('reflected'+i).checked&&$('extensions').checked){
+  const direction=sub(virtual,hit);
+  const sideLimit=Math.abs(direction[0])<1e-10?Infinity:((direction[0]>0?11:-11)-hit[0])/direction[0];
+  const boundary=Math.min(sideLimit,-10/direction[2]);
+  line(hit,add(hit,mul(direction,boundary)),colors[i],1.7,[6,6]);
+ }
+}
+// Numbered handles are teaching overlays and stay accessible from either side.
+for(let i=0;i<3;i++){if(!$('ray'+i).checked)continue;const p=project([targets[i],RAY_HEIGHT,0]);ctx.beginPath();ctx.arc(p[0],p[1],i===selectedRay?6.5:5.5,0,Math.PI*2);ctx.fillStyle=colors[i];ctx.fill();ctx.strokeStyle='#102333';ctx.lineWidth=2;ctx.stroke();ctx.font='bold 8px system-ui';ctx.textAlign='center';ctx.fillStyle='#102333';ctx.fillText(i+1,p[0],p[1]+2.8)}
+if(mode==='top'||front)drawAngleLabels(angleLabels);
+
+$('equal').textContent=s.distance.toFixed(1)+' 格';}
+function update(){ids.forEach(id=>$(id+'Value').textContent=(+$(id).value).toFixed(1)+' 格');dirty=true}ids.concat(checks).forEach(id=>$(id).addEventListener('input',update));
+function view(m){mode=m==='top'?'top':'3d';if(m==='front'){yaw=.36;pitch=.48}document.querySelectorAll('button').forEach(b=>b.classList.remove('active'));$(m==='top'?'topview':'perspective').classList.add('active');dirty=true}
+$('perspective').onclick=()=>view('front');$('topview').onclick=()=>view('top');$('reset').onclick=()=>{ids.forEach((id,i)=>$(id).value=[8,0,-2,4][i]);checks.forEach(id=>$(id).checked=!id.endsWith('Angle')&&!['extensions','virtual'].includes(id));targets=[-2.72,0,2.72];selectedRay=0;drag=null;zoom=23;view('front');update()};
+const pointers=new Map();
+function localPoint(e){const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
+function handleAt(p){return [0,1,2].filter(i=>$('ray'+i).checked).map(i=>({i,d:Math.hypot(...sub(project([targets[i],RAY_HEIGHT,0]).slice(0,2),p))})).filter(v=>v.d<19).sort((a,b)=>a.d-b.d||(a.i===selectedRay?-1:1))[0]?.i}
+function targetAt(p){const a=project([RAIL_MIN,RAY_HEIGHT,0]),b=project([RAIL_MAX,RAY_HEIGHT,0]),v=sub(b.slice(0,2),a.slice(0,2)),length=dot(v,v);if(length<16)return null;const t=Math.max(0,Math.min(1,dot(sub(p,a.slice(0,2)),v)/length));const u=mode==='top'?t:t*a[2]/(b[2]*(1-t)+t*a[2]);return RAIL_MIN+(RAIL_MAX-RAIL_MIN)*u}
+canvas.onpointerdown=e=>{if(drag)return;const p=localPoint(e),i=handleAt(p);if(i!==undefined&&pointers.size===0){selectedRay=i;const x=targetAt(p);drag={id:e.pointerId,i,offset:x===null?0:targets[i]-x};canvas.style.cursor='grabbing'}pointers.set(e.pointerId,[e.clientX,e.clientY]);canvas.setPointerCapture(e.pointerId);dirty=true};
+canvas.onpointermove=e=>{
+ if(drag&&drag.id===e.pointerId){const x=targetAt(localPoint(e));if(x!==null)targets[drag.i]=Math.max(RAIL_MIN,Math.min(RAIL_MAX,x+drag.offset));dirty=true;return}
+ if(!pointers.has(e.pointerId)){canvas.style.cursor=handleAt(localPoint(e))!==undefined?'grab':'default';return}
+ const prev=pointers.get(e.pointerId),next=[e.clientX,e.clientY];
+ if(pointers.size===2){const other=[...pointers.entries()].find(([id])=>id!==e.pointerId)[1];const old=Math.hypot(prev[0]-other[0],prev[1]-other[1]),now=Math.hypot(next[0]-other[0],next[1]-other[1]);zoom=Math.max(20,Math.min(40,zoom+(old-now)*.04))}
+ else if(mode!=='top'){yaw-=(next[0]-prev[0])*.008;pitch=Math.max(0,Math.min(1.48,pitch+(next[1]-prev[1])*.006))}
+ pointers.set(e.pointerId,next);dirty=true;
+};
+canvas.onpointerup=canvas.onpointercancel=canvas.onlostpointercapture=e=>{pointers.delete(e.pointerId);if(drag?.id===e.pointerId)drag=null;canvas.style.cursor='default'};
+canvas.onwheel=e=>{e.preventDefault();zoom=Math.max(20,Math.min(40,zoom+e.deltaY*.015));dirty=true};
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);dirty=true}new ResizeObserver(resize).observe(canvas);function animate(){if(dirty){draw();dirty=false}requestAnimationFrame(animate)}update();resize();animate();
+</script></html>

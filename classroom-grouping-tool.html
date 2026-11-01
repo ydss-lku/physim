@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>學生分組器</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Microsoft JhengHei",sans-serif;color:#20313e;background:#f3f6f8;font-synthesis:none}*{box-sizing:border-box}body{margin:0;padding:clamp(16px,4vw,48px)}main{max-width:1080px;margin:auto}header{margin-bottom:28px}.eyebrow{font-size:12px;letter-spacing:3px;font-weight:750;color:#238374}h1{font-size:clamp(28px,4vw,40px);margin:10px 0}p{line-height:1.7;color:#60717d;margin:0}.layout{display:grid;grid-template-columns:320px 1fr;gap:24px}.panel{background:white;border:1px solid #e0e7eb;border-radius:20px;padding:24px;box-shadow:0 6px 24px #263b4a05}label{display:block;font-weight:700;margin-bottom:10px}.label-row{display:flex;justify-content:space-between;align-items:center}.count{font-size:13px;color:#69808e}textarea,input,button{font:inherit}textarea{width:100%;min-height:270px;resize:vertical;border:1px solid #ced9df;border-radius:12px;padding:14px;line-height:1.8;color:inherit;background:#fbfcfd}textarea:focus,input:focus,button:focus-visible{outline:3px solid #99ddd0;outline-offset:3px}textarea::placeholder{color:#8a9ba5}.group-control{display:flex;align-items:center;justify-content:space-between;margin:22px 0}.group-control label{margin:0}input{width:90px;padding:10px;border:1px solid #ced9df;border-radius:10px;color:inherit}button{width:100%;border:0;border-radius:12px;padding:14px;font-weight:750;cursor:pointer;background:#177d6d;color:white;transition:background .2s,transform .2s}button:hover:not(:disabled){background:#106859;transform:translateY(-1px)}button:disabled{opacity:.55;cursor:wait}.hint{font-size:12px;margin-top:12px}.error{color:#b23e37;font-size:14px;line-height:1.6;margin-top:12px}.error:empty{display:none}.results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}h2{font-size:20px;margin:0}.badge{font-size:12px;color:#177d6d;background:#e8f5f0;padding:6px 10px;border-radius:20px;white-space:nowrap}.empty{min-height:350px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px}.symbol{display:grid;grid-template-columns:repeat(3,18px);gap:8px;margin-bottom:22px;transform:rotate(-8deg)}.symbol i{width:18px;height:18px;border-radius:6px;background:#b7ded2}.symbol i:nth-child(2n){background:#e0c591}.empty strong{font-size:18px;margin-bottom:8px}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{border:1px solid #dde8e4;border-radius:14px;padding:18px;background:#f8fbfa;animation:appear .35s both;animation-delay:var(--delay,0ms)}.card:nth-child(3n+2){background:#faf9f5;border-color:#ece6d8}.card:nth-child(3n){background:#f5f8fc;border-color:#dfe6f0}.card h3{font-size:15px;display:flex;justify-content:space-between;gap:8px;margin:0 0 14px;color:#347264}.card h3 span{font-size:12px;font-weight:400;color:#667984}.card ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}.card li{background:white;border:1px solid #e4eae8;border-radius:7px;padding:6px 10px;font-size:14px;overflow-wrap:anywhere;max-width:100%}.shuffle-name{font-size:28px;font-weight:750;color:#177d6d;max-width:100%;overflow-wrap:anywhere;margin:20px 0}.progress{width:180px;height:5px;overflow:hidden;background:#e7efeb;border-radius:10px}.progress:after{content:"";display:block;height:100%;background:#299682;animation:progress 1.5s linear forwards}.status{font-size:13px;min-height:22px;margin-top:16px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@keyframes appear{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes progress{from{width:0}to{width:100%}}@media(max-width:720px){.layout{grid-template-columns:1fr}textarea{min-height:180px}.empty{min-height:230px}}@media(max-width:380px){.cards{grid-template-columns:1fr}.panel{padding:18px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">CLASSROOM TOOLS</div><h1>學生分組器</h1><p>輸入名單，輕鬆抽出每一組。一起開始合作吧！</p></header>
+<div class="layout">
+<section class="panel" aria-label="分組設定">
+<form id="form" novalidate>
+<div class="label-row"><label for="names">學生名單</label><span class="count" id="count">0 位學生</span></div>
+<textarea id="names" placeholder="每行輸入一位學生的姓名，例如：&#10;陳大文&#10;李小明&#10;黃美欣&#10;何樂天" aria-describedby="names-hint" spellcheck="false"></textarea>
+<p class="hint" id="names-hint">按 Enter 換行；空白行會自動略過。同名學生請加上學號以便識別。</p>
+<div class="group-control"><label for="groups">分組數量</label><input id="groups" type="number" min="1" step="1" value="4" inputmode="numeric" required></div>
+<button id="draw" type="submit">開始分組 <span aria-hidden="true">↗</span></button>
+<p class="error" id="error" role="alert"></p>
+<p class="hint">隨機分組，各組人數最多相差 1 人。名單只在此瀏覽器頁面處理。</p>
+</form>
+</section>
+<section class="panel" aria-labelledby="result-title" aria-busy="false" id="result-panel">
+<div class="results-head"><h2 id="result-title">分組結果</h2><span class="badge" id="badge">等待抽選</span></div>
+<div id="results"><div class="empty"><div class="symbol" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><strong>今天會和誰同一組？</strong><p>在左方或上方輸入學生名單，<br>選擇組數後即可開始。</p></div></div>
+<p class="status" id="status" role="status" aria-live="polite"></p>
+</section>
+</div>
+</main>
+<script>
+'use strict';
+const namesInput=document.querySelector('#names'),groupsInput=document.querySelector('#groups'),draw=document.querySelector('#draw'),results=document.querySelector('#results'),status=document.querySelector('#status'),badge=document.querySelector('#badge'),panel=document.querySelector('#result-panel'),error=document.querySelector('#error');
+const getNames=()=>namesInput.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+let busy=false,hasResult=false;
+function update(){document.querySelector('#count').textContent=`${getNames().length} 位學生`;error.textContent='';if(hasResult){status.textContent='設定已更新，請按「重新抽選」套用。';badge.textContent='待重新抽選';}}
+namesInput.addEventListener('input',update);groupsInput.addEventListener('input',update);
+function randomIndex(max){const a=new Uint32Array(1),limit=Math.floor(4294967296/max)*max;do{crypto.getRandomValues(a);}while(a[0]>=limit);return a[0]%max;}
+function makeGroups(names,count){const shuffled=[...names];for(let i=shuffled.length-1;i>0;i--){const j=randomIndex(i+1);[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}const groups=Array.from({length:count},()=>[]);shuffled.forEach((name,i)=>groups[i%count].push(name));return groups;}
+function showGroups(groups){const grid=document.createElement('div');grid.className='cards';groups.forEach((members,i)=>{const card=document.createElement('article');card.className='card';card.style.setProperty('--delay',`${Math.min(i*70,560)}ms`);const heading=document.createElement('h3');heading.textContent=`第 ${i+1} 組`;const size=document.createElement('span');size.textContent=`${members.length} 人`;heading.append(size);const list=document.createElement('ul');members.forEach(name=>{const li=document.createElement('li');li.textContent=name;list.append(li);});card.append(heading,list);grid.append(card);});results.replaceChildren(grid);}
+async function animate(names){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const wrap=document.createElement('div');wrap.className='empty';wrap.setAttribute('aria-hidden','true');const title=document.createElement('strong');title.textContent='正在隨機分組…';const name=document.createElement('div');name.className='shuffle-name';const bar=document.createElement('div');bar.className='progress';wrap.append(title,name,bar);results.replaceChildren(wrap);for(let i=0;i<15;i++){name.textContent=names[randomIndex(names.length)];await new Promise(resolve=>setTimeout(resolve,100));}}
+document.querySelector('#form').addEventListener('submit',async event=>{event.preventDefault();if(busy)return;const names=getNames(),count=Number(groupsInput.value);error.textContent='';if(!names.length){error.textContent='請先輸入至少一位學生的姓名。';namesInput.focus();return;}if(!Number.isSafeInteger(count)||count<1||count>names.length){error.textContent=`請輸入 1 至 ${names.length} 之間的整數組數，確保每組都有組員。`;groupsInput.focus();return;}busy=true;draw.disabled=namesInput.disabled=groupsInput.disabled=true;panel.setAttribute('aria-busy','true');badge.textContent='抽選中';status.textContent='正在隨機分組，請稍候。';try{const groups=makeGroups(names,count);await animate(names);showGroups(groups);hasResult=true;badge.textContent=`${names.length} 人 · ${count} 組`;status.textContent=`分組完成！共 ${names.length} 位學生，分成 ${count} 組。`;draw.textContent='重新抽選 ↻';}catch(e){error.textContent='分組未能完成，請重試。';badge.textContent='請重試';status.textContent='';}finally{busy=false;draw.disabled=namesInput.disabled=groupsInput.disabled=false;panel.setAttribute('aria-busy','false');}});
+</script>
+</body>
+</html>
