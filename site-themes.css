@@ -114,3 +114,28 @@ html[data-style=tech] .rgb-frame::after{z-index:-1!important}
 
 /* Viewport-anchored rims avoid scrolling through panel content. */
 html[data-style=tech] .rgb-frame::after{display:none!important;animation:none!important}
+
+/* Complementary surface inks under the legacy diagram inversion. */
+html[data-style=tech]:is([data-page=instantaneous-velocity],[data-page=kinetic-theory],[data-page=laws-of-reflection],[data-page=m2-differentiation-principle],[data-page=m2-integration-principle],[data-page=me01-light-gate],[data-page=me01-ticker-tape-timer],[data-page=mirror-image-2],[data-page=mirror-image],[data-page=mirror-rotation],[data-page=motion-graph-practice],[data-page=pinhole-camera],[data-page=rayleigh-criterion]) :is(main,header,aside,article,.panel,.card,.stage,.bench,.apparatus,.toolbar,.bar,.controls,.stats,.chart,.metric,.readout,.scene-scroll,.touch-note,.law-box,.simulation-body,.stage-heading,.stage-footer){
+ background:linear-gradient(125deg,#ead9bf,#e8dfc7 55%,#dbdfbb)!important;
+}
+html[data-style=tech]:is([data-page=instantaneous-velocity],[data-page=kinetic-theory],[data-page=laws-of-reflection],[data-page=m2-differentiation-principle],[data-page=m2-integration-principle],[data-page=me01-light-gate],[data-page=me01-ticker-tape-timer],[data-page=mirror-image-2],[data-page=mirror-image],[data-page=mirror-rotation],[data-page=motion-graph-practice],[data-page=pinhole-camera],[data-page=rayleigh-criterion]) :is(.metric,.readout,.stat,.toolbar,.bar,.touch-note){background:#dae1c5!important}
+html[data-style=tech]:is([data-page=instantaneous-velocity],[data-page=kinetic-theory],[data-page=laws-of-reflection],[data-page=m2-differentiation-principle],[data-page=m2-integration-principle],[data-page=me01-light-gate],[data-page=me01-ticker-tape-timer],[data-page=mirror-image-2],[data-page=mirror-image],[data-page=mirror-rotation],[data-page=motion-graph-practice],[data-page=pinhole-camera],[data-page=rayleigh-criterion]) :is(.scene-scroll canvas,#plot:not(canvas),.plot){background-color:#eaddc6!important}
+html[data-page=kinetic-theory][data-style=tech] :is(.bench,.chart){filter:invert(1);background:#152940!important;color:#d6e8f8}
+html[data-page=motion-graph-practice][data-style=tech] .hero{filter:invert(1);background:linear-gradient(120deg,#17374e,#282343);color:#eff7ff}
+html[data-page=motion-graph-practice][data-style=tech] .hero em{color:#7ae9fd}
+html[data-style=tech] input[type=range]{
+ --thumb:#05a9b5;--rail:#71869e;--rim:#effaff;
+ appearance:none!important;-webkit-appearance:none!important;background:transparent!important;border:0!important;box-shadow:none!important;min-height:22px;cursor:pointer
+}
+html[data-style=tech]:is([data-page=instantaneous-velocity],[data-page=kinetic-theory],[data-page=laws-of-reflection],[data-page=m2-differentiation-principle],[data-page=m2-integration-principle],[data-page=me01-light-gate],[data-page=me01-ticker-tape-timer],[data-page=mirror-image-2],[data-page=mirror-image],[data-page=mirror-rotation],[data-page=motion-graph-practice],[data-page=pinhole-camera],[data-page=rayleigh-criterion]) input[type=range]{--thumb:#ff250c;--rail:#859072;--rim:#edf5e6}
+html[data-page=snells-law][data-style=tech] input[type=range]{--thumb:#49ebff;--rim:#13293b}
+html[data-style=tech] input[type=range]::-webkit-slider-runnable-track{height:6px!important;border-radius:9px!important;background:var(--rail)!important;border:0!important}
+html[data-style=tech] input[type=range]::-moz-range-track{height:6px!important;border-radius:9px!important;background:var(--rail)!important;border:0!important}
+html[data-style=tech] input[type=range]::-webkit-slider-thumb{appearance:none!important;-webkit-appearance:none!important;box-sizing:border-box!important;width:18px!important;height:18px!important;border-radius:50%!important;border:2px solid var(--rim)!important;background:var(--thumb)!important;box-shadow:0 0 0 1px var(--thumb)!important}
+html[data-style=tech] input[type=range]::-moz-range-thumb{appearance:none!important;-webkit-appearance:none!important;box-sizing:border-box!important;width:18px!important;height:18px!important;border-radius:50%!important;border:2px solid var(--rim)!important;background:var(--thumb)!important;box-shadow:0 0 0 1px var(--thumb)!important}
+html[data-style=tech] input[type=range]::-webkit-slider-thumb{margin-top:-6px!important}
+
+html[data-page=pinhole-camera][data-style=tech] :is([data-slot="slider-thumb"],[role="slider"]){background:#ff250c!important;border:2px solid #edf5e6!important;box-shadow:0 0 0 1px #ff250c!important}
+html[data-page=pinhole-camera][data-style=tech] [data-slot="slider-track"]{background:#859072!important}
+html[data-page=pinhole-camera][data-style=tech] [data-slot="slider-range"]{background:#b64f40!important}
