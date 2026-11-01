@@ -1,4 +1,4 @@
-<!doctype html><html data-page="motion-graph-practice" lang="en"><meta name="yd-site-build" content="rgb-r7-production-2"><script>/* Lighting is drawn on a separate transparent layer. Model state and ray paths are untouched. */
+<!doctype html><html data-page="motion-graph-practice" lang="en"><meta name="yd-site-build" content="rgb-r7-production-3"><script>/* Lighting is drawn on a separate transparent layer. Model state and ray paths are untouched. */
 (()=>{
  const objects=new Map(),textZones=new WeakMap(),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let textRanges=[],lastProtected=[],frames=[];
@@ -93,7 +93,13 @@
   g.restore();frameCount++;overlay.dataset.frames=String(frameCount);overlay.dataset.paths=String(index);overlay.dataset.borderPaths=String(frameIndex);overlay.dataset.protectedLabels=String(lastProtected.length);
  }
  window.ydRGB={begin,path,rectangle,ring,three,get active(){return enabled},get objectCount(){return objects.size},get protectedAreas(){return lastProtected.map(r=>r.slice())}};
- function init(){overlay=document.createElement('canvas');overlay.id='rgb-object-lights';overlay.setAttribute('aria-hidden','true');document.body.append(overlay);g=overlay.getContext('2d');update();requestAnimationFrame(paint);let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;markFrames()})}).observe(document.body,{childList:true,subtree:true});window.addEventListener('lab-theme-change',update)}
+ function init(){
+  // Catalogue cards scroll with the document, including during iOS toolbar resizing.
+  if(document.querySelector('a.box,a.tool')){
+   markFrames();
+   const style=document.createElement('style');style.textContent='html[data-style=tech] .rgb-frame.rgb-frame::after{display:block!important;inset:0!important;z-index:0!important;padding:2px!important;animation:rgb-edge-flow 4s linear infinite!important}@media(prefers-reduced-motion:reduce){html[data-style=tech] .rgb-frame.rgb-frame::after{animation:none!important}}';document.head.append(style);return;
+  }
+  overlay=document.createElement('canvas');overlay.id='rgb-object-lights';overlay.setAttribute('aria-hidden','true');document.body.append(overlay);g=overlay.getContext('2d');update();requestAnimationFrame(paint);let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;markFrames()})}).observe(document.body,{childList:true,subtree:true});window.addEventListener('lab-theme-change',update)}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Motion Graph Practice · 運動圖像練習</title><link rel="stylesheet" href="lab-paper.css"><style>
