@@ -160,7 +160,7 @@ function ray(x1,y1,x2,y2,dash=[],ink='#98472e'){
 function arc(start,end,r,text,color='#a0efff'){
  ctx.beginPath();ctx.arc(geom.cx,geom.cy,r,start*D,end*D,end<start);ctx.strokeStyle=paper?"#496151":color;ctx.lineWidth=1.7;ctx.stroke();const mid=(start+end)/2*D;label(text,geom.cx+(r+25)*Math.cos(mid),geom.cy+(r+25)*Math.sin(mid),color,13);
 }
-function drawRayName(end,en,zh,ink,obstacles,preferredSide){
+function drawRayName(end,en,zh,ink,obstacles){
  const {cx,cy,w,h}=geom,dx=end.x-cx,dy=end.y-cy,len=Math.hypot(dx,dy);
  if(len<1)return;
  // Keep text upright even when propagation points towards the left.
@@ -168,20 +168,20 @@ function drawRayName(end,en,zh,ink,obstacles,preferredSide){
  const ux=sign*dx/len,uy=sign*dy/len;
  ctx.save();ctx.font='600 13px system-ui';
  const halfWidth=Math.max(ctx.measureText(en).width,ctx.measureText(zh).width)/2+3;
- const halfHeight=16,bx=Math.abs(ux)*halfWidth+Math.abs(uy)*halfHeight,by=Math.abs(uy)*halfWidth+Math.abs(ux)*halfHeight;
+ const halfHeight=20,bx=Math.abs(ux)*halfWidth+Math.abs(uy)*halfHeight,by=Math.abs(uy)*halfWidth+Math.abs(ux)*halfHeight;
  let best=null;
- for(const fraction of [.69,.81,.55,.42])for(const side of [preferredSide,-preferredSide])for(const gap of [21,37]){
-  const x=cx+dx*fraction-uy*side*gap,y=cy+dy*fraction+ux*side*gap;
+ for(const fraction of [.69,.81,.55,.42,.91,.33]){
+  const x=cx+dx*fraction,y=cy+dy*fraction;
   const box={l:x-bx,r:x+bx,t:y-by,b:y+by};
   const clip=Math.max(0,3-box.l,box.r-w+3)+Math.max(0,3-box.t,box.b-h+3);
   const overlap=obstacles.reduce((n,o)=>n+Math.max(0,Math.min(o.r,box.r)-Math.max(o.l,box.l))*Math.max(0,Math.min(o.b,box.b)-Math.max(o.t,box.t)),0);
-  const cost=clip*10000+overlap+gap*.1+Math.abs(.69-fraction)+(side===preferredSide?0:.3);
+  const cost=clip*10000+overlap+Math.abs(.69-fraction);
   if(!best||cost<best.cost)best={x,y,box,cost};
  }
  obstacles.push(best.box);ctx.translate(best.x,best.y);ctx.rotate(Math.atan2(uy,ux));
  ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.lineWidth=3;
  ctx.strokeStyle=paper?'#faf6e9':'#101f31';ctx.fillStyle=paper?ink:'#e6faff';
- ctx.strokeText(en,0,-7);ctx.fillText(en,0,-7);ctx.font='12px system-ui';ctx.strokeText(zh,0,8);ctx.fillText(zh,0,8);ctx.restore();
+ ctx.strokeText(en,0,-12);ctx.fillText(en,0,-12);ctx.font='12px system-ui';ctx.strokeText(zh,0,12);ctx.fillText(zh,0,12);ctx.restore();
 }
 $('ray-labels').addEventListener('change',draw);
 function positionMedia(){
@@ -230,11 +230,11 @@ function draw(){
  if($('ray-labels').checked){
  const blocked=[...document.querySelectorAll('.plot-brand,.medium')].map(el=>({l:el.offsetLeft,r:el.offsetLeft+el.offsetWidth,t:el.offsetTop,b:el.offsetTop+el.offsetHeight}));
  blocked.push({l:cx-45,r:cx+45,t:cy-45,b:cy+45});
- drawRayName(g.source,'Incident ray','入射線','#87391f',blocked,-1);
+ drawRayName(g.source,'Incident ray','入射線','#87391f',blocked);
  if(!result.grazing&&(result.tir||($('reflection').checked&&Math.abs(result.nIn-result.nOut)>1e-10))){
-  drawRayName(g.reflected,result.tir?'Reflected ray (TIR)':'Reflected ray',result.tir?'反射線（全內反射）':'反射線','#6c407a',blocked,1);
+  drawRayName(g.reflected,result.tir?'Reflected ray (TIR)':'Reflected ray',result.tir?'反射線（全內反射）':'反射線','#6c407a',blocked);
  }
- if(!result.grazing&&!result.tir)drawRayName(g.refracted,'Refracted ray','折射線','#156355',blocked,1);
+ if(!result.grazing&&!result.tir)drawRayName(g.refracted,'Refracted ray','折射線','#156355',blocked);
  }
  canvas.setAttribute('aria-label',`Ray diagram. Interface rotation ${state.rotation.toFixed(1)} degrees clockwise. Incident from medium ${result.side}; i ${Math.abs(state.i).toFixed(1)} degrees. ${result.grazing?'Ray along interface.':state.mode==='find-r'&&!state.revealed?'Predict r.':result.tir?'Total internal reflection.':'r '+result.r.toFixed(1)+' degrees.'} Drag blue handle to move the ray, gold handle to rotate interface. Arrow keys move the ray; Alt plus arrow rotates interface.`);
 }
