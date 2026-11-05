@@ -149,7 +149,7 @@ html[data-style=tech] #graphPanel .legend {background:#192b46}
 html[data-style=tech] #graphPanel .legend .p {color:#61e2d5}
 html[data-style=tech] #graphPanel .legend .q {color:#ffb67b}
 html[data-style=tech] #graphPanel .legend .total {color:#e7e9ff}
-html[data-style=tech] body .canvas-wrap #ray {background:linear-gradient(105deg,#b5d8e9,#c8c9e9)}
+html[data-style=tech] body .canvas-wrap #ray {background:#192b46}
 </style></head><body><main>
 <aside><h1>Rayleigh criterion / 瑞利判據</h1><label for="mode">Investigate one variable / 探究單一變量</label><select id="mode"><option value="lambda">Wavelength λ / 波長 λ</option><option value="D">Aperture diameter D / 孔徑直徑 D</option><option value="theta">Angular separation θ / 角距 θ</option><option value="s">Source separation s / 光源間距 s</option><option value="L">Observation distance L / 觀察距離 L</option><option value="free">Free exploration / 自由探究</option></select>
 <div id="parameters">
@@ -194,11 +194,15 @@ function setup(id){const c=$(id),w=Math.max(250,c.clientWidth),h=c.clientHeight,
 function line(g,x1,y1,x2,y2,color='#adc4d3',width=1.5,dash=[],arrow=false){g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.strokeStyle=color;g.lineWidth=width;g.setLineDash(dash);g.stroke();g.setLineDash([]);if(arrow){const x=x1+(x2-x1)*.54,y=y1+(y2-y1)*.54,a=Math.atan2(y2-y1,x2-x1);g.beginPath();g.moveTo(x,y);g.lineTo(x-9*Math.cos(a-.4),y-9*Math.sin(a-.4));g.lineTo(x-9*Math.cos(a+.4),y-9*Math.sin(a+.4));g.closePath();g.fillStyle=color;g.fill();}}
 function text(g,t,x,y,color='#d8e8f2',align='left',italic=false){g.font=(italic?'italic ':'')+'13px Arial';g.fillStyle=color;g.textAlign=align;const parts=t.includes(' | ')?t.split(' | '):t.split(' / ');if(parts.length>1 && /[\u3400-\u9fff]/.test(parts[parts.length-1])){g.font='11px Arial, Microsoft JhengHei';g.fillText(parts.slice(0,-1).join(' / '),x,y-7);g.fillText(parts[parts.length-1],x,y+7);}else g.fillText(t,x,y);}
 function dot(g,x,y,color){g.beginPath();g.arc(x,y,4,0,Math.PI*2);g.fillStyle=color;g.fill();}
-function rays(m){const{g,w,h}=setup('ray'),cx=w*.48,fx=w*.85,cy=h*.5,ap=35+state.D*7,sep=Math.min(state.theta/800*65,85);
-window.ydRGB.begin(g.canvas);window.ydRGB.path(g,[[cx-7,20],[cx-7,cy-ap]]);window.ydRGB.path(g,[[cx-7,cy+ap],[cx-7,h-20]]);line(g,15,cy,w-12,cy,'#526d80',1,[5,5]);line(g,cx,35,cx,h-35,'#405565',3);line(g,cx,35,cx-7,46,'#405565',2);line(g,cx,35,cx+7,46,'#405565',2);line(g,cx,h-35,cx-7,h-46,'#405565',2);line(g,cx,h-35,cx+7,h-46,'#405565',2);
-line(g,cx-7,20,cx-7,cy-ap,'#596560',7);line(g,cx-7,cy+ap,cx-7,h-20,'#596560',7);line(g,fx,28,fx,h-28,'#5a6971',2);
-for(const[id,sy,color,dash]of[['P',sep,'#00645d',[]],['Q',-sep,'#984019',[7,4]]]){if(!on(id))continue;for(const rel of[-.82,0,.82]){const ly=cy+ap*rel,iy=cy+sy,left=25,entry=ly-sy*(cx-left)/(fx-cx);if(on('incident'))line(g,left,entry,cx,ly,color,1.7,dash,true);if(on('refracted'))line(g,cx,ly,fx,iy,color,1.7,dash,true);}if(on('ideal')){dot(g,fx,cy+sy,color);if(on('labels'))text(g,id+'′',fx+10,cy+sy+(id==='P'?16:-8),color,'left',true);}}
-if(on('labels')){text(g,'Circular aperture + lens / 圓形孔徑與透鏡',cx,19,'#283b32','center');text(g,'Focal plane / 焦平面',fx,h-12,'#283b32','center');text(g,'From distant P / 來自遠處 P',18,24,'#00645d','left',true);text(g,'From distant Q / 來自遠處 Q',18,h-18,'#984019','left',true);text(g,'D',cx-20,cy-4,'#283b32','right',true);line(g,cx, h-30,fx,h-30,'#68776d',1);text(g,'f = 100 mm',(cx+fx)/2,h-35,'#394d43','center');}}
+function rays(m){
+const rgb=document.documentElement.dataset.style==='tech';
+const ink=rgb?{"axis":"#708ba9","lens":"#a3b9ee","aperture":"#86a5c5","plane":"#b5c7e0","p":"#61e2d5","q":"#ffb67b","label":"#e5efff","dimension":"#91a9c9","value":"#c8daed"}:
+{"axis":"#526d80","lens":"#405565","aperture":"#596560","plane":"#5a6971","p":"#00645d","q":"#984019","label":"#283b32","dimension":"#68776d","value":"#394d43"};
+const{g,w,h}=setup('ray'),cx=w*.48,fx=w*.85,cy=h*.5,ap=35+state.D*7,sep=Math.min(state.theta/800*65,85);
+window.ydRGB.begin(g.canvas);window.ydRGB.path(g,[[cx-7,20],[cx-7,cy-ap]]);window.ydRGB.path(g,[[cx-7,cy+ap],[cx-7,h-20]]);line(g,15,cy,w-12,cy,ink.axis,1,[5,5]);line(g,cx,35,cx,h-35,ink.lens,3);line(g,cx,35,cx-7,46,ink.lens,2);line(g,cx,35,cx+7,46,ink.lens,2);line(g,cx,h-35,cx-7,h-46,ink.lens,2);line(g,cx,h-35,cx+7,h-46,ink.lens,2);
+line(g,cx-7,20,cx-7,cy-ap,ink.aperture,7);line(g,cx-7,cy+ap,cx-7,h-20,ink.aperture,7);line(g,fx,28,fx,h-28,ink.plane,2);
+for(const[id,sy,color,dash]of[['P',sep,ink.p,[]],['Q',-sep,ink.q,[7,4]]]){if(!on(id))continue;for(const rel of[-.82,0,.82]){const ly=cy+ap*rel,iy=cy+sy,left=25,entry=ly-sy*(cx-left)/(fx-cx);if(on('incident'))line(g,left,entry,cx,ly,color,1.7,dash,true);if(on('refracted'))line(g,cx,ly,fx,iy,color,1.7,dash,true);}if(on('ideal')){dot(g,fx,cy+sy,color);if(on('labels'))text(g,id+'′',fx+10,cy+sy+(id==='P'?16:-8),color,'left',true);}}
+if(on('labels')){text(g,'Circular aperture + lens / 圓形孔徑與透鏡',cx,19,ink.label,'center');text(g,'Focal plane / 焦平面',fx,h-12,ink.label,'center');text(g,'From distant P / 來自遠處 P',18,24,ink.p,'left',true);text(g,'From distant Q / 來自遠處 Q',18,h-18,ink.q,'left',true);text(g,'D',cx-20,cy-4,ink.label,'right',true);line(g,cx, h-30,fx,h-30,ink.dimension,1);text(g,'f = 100 mm',(cx+fx)/2,h-35,ink.value,'center');}}
 function centreMarker(g,x,y,id){
 const colour=id==='P'?'#005345':'#8a3400';
 for(const [stroke,width]of[['#ffffff',5],[colour,2.5]]){line(g,x-6,y,x+6,y,stroke,width);line(g,x,y-6,x,y+6,stroke,width);}
