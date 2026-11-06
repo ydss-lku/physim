@@ -1,5 +1,13 @@
 <!doctype html>
-<html data-page="me01-light-gate" lang="en"><meta name="yd-site-build" content="rgb-r7-production-6"><script>/* Lighting is drawn on a separate transparent layer. Model state and ray paths are untouched. */
+<html data-page="me01-light-gate" lang="en"><meta name="yd-site-build" content="rgb-r7-production-6"><style id="yd-logo-blend">
+/* Blend away the logo's rectangular background within each theme layer. */
+html[data-style=tech]:not([data-page=snells-law]) body :is(#logo,.yd-brand img,img[alt*="YD" i],img.yd-logo,img.logo){
+ background:transparent!important;mix-blend-mode:multiply!important
+}
+html[data-style=tech][data-page=snells-law] body :is(#logo,.yd-brand img,img[alt*="YD" i],img.yd-logo,img.logo){
+ background:transparent!important;mix-blend-mode:screen!important
+}
+</style><script>/* Lighting is drawn on a separate transparent layer. Model state and ray paths are untouched. */
 (()=>{
  const objects=new Map(),textZones=new WeakMap(),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let textRanges=[],lastProtected=[],frames=[];
