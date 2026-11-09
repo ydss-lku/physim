@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物理模擬：視深與折射 (Apparent Depth & Refraction)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js for 3D simulation (OrbitControls removed) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+            overflow: hidden; /* Prevent full page scroll */
+        }
+        canvas {
+            display: block;
+        }
+        .canvas-container {
+            background-color: #1e293b; /* Slate 800 */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            position: relative;
+        }
+        /* Custom Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #38bdf8; /* Sky 400 */
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #475569; /* Slate 600 */
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row">
+
+    <!-- Sidebar Controls -->
+    <div class="w-full md:w-80 flex-shrink-0 p-6 flex flex-col gap-6 border-r border-slate-700 bg-slate-900 overflow-y-auto z-10">
+        <div>
+            <h1 class="text-2xl font-bold text-sky-400 mb-2">視深與折射</h1>
+            <p class="text-xs text-slate-400">Apparent Depth Simulation</p>
+        </div>
+
+        <div class="space-y-6">
+            <!-- Water Level Control -->
+            <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                <label class="block text-sm font-medium mb-2 flex justify-between">
+                    <span>水位高度 (Water Level)</span>
+                    <span id="val-water" class="text-sky-300">80%</span>
+                </label>
+                <input type="range" id="slider-water" min="20" max="95" value="80" class="w-full">
+            </div>
+
+            <!-- Fish Position Control -->
+            <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                <label class="block text-sm font-medium mb-2 flex justify-between">
+                    <span>魚的實際深度 (Real Depth)</span>
+                    <span id="val-fish" class="text-sky-300">70%</span>
+                </label>
+                <input type="range" id="slider-fish" min="10" max="90" value="70" class="w-full">
+                <p class="text-xs text-slate-500 mt-2">調整魚在水箱中的垂直位置。</p>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="bg-slate-800 p-4 rounded-lg border border-slate-700 text-sm space-y-2">
+                <div class="flex justify-between border-b border-slate-700 pb-2">
+                    <span class="text-slate-400">折射率 (水)</span>
+                    <span>n = 1.33</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-700 pb-2">
+                    <span class="text-slate-400">折射率 (空氣)</span>
+                    <span>n = 1.00</span>
+                </div>
+                <div class="pt-2 text-slate-300 text-xs leading-relaxed space-y-1">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+                        <span>實物 (Real Fish)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-orange-500 opacity-40 border border-orange-500"></div>
+                        <span>虛像 (Apparent Image)</span>
+                    </div>
+                    <div class="mt-2 pl-5 border-l-2 border-slate-600">
+                        <span class="text-yellow-400 font-bold">黃線：</span> 兩條進入瞳孔邊緣的光線<br>
+                        <span class="text-red-400 font-bold">紅虛線：</span> 視覺反向延伸
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-auto pt-6 text-xs text-slate-500 text-center">
+            HTML5 Canvas & Three.js Physics Simulation
+        </div>
+    </div>
+
+    <!-- Main Simulation Area -->
+    <div class="flex-1 flex flex-col p-4 gap-4 h-full bg-slate-950 overflow-hidden">
+        
+        <!-- 2D Canvas (Upper Part) -->
+        <div class="flex-1 canvas-container relative">
+            <div class="absolute top-2 left-3 bg-black/50 px-2 py-1 rounded text-xs text-white pointer-events-none z-10">
+                2D 光路圖 (Side View)
+            </div>
+            <canvas id="canvas2d" class="w-full h-full"></canvas>
+        </div>
+
+        <!-- 3D Canvas (Lower Part) -->
+        <div class="flex-1 canvas-container relative">
+            <div class="absolute top-2 left-3 bg-black/50 px-2 py-1 rounded text-xs text-white pointer-events-none z-10">
+                3D 模擬 (Fixed View) - 觀察者視角
+            </div>
+            <div id="container3d" class="w-full h-full"></div>
+        </div>
+
+    </div>
+
+<script>
+/**
+ * Global Physics Constants & State
+ */
+const STATE = {
+    waterLevel: 0.8,    // 0 to 1 (relative to tank height)
+    fishY: 0.3,         // 0 to 1 input slider value
+    actualFishYLog: 0,  // Logical Y position calculated from fishY
+    tankWidth: 300,     // logical units
+    tankHeight: 250,    // logical units
+    nWater: 1.33,
+    nAir: 1.00,
+    // Eye position is fixed in logical coordinates for 2D view
+    eyePosX: 200,
+    eyePosY: 300,
+    eyePupilSize: 10 // Distance between the two rays entering the eye
+};
+
+// DOM Elements
+const canvas2d = document.getElementById('canvas2d');
+const ctx2d = canvas2d.getContext('2d');
+const sliderWater = document.getElementById('slider-water');
+const sliderFish = document.getElementById('slider-fish');
+const labelWater = document.getElementById('val-water');
+const labelFish = document.getElementById('val-fish');
+
+// Assets (Simple SVG Strings for texture generation)
+const fishSVGString = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60" width="100" height="60">
+  <path d="M95,30 Q80,10 50,10 Q20,10 5,30 Q20,50 50,50 Q80,50 95,30 Z" fill="#f97316" stroke="#c2410c" stroke-width="2"/>
+  <polygon points="5,30 -5,15 -5,45" fill="#f97316" stroke="#c2410c" stroke-width="2"/>
+  <circle cx="80" cy="25" r="3" fill="white"/>
+  <circle cx="82" cy="25" r="1.5" fill="black"/>
+  <path d="M60,30 Q55,30 50,35" fill="none" stroke="#c2410c" stroke-width="2" opacity="0.5"/>
+</svg>`;
+const fishTextureURI = "data:image/svg+xml;base64," + btoa(fishSVGString);
+
+/**
+ * 2D SIMULATION ENGINE
+ */
+
+function resizeCanvas() {
+    const parent = canvas2d.parentElement;
+    canvas2d.width = parent.clientWidth;
+    canvas2d.height = parent.clientHeight;
+}
+
+// Coordinate conversion: Logical to Screen
+function toScreen(x, y, w, h) {
+    const scaleX = w / 500;
+    const scaleY = h / 450;
+    const scale = Math.min(scaleX, scaleY) * 0.95; 
+
+    const cx = w / 2 - 60 * scale; 
+    const cy = h - 60; 
+
+    return {
+        x: cx + x * scale,
+        y: cy - y * scale,
+        scale: scale
+    };
+}
+
+// Solver: Find the point on water surface X where light refracts to Eye
+function solveRefractionPoint(fishPos, eyePos, waterY) {
+    let low = fishPos.x;
+    let high = eyePos.x;
+    const tolerance = 0.05;
+    
+    // Ensure bounds are correct direction
+    if (eyePos.x < fishPos.x) { [low, high] = [high, low]; }
+
+    let bestX = low;
+
+    // Binary search for the surface point that satisfies Snell's Law
+    for (let i = 0; i < 30; i++) { 
+        const mid = (low + high) / 2;
+        
+        // Incident Ray vector (Fish -> Surface)
+        const dx1 = mid - fishPos.x;
+        const dy1 = waterY - fishPos.y;
+        // Refracted Ray vector (Surface -> Eye)
+        const dx2 = eyePos.x - mid;
+        const dy2 = eyePos.y - waterY;
+
+        // Snell's Law: n1 * sin(theta1) = n2 * sin(theta2)
+        const h1 = Math.sqrt(dx1*dx1 + dy1*dy1);
+        const h2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+        const sin1 = dx1 / h1;
+        const sin2 = dx2 / h2;
+
+        const error = STATE.nWater * sin1 - STATE.nAir * sin2;
+
+        if (Math.abs(error) < tolerance / 1000) { 
+            bestX = mid;
+            break;
+        }
+
+        if (error > 0) { high = mid; } else { low = mid; }
+        bestX = mid;
+    }
+    return { x: bestX, y: waterY };
+}
+
+// Intersection of two lines
+function getIntersection(p1, p2, p3, p4) {
+    const x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
+    const x3 = p3.x, y3 = p3.y, x4 = p4.x, y4 = p4.y;
+    const denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+    if (Math.abs(denom) < 0.001) return null; 
+    const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
+    return { x: x1 + ua * (x2 - x1), y: y1 + ua * (y2 - y1) };
+}
+
+// --- Drawing Helpers ---
+
+function drawFishIcon(ctx, x, y, scale, alpha = 1) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale * 0.4, scale * 0.4); 
+    ctx.translate(-50, -30); // Center based on 100x60 SVG viewbox
+    ctx.globalAlpha = alpha;
+    
+    // Manually draw fish path (similar to SVG)
+    ctx.fillStyle = '#f97316'; // Orange 500
+    ctx.strokeStyle = '#c2410c'; // Orange 700
+    ctx.lineWidth = 2;
+    
+    // Body
+    ctx.beginPath();
+    ctx.moveTo(95, 30);
+    ctx.quadraticCurveTo(80, 10, 50, 10);
+    ctx.quadraticCurveTo(20, 10, 5, 30);
+    ctx.quadraticCurveTo(20, 50, 50, 50);
+    ctx.quadraticCurveTo(80, 50, 95, 30);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Tail
+    ctx.beginPath();
+    ctx.moveTo(5, 30);
+    ctx.lineTo(-5, 15);
+    ctx.lineTo(-5, 45);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Eye
+    ctx.fillStyle = 'white';
+    ctx.beginPath(); ctx.arc(80, 25, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'black';
+    ctx.beginPath(); ctx.arc(82, 25, 2, 0, Math.PI*2); ctx.fill();
+
+    ctx.restore();
+}
+
+function drawObserverEye(ctx, x, y, scale, lookAtX, lookAtY) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    
+    // Rotate to look at the target (virtual image)
+    const dx = lookAtX - x;
+    const dy = lookAtY - y;
+    const angle = Math.atan2(dy, dx);
+    ctx.rotate(angle);
+
+    // Draw stylized side-view eye
+    // Outer structure (Skin/Lids)
+    ctx.fillStyle = '#94a3b8'; // Slate 400 (Greyish)
+    ctx.strokeStyle = '#38bdf8'; // Sky 400 (Bright Blue) - High contrast
+    ctx.lineWidth = 3; // Thicker lines
+    ctx.beginPath();
+    ctx.moveTo(25, 0); 
+    ctx.lineTo(-5, -15); 
+    ctx.quadraticCurveTo(-15, 0, -5, 15); 
+    ctx.lineTo(25, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Eyeball / Sclera (White part)
+    ctx.beginPath();
+    ctx.moveTo(30, 0); 
+    ctx.lineTo(0, -14);
+    ctx.bezierCurveTo(-5, -5, -5, 5, 0, 14);
+    ctx.lineTo(30, 0);
+    ctx.fillStyle = "#ffffff"; // White
+    ctx.fill();
+    ctx.stroke();
+
+    // Iris/Pupil
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 4, 13, 0, -Math.PI/2, Math.PI/2); 
+    ctx.fillStyle = "#0f172a"; // Dark pupil
+    ctx.fill();
+    
+    // Specular highlight (Reflection)
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(-2, -3, 2, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function draw2D() {
+    const w = canvas2d.width;
+    const h = canvas2d.height;
+    ctx2d.clearRect(0, 0, w, h);
+
+    const TANK_W = STATE.tankWidth;
+    const TANK_H = STATE.tankHeight;
+    const WATER_H = TANK_H * STATE.waterLevel;
+    
+    STATE.actualFishYLog = WATER_H * (0.1 + STATE.fishY * 0.8);
+    const fishPos = { x: -60, y: STATE.actualFishYLog };
+    
+    const eyeCenter = { x: STATE.eyePosX, y: STATE.eyePosY };
+    const pupilR = STATE.eyePupilSize / 2;
+    
+    const eyePos1 = { x: eyeCenter.x, y: eyeCenter.y + pupilR }; 
+    const eyePos2 = { x: eyeCenter.x, y: eyeCenter.y - pupilR }; 
+
+    // --- Physics Calc ---
+    const sP1 = solveRefractionPoint(fishPos, eyePos1, WATER_H);
+    const sP2 = solveRefractionPoint(fishPos, eyePos2, WATER_H);
+    
+    // Virtual Image Intersection
+    const pVirt = getIntersection(sP1, eyePos1, sP2, eyePos2);
+
+    // --- Drawing ---
+    function drawLine(p1, p2, color, style='solid') {
+        const s = toScreen(p1.x, p1.y, w, h);
+        const e = toScreen(p2.x, p2.y, w, h);
+        ctx2d.beginPath();
+        ctx2d.strokeStyle = color;
+        ctx2d.lineWidth = 2;
+        if(style === 'dashed') ctx2d.setLineDash([5, 5]);
+        else ctx2d.setLineDash([]);
+        ctx2d.moveTo(s.x, s.y);
+        ctx2d.lineTo(e.x, e.y);
+        ctx2d.stroke();
+        ctx2d.setLineDash([]);
+    }
+
+    // Tank
+    const bl = toScreen(-TANK_W/2, 0, w, h);
+    const tr = toScreen(TANK_W/2, TANK_H, w, h);
+    ctx2d.strokeStyle = '#94a3b8'; ctx2d.lineWidth = 4;
+    ctx2d.strokeRect(bl.x, tr.y, tr.x - bl.x, bl.y - tr.y);
+    
+    // Water
+    const waterYSc = toScreen(0, WATER_H, w, h).y;
+    ctx2d.fillStyle = 'rgba(56, 189, 248, 0.2)';
+    ctx2d.fillRect(bl.x, waterYSc, tr.x - bl.x, bl.y - waterYSc);
+    ctx2d.beginPath(); ctx2d.moveTo(bl.x, waterYSc); ctx2d.lineTo(tr.x, waterYSc);
+    ctx2d.strokeStyle = '#38bdf8'; ctx2d.lineWidth = 2; ctx2d.stroke();
+
+    // Rays (Real)
+    drawLine(fishPos, sP1, '#facc15'); // Fish -> Surface
+    drawLine(fishPos, sP2, '#facc15');
+    drawLine(sP1, eyePos1, '#facc15'); // Surface -> Eye
+    drawLine(sP2, eyePos2, '#facc15');
+
+    // Rays (Virtual/Apparent)
+    if (pVirt) {
+        drawLine(sP1, pVirt, '#f87171', 'dashed');
+        drawLine(sP2, pVirt, '#f87171', 'dashed');
+    }
+
+    // Fish Icons
+    const pRealSc = toScreen(fishPos.x, fishPos.y, w, h);
+    drawFishIcon(ctx2d, pRealSc.x, pRealSc.y, pRealSc.scale);
+    
+    if (pVirt && pVirt.y < WATER_H) {
+        const pVirtSc = toScreen(fishPos.x, pVirt.y, w, h);
+        drawFishIcon(ctx2d, pVirtSc.x, pVirtSc.y, pVirtSc.scale, 0.4);
+    }
+
+    // Eye Icon
+    const pEyeSc = toScreen(eyeCenter.x, eyeCenter.y, w, h);
+    const target = pVirt ? pVirt : fishPos;
+    const pTargetSc = toScreen(target.x, target.y, w, h);
+    drawObserverEye(ctx2d, pEyeSc.x, pEyeSc.y, pEyeSc.scale/20, pTargetSc.x, pTargetSc.y);
+}
+
+
+/**
+ * 3D SIMULATION ENGINE
+ */
+let scene, camera, renderer;
+let waterMesh, realFishSprite, virtualFishSprite;
+
+function init3D() {
+    const container = document.getElementById('container3d');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1e293b); 
+
+    camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+    // 固定視角：對應 2D 觀察者 (x=200, y=300) 的比例
+    // 在 3D 空間中設置在右上方
+    camera.position.set(20, 30, 20); 
+    // 讓攝影機看向水箱中心偏左位置 (魚的大概位置)
+    camera.lookAt(-5, 10, 0);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // Lights
+    const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(10, 50, 20);
+    scene.add(dirLight);
+
+    // Tank
+    const TANK_DIM_X = STATE.tankWidth / 10;
+    const TANK_DIM_Y = STATE.tankHeight / 10;
+    const TANK_DIM_Z = 20;
+
+    const tankGeo = new THREE.BoxGeometry(TANK_DIM_X, TANK_DIM_Y, TANK_DIM_Z);
+    const tankEdges = new THREE.EdgesGeometry(tankGeo);
+    const tankMesh = new THREE.LineSegments(tankEdges, new THREE.LineBasicMaterial({ color: 0x64748b })); 
+    tankMesh.position.y = TANK_DIM_Y / 2; 
+    scene.add(tankMesh);
+
+    // Water
+    const waterGeo = new THREE.BoxGeometry(TANK_DIM_X - 0.2, 1, TANK_DIM_Z - 0.2); 
+    const waterMat = new THREE.MeshPhysicalMaterial({
+        color: 0x38bdf8, transparent: true, opacity: 0.3,
+        roughness: 0, transmission: 0.5, thickness: 2
+    });
+    waterMesh = new THREE.Mesh(waterGeo, waterMat);
+    scene.add(waterMesh);
+
+    // Fish Sprites
+    const loader = new THREE.TextureLoader();
+    const fishTex = loader.load(fishTextureURI);
+    
+    // Real Fish
+    const matReal = new THREE.SpriteMaterial({ map: fishTex });
+    realFishSprite = new THREE.Sprite(matReal);
+    realFishSprite.scale.set(6, 3.6, 1);
+    scene.add(realFishSprite);
+
+    // Virtual Fish (User view)
+    const matVirt = new THREE.SpriteMaterial({ map: fishTex, opacity: 0.6, transparent: true, color: 0xffaaaa });
+    virtualFishSprite = new THREE.Sprite(matVirt);
+    virtualFishSprite.scale.set(6, 3.6, 1);
+    scene.add(virtualFishSprite);
+
+    // Grid
+    const grid = new THREE.GridHelper(60, 20, 0x334155, 0x0f172a);
+    scene.add(grid);
+
+    window.addEventListener('resize', onWindowResize3D);
+    animate3D();
+}
+
+function update3D() {
+    if (!waterMesh || !realFishSprite) return;
+
+    const waterLevelLog = STATE.tankHeight * STATE.waterLevel;
+    const waterH3D = waterLevelLog / 10;
+    const fishY3D = STATE.actualFishYLog / 10;
+    const fishX3D = -6; // Matches -60 in 2D
+
+    // Update Water Mesh
+    waterMesh.scale.y = Math.max(0.01, waterH3D);
+    waterMesh.position.y = waterH3D / 2;
+
+    // Update Real Fish
+    realFishSprite.position.set(fishX3D, fishY3D, 0);
+
+    // Calculate Dynamic Apparent Depth based on Camera Angle
+    // 1. Get Camera Vector relative to Fish
+    const camPos = camera.position.clone();
+    // Vector from Fish to Camera
+    const viewVec = camPos.sub(new THREE.Vector3(fishX3D, fishY3D, 0));
+    
+    // 2. Calculate Angle with Vertical (Zenith)
+    // theta2 (in air)
+    const up = new THREE.Vector3(0, 1, 0);
+    const theta2 = viewVec.angleTo(up);
+
+    // 3. Apparent Depth Calculation
+    // Only if camera is above water
+    if (camera.position.y > waterH3D && fishY3D < waterH3D) {
+        virtualFishSprite.visible = true;
+
+        const realDepth = waterH3D - fishY3D;
+        let apparentDepth = realDepth; 
+
+        // Limit theta2 to avoid TIR or horizon issues (max 85 deg)
+        const maxAng = 85 * Math.PI / 180;
+        const safeTheta2 = Math.min(theta2, maxAng);
+
+        if (safeTheta2 < 0.05) {
+            // Near vertical viewing: d' = d / n
+            apparentDepth = realDepth / STATE.nWater;
+        } else {
+            // General case:
+            // d' = d * tan(theta1) / tan(theta2)
+            // Snell: n1 sin(t1) = n2 sin(t2)
+            const sinTheta1 = (STATE.nAir / STATE.nWater) * Math.sin(safeTheta2);
+            const theta1 = Math.asin(sinTheta1);
+            const tan1 = Math.tan(theta1);
+            const tan2 = Math.tan(safeTheta2);
+            apparentDepth = realDepth * (tan1 / tan2);
+        }
+        
+        // Virtual Fish Y = WaterSurface - ApparentDepth
+        const virtualY = waterH3D - apparentDepth;
+        virtualFishSprite.position.set(fishX3D, virtualY, 0);
+        
+    } else {
+        // Camera underwater or fish above water
+        virtualFishSprite.visible = false;
+    }
+}
+
+function onWindowResize3D() {
+    const container = document.getElementById('container3d');
+    if(container) {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+}
+
+function animate3D() {
+    requestAnimationFrame(animate3D);
+    update3D(); 
+    renderer.render(scene, camera);
+}
+
+// Global Loop
+function updateState() {
+    STATE.waterLevel = parseInt(sliderWater.value) / 100;
+    STATE.fishY = parseInt(sliderFish.value) / 100;
+    labelWater.innerText = sliderWater.value + '%';
+    labelFish.innerText = sliderFish.value + '%';
+    draw2D();
+}
+
+sliderWater.addEventListener('input', updateState);
+sliderFish.addEventListener('input', updateState);
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    draw2D();
+    onWindowResize3D();
+});
+
+window.onload = () => {
+    resizeCanvas();
+    init3D();
+    updateState();
+};
+
+</script>
+</body>
+</html>
