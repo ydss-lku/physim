@@ -153,8 +153,8 @@ html[data-page=laws-of-reflection][data-style=tech] main button[aria-pressed=tru
 </style></head>
 <body><main>
 <header><div><div class="eyebrow">S3 PHYSICS / OPTICS</div><h1>反射實驗室 <span>Laws of Reflection</span></h1></div><div class="header-actions"><div class="views" role="group" aria-label="觀察角度"><button id="top" aria-pressed="false">鳥瞰</button><button id="free" aria-pressed="true">自由 3D</button></div></div></header>
-<section class="stage" aria-label="反射實驗場景"><canvas id="scene" aria-label="三維平面鏡、量角器及可調方向的光線箱；可拖曳旋轉視角">請使用支援 Canvas 的瀏覽器。</canvas><div class="stage-title" id="view-name">自由 3D 視角</div><div class="legend"><span>入射線</span><span>反射線</span><span>法線</span></div><div class="hint" id="hint">拖曳畫面旋轉 · 滾輪或雙指縮放 · 鳥瞰可直接讀取刻度</div></section>
-<footer class="controls"><button class="power" id="power" aria-pressed="true"><i class="lamp" aria-hidden="true"></i><span id="power-text">Ray box　開啟</span></button><div class="adjust"><label for="direction">移動 Ray box <span>光束始終對準鏡面中心</span></label><input id="direction" type="range" min="-80" max="80" value="-35" step="1" aria-label="Ray box 位置"><div class="ends"><span>左側</span><span>法線方向</span><span>右側</span></div></div><div class="note">量角器以法線為 0°，每小格 1°。<br>觀察光線與法線兩側的刻度。</div><div class="sr-only" id="status" aria-live="polite"></div></footer>
+<section class="stage" aria-label="反射實驗場景"><canvas id="scene" aria-label="三維平面鏡、量角器及可調方向的光線箱；可拖曳旋轉視角">請使用支援 Canvas 的瀏覽器。</canvas><div class="stage-title" id="view-name">自由 3D 視角</div><div class="legend"><span>入射線</span><span>反射線</span><span>法線</span></div><div class="hint" id="hint">拖曳 Ray box 移動光線箱 · 拖曳其他位置旋轉 · 滾輪或雙指縮放</div></section>
+<footer class="controls"><button class="power" id="power" aria-pressed="true"><i class="lamp" aria-hidden="true"></i><span id="power-text">Ray box　開啟</span></button><div class="adjust"><label for="direction">移動 Ray box <span>光束始終對準鏡面中心</span></label><input id="direction" type="range" min="-80" max="80" value="-35" step="0.25" aria-label="Ray box 位置"><div class="ends"><span>左側</span><span>法線方向</span><span>右側</span></div></div><div class="note">量角器以法線為 0°，每小格 1°。<br>觀察光線與法線兩側的刻度。</div><div class="sr-only" id="status" aria-live="polite"></div></footer>
 </main>
 <script>
 'use strict';
@@ -163,7 +163,7 @@ const state={on:true,realistic:false,angle:-35,top:false,yaw:-.18,elevation:.58,
 const RAY_HEIGHT=.018, MIRROR_HEIGHT=2.8;
 let W=1,H=1,scale=1,dirty=true,queue=[],reflectedPass=false;
 const V={add:(a,b)=>a.map((x,i)=>x+b[i]),mul:(a,n)=>a.map(x=>x*n),dot:(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0)};
-let right,up,depth;
+let right,up,depth,rayBoxScreen=[];
 function camera(){const y=state.top?0:state.yaw,e=state.top?Math.PI/2:state.elevation;right=[Math.cos(y),0,-Math.sin(y)];up=[Math.sin(y)*Math.sin(e),-Math.cos(e),Math.cos(y)*Math.sin(e)];depth=[-Math.sin(y)*Math.cos(e),-Math.sin(e),-Math.cos(y)*Math.cos(e)];scale=Math.min(W/11.9,(H-100)/7.3)*state.zoom;}
 function project(p){if(reflectedPass)p=[p[0],p[1],-p[2]];const q=[p[0],p[1],p[2]-2];return [W/2+V.dot(q,right)*scale,H*.52+V.dot(q,up)*scale,V.dot(q,depth)];}
 function polygon(points,fill,stroke){queue.push({z:points.reduce((s,p)=>s+project(p)[2],0)/points.length,draw(){ctx.beginPath();points.forEach((p,i)=>{const q=project(p);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);});ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}}});}
@@ -171,7 +171,7 @@ function line(a,b,color,width=1,dash=[]){queue.push({z:(project(a)[2]+project(b)
 function text(p,t,color='#385967',size=13){queue.push({z:project(p)[2]-.001,draw(){const q=project(p);ctx.font=`500 ${size}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=color;if(reflectedPass){ctx.save();ctx.translate(q[0],q[1]);ctx.scale(-1,1);ctx.fillText(t,0,0);ctx.restore();}else ctx.fillText(t,q[0],q[1]);}});}
 function arc(radius,y,color,width){for(let d=-90;d<90;d+=2){const a=d*Math.PI/180,b=(d+2)*Math.PI/180;line([radius*Math.sin(a),y,radius*Math.cos(a)],[radius*Math.sin(b),y,radius*Math.cos(b)],color,width);}}
 function ray(a,b,color){if(state.realistic){queue.push({z:(project(a)[2]+project(b)[2])/2,draw(){const p=project(a),q=project(b);ctx.save();ctx.lineCap='round';for(const [w,c,blur] of [[14,'#ffae2717',18],[7,'#ffbf4c55',10],[3,'#ffd579',5],[1.2,'#fff8df',0]]){ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.lineWidth=w;ctx.strokeStyle=c;ctx.shadowColor='#ffb940';ctx.shadowBlur=blur;ctx.stroke();}ctx.restore();}});return;}const steps=40;for(let i=0;i<steps;i++)line(V.add(a,V.mul(V.add(b,V.mul(a,-1)),i/steps)),V.add(a,V.mul(V.add(b,V.mul(a,-1)),(i+1)/steps)),color,2.7);const v=V.add(b,V.mul(a,-1)),n=Math.hypot(...v),u=V.mul(v,1/n),side=[u[2],0,-u[0]],tip=V.add(a,V.mul(v,.57)),base=V.add(tip,V.mul(u,-.22));polygon([tip,V.add(base,V.mul(side,.095)),V.add(base,V.mul(side,-.095))],color);}
-function box(theta,showLabel=true){const radial=[Math.sin(theta),0,Math.cos(theta)],tangent=[Math.cos(theta),0,-Math.sin(theta)];const point=(x,y,z)=>V.add(V.add(V.mul(radial,4.12+z),V.mul(tangent,x)),[0,y,0]);const vertices=[point(-.28,0,-.38),point(.28,0,-.38),point(.28,0,.38),point(-.28,0,.38),point(-.28,.37,-.38),point(.28,.37,-.38),point(.28,.37,.38),point(-.28,.37,.38)];[[[0,1,5,4],'#263d4b'],[[1,2,6,5],'#34505f'],[[2,3,7,6],'#243d4b'],[[3,0,4,7],'#3f5c6a'],[[4,5,6,7],'#527282']].forEach(([face,c])=>polygon(face.map(i=>vertices[i]),c,'#203d4c'));polygon([point(-.065,.005,-.381),point(.065,.005,-.381),point(.065,.035,-.381),point(-.065,.035,-.381)],state.on?'#ffd496':'#10232c');for(let i=0;i<3;i++)line(point(-.17,.372,.04+i*.08),point(.17,.372,.04+i*.08),'#243f4f',2);if(showLabel)window.ydRGB.path(ctx,[vertices[4],vertices[5],vertices[6],vertices[7],vertices[4]].map(project));if(showLabel)text(point(0,.05,.92),'Ray box',state.realistic?'#c6d6e0':'#304f5e',13);return point(0,RAY_HEIGHT,-.381);}
+function box(theta,showLabel=true){const radial=[Math.sin(theta),0,Math.cos(theta)],tangent=[Math.cos(theta),0,-Math.sin(theta)];const point=(x,y,z)=>V.add(V.add(V.mul(radial,4.12+z),V.mul(tangent,x)),[0,y,0]);const vertices=[point(-.28,0,-.38),point(.28,0,-.38),point(.28,0,.38),point(-.28,0,.38),point(-.28,.37,-.38),point(.28,.37,-.38),point(.28,.37,.38),point(-.28,.37,.38)];if(!reflectedPass)rayBoxScreen=vertices.map(project);[[[0,1,5,4],'#263d4b'],[[1,2,6,5],'#34505f'],[[2,3,7,6],'#243d4b'],[[3,0,4,7],'#3f5c6a'],[[4,5,6,7],'#527282']].forEach(([face,c])=>polygon(face.map(i=>vertices[i]),c,'#203d4c'));polygon([point(-.065,.005,-.381),point(.065,.005,-.381),point(.065,.035,-.381),point(-.065,.035,-.381)],state.on?'#ffd496':'#10232c');for(let i=0;i<3;i++)line(point(-.17,.372,.04+i*.08),point(.17,.372,.04+i*.08),'#243f4f',2);if(showLabel)window.ydRGB.path(ctx,[vertices[4],vertices[5],vertices[6],vertices[7],vertices[4]].map(project));if(showLabel)text(point(0,.05,.92),'Ray box',state.realistic?'#c6d6e0':'#304f5e',13);return point(0,RAY_HEIGHT,-.381);}
 function flush(){queue.sort((a,b)=>b.z-a.z).forEach(o=>o.draw());queue=[];}
 function surface(){
 // Horizontal measuring surface. The reflecting face is z=0; its normal is the z axis.
@@ -198,16 +198,46 @@ ctx.save();if(!front){ctx.beginPath();ctx.rect(0,0,W,H);const pts=[[-3.58,0,-.10
 text([0,MIRROR_HEIGHT+.22,-.15],front?'平面鏡 / Plane mirror':'鏡背',state.realistic?'#c6d6e0':'#3c606f',14);flush();
 }
 function invalidate(){dirty=true;}
-function setView(top){state.top=top;$('top').setAttribute('aria-pressed',top);$('free').setAttribute('aria-pressed',!top);$('view-name').textContent=top?'鳥瞰 · 由法線開始讀取刻度':'自由 3D 視角';$('hint').textContent=top?'移動下方滑桿，觀察兩條光線通過的刻度':'拖曳畫面旋轉 · 滾輪或雙指縮放 · 鳥瞰可直接讀取刻度';invalidate();}
+function setView(top){state.top=top;$('top').setAttribute('aria-pressed',top);$('free').setAttribute('aria-pressed',!top);$('view-name').textContent=top?'鳥瞰 · 由法線開始讀取刻度':'自由 3D 視角';$('hint').textContent=top?'拖曳 Ray box 或移動滑桿 · 拖曳其他位置調整視角':'拖曳 Ray box 移動光線箱 · 拖曳其他位置旋轉 · 滾輪或雙指縮放';invalidate();}
 function syncReflectionTheme(){state.realistic=document.documentElement.dataset.style==='tech';document.body.classList.toggle('realistic',state.realistic);$('status').textContent=state.realistic?'寫實模式：鏡面顯示倒影，光束帶發光效果':'模擬模式';invalidate();}
 window.addEventListener('lab-theme-change',syncReflectionTheme);
 syncReflectionTheme();
 $('top').onclick=()=>setView(true);$('free').onclick=()=>setView(false);
 $('power').onclick=()=>{state.on=!state.on;$('power').setAttribute('aria-pressed',state.on);$('power-text').textContent='Ray box　'+(state.on?'開啟':'關閉');$('status').textContent=state.on?'Ray box 已開啟':'Ray box 已關閉';invalidate();};
 $('direction').oninput=e=>{state.angle=+e.target.value;invalidate();};
-const pointers=new Map();canvas.onpointerdown=e=>{pointers.set(e.pointerId,[e.clientX,e.clientY]);canvas.setPointerCapture(e.pointerId);};
-canvas.onpointermove=e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId),next=[e.clientX,e.clientY];if(pointers.size===2){const other=[...pointers.entries()].find(([id])=>id!==e.pointerId)[1],a=Math.hypot(prev[0]-other[0],prev[1]-other[1]),b=Math.hypot(next[0]-other[0],next[1]-other[1]);if(a>1)state.zoom=Math.max(.75,Math.min(1.4,state.zoom*b/a));}else if(!state.top){state.yaw-=(next[0]-prev[0])*.007;state.elevation=Math.max(.22,Math.min(1.5,state.elevation+(next[1]-prev[1])*.006));}pointers.set(e.pointerId,next);invalidate();};
-canvas.onpointerup=canvas.onpointercancel=canvas.onlostpointercapture=e=>pointers.delete(e.pointerId);
+// Hit-test the actual projected box, never its mirror image.
+function hitRayBox(x,y){
+ if(!state.top&&Math.cos(state.yaw)<0){mirrorPath();if(ctx.isPointInPath(x*canvas.width/W,y*canvas.height/H))return false;}
+ return [[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7],[4,5,6,7]].some(face=>{
+  const pts=face.map(i=>rayBoxScreen[i]);if(pts.some(p=>!p))return false;
+  let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const a=pts[i],b=pts[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])inside=!inside;}return inside;
+ });
+}
+function boxCenter(angle){const t=angle*Math.PI/180;return project([4.12*Math.sin(t),.185,4.12*Math.cos(t)]);}
+function localPointer(e){const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
+const pointers=new Map();let drag=null;
+canvas.onpointerdown=e=>{
+ if(e.button!==0)return;camera();if(dirty)draw();const pos=localPointer(e);pointers.set(e.pointerId,pos);canvas.setPointerCapture(e.pointerId);
+ if(pointers.size===1){const center=boxCenter(state.angle);drag={mode:hitRayBox(...pos)?'box':'view',offset:[pos[0]-center[0],pos[1]-center[1]]};}
+ else drag={mode:'view'};
+ canvas.style.cursor='grabbing';
+};
+canvas.onpointermove=e=>{
+ const next=localPointer(e);if(!pointers.has(e.pointerId)){canvas.style.cursor=hitRayBox(...next)?'grab':'move';return;}
+ const prev=pointers.get(e.pointerId);
+ if(pointers.size===2){const other=[...pointers.entries()].find(([id])=>id!==e.pointerId)[1],a=Math.hypot(prev[0]-other[0],prev[1]-other[1]),b=Math.hypot(next[0]-other[0],next[1]-other[1]);if(a>1)state.zoom=Math.max(.75,Math.min(1.4,state.zoom*b/a));}
+ else if(drag?.mode==='box'){
+  // Nearest point on the projected arc works at every camera angle and zoom.
+  const target=[next[0]-drag.offset[0],next[1]-drag.offset[1]];let best=state.angle,distance=Infinity;
+  for(let angle=-80;angle<=80;angle+=.25){const p=boxCenter(angle),d=(p[0]-target[0])**2+(p[1]-target[1])**2;if(d<distance){distance=d;best=angle;}}
+  state.angle=best;$('direction').value=String(best);
+ }else if(next[0]!==prev[0]||next[1]!==prev[1]){
+  if(state.top){state.elevation=1.5;state.yaw=0;setView(false);}
+  state.yaw-=(next[0]-prev[0])*.007;state.elevation=Math.max(.22,Math.min(1.5,state.elevation+(next[1]-prev[1])*.006));
+ }
+ pointers.set(e.pointerId,next);invalidate();
+};
+canvas.onpointerup=canvas.onpointercancel=canvas.onlostpointercapture=e=>{pointers.delete(e.pointerId);if(!pointers.size){drag=null;canvas.style.cursor='grab';}else drag={mode:'view'};};
 canvas.addEventListener('wheel',e=>{e.preventDefault();state.zoom=Math.max(.75,Math.min(1.4,state.zoom*Math.exp(-e.deltaY*.001)));invalidate();},{passive:false});
 function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);invalidate();}new ResizeObserver(resize).observe(canvas);
 function animate(){if(dirty){draw();dirty=false;}requestAnimationFrame(animate);}resize();animate();
