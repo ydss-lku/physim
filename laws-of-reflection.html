@@ -152,9 +152,9 @@ html[data-page=laws-of-reflection][data-style=tech] main button{color:#d6e8f1;bo
 html[data-page=laws-of-reflection][data-style=tech] main button[aria-pressed=true]{background:#205269;color:#fff}
 </style></head>
 <body><main>
-<header><div><div class="eyebrow">S3 PHYSICS / OPTICS</div><h1>反射實驗室 <span>Laws of Reflection</span></h1></div><div class="header-actions"><div class="views" role="group" aria-label="觀察角度"><button id="top" aria-pressed="false">鳥瞰</button><button id="free" aria-pressed="true">自由 3D</button></div></div></header>
+
 <section class="stage" aria-label="反射實驗場景"><canvas id="scene" aria-label="三維平面鏡、量角器及可調方向的光線箱；可拖曳旋轉視角">請使用支援 Canvas 的瀏覽器。</canvas><div class="stage-title" id="view-name">自由 3D 視角</div><div class="legend"><span>入射線</span><span>反射線</span><span>法線</span></div><div class="hint" id="hint">拖曳 Ray box 移動光線箱 · 拖曳其他位置旋轉 · 滾輪或雙指縮放</div></section>
-<footer class="controls"><button class="power" id="power" aria-pressed="true"><i class="lamp" aria-hidden="true"></i><span id="power-text">Ray box　開啟</span></button><div class="adjust"><label for="direction">移動 Ray box <span>光束始終對準鏡面中心</span></label><input id="direction" type="range" min="-80" max="80" value="-35" step="0.25" aria-label="Ray box 位置"><div class="ends"><span>左側</span><span>法線方向</span><span>右側</span></div></div><div class="note">量角器以法線為 0°，每小格 1°。<br>觀察光線與法線兩側的刻度。</div><div class="sr-only" id="status" aria-live="polite"></div></footer>
+<div class="sr-only" id="status" aria-live="polite"></div>
 </main>
 <script>
 'use strict';
@@ -198,13 +198,11 @@ ctx.save();if(!front){ctx.beginPath();ctx.rect(0,0,W,H);const pts=[[-3.58,0,-.10
 text([0,MIRROR_HEIGHT+.22,-.15],front?'平面鏡 / Plane mirror':'鏡背',state.realistic?'#c6d6e0':'#3c606f',14);flush();
 }
 function invalidate(){dirty=true;}
-function setView(top){state.top=top;$('top').setAttribute('aria-pressed',top);$('free').setAttribute('aria-pressed',!top);$('view-name').textContent=top?'鳥瞰 · 由法線開始讀取刻度':'自由 3D 視角';$('hint').textContent=top?'拖曳 Ray box 或移動滑桿 · 拖曳其他位置調整視角':'拖曳 Ray box 移動光線箱 · 拖曳其他位置旋轉 · 滾輪或雙指縮放';invalidate();}
+function setView(top){state.top=top;$('view-name').textContent=top?'鳥瞰 · 由法線開始讀取刻度':'自由 3D 視角';$('hint').textContent=top?'拖曳 Ray box 移動光線箱 · 拖曳其他位置調整視角':'拖曳 Ray box 移動光線箱 · 拖曳其他位置旋轉 · 滾輪或雙指縮放';invalidate();}
 function syncReflectionTheme(){state.realistic=document.documentElement.dataset.style==='tech';document.body.classList.toggle('realistic',state.realistic);$('status').textContent=state.realistic?'寫實模式：鏡面顯示倒影，光束帶發光效果':'模擬模式';invalidate();}
 window.addEventListener('lab-theme-change',syncReflectionTheme);
 syncReflectionTheme();
-$('top').onclick=()=>setView(true);$('free').onclick=()=>setView(false);
-$('power').onclick=()=>{state.on=!state.on;$('power').setAttribute('aria-pressed',state.on);$('power-text').textContent='Ray box　'+(state.on?'開啟':'關閉');$('status').textContent=state.on?'Ray box 已開啟':'Ray box 已關閉';invalidate();};
-$('direction').oninput=e=>{state.angle=+e.target.value;invalidate();};
+
 // Hit-test the actual projected box, never its mirror image.
 function hitRayBox(x,y){
  if(!state.top&&Math.cos(state.yaw)<0){mirrorPath();if(ctx.isPointInPath(x*canvas.width/W,y*canvas.height/H))return false;}
@@ -230,7 +228,7 @@ canvas.onpointermove=e=>{
   // Nearest point on the projected arc works at every camera angle and zoom.
   const target=[next[0]-drag.offset[0],next[1]-drag.offset[1]];let best=state.angle,distance=Infinity;
   for(let angle=-80;angle<=80;angle+=.25){const p=boxCenter(angle),d=(p[0]-target[0])**2+(p[1]-target[1])**2;if(d<distance){distance=d;best=angle;}}
-  state.angle=best;$('direction').value=String(best);
+  state.angle=best;
  }else if(next[0]!==prev[0]||next[1]!==prev[1]){
   if(state.top){state.elevation=1.5;state.yaw=0;setView(false);}
   state.yaw-=(next[0]-prev[0])*.007;state.elevation=Math.max(.22,Math.min(1.5,state.elevation+(next[1]-prev[1])*.006));
