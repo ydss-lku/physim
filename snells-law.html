@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-page="snells-law" data-style="paper" lang="zh-HK"><meta name="yd-site-build" content="rgb-r7-production-6"><style id="yd-logo-blend">
+<html data-page="snells-law" data-style="paper" lang="zh-HK"><meta name="yd-site-build" content="snell-handle-glow-20261117"><style id="yd-logo-blend">
 /* Blend away the logo's rectangular background within each theme layer. */
 html[data-style=tech]:not([data-page=snells-law]) body :is(#logo,.yd-brand img,img[alt*="YD" i],img.yd-logo,img.logo){
  background:transparent!important;mix-blend-mode:multiply!important
@@ -337,7 +337,9 @@ function draw(){
   ctx.fillRect(-extent,k===0?-extent:0,extent*2,extent);
  }
  line(-extent,0,extent,0,'#6499b0',1.3);line(0,-extent,0,extent,'#7995ae',1.2,[6,7]);ctx.restore();
- window.ydRGB.begin(ctx.canvas);window.ydRGB.path(ctx,window.ydRGB.ring(g.source.x,g.source.y,11));window.ydRGB.path(ctx,window.ydRGB.ring(g.handle.x,g.handle.y,12));positionMedia();
+ // Keep handle light on the physical canvas: no displaced viewport rings or text-mask cutouts.
+ window.ydRGB.begin(ctx.canvas);positionMedia();
+ if(!paper){ctx.save();for(const [point,color] of [[g.source,'#64e8ff'],[g.handle,'#f1c878']]){const glow=ctx.createRadialGradient(point.x,point.y,6,point.x,point.y,21);glow.addColorStop(0,color+'66');glow.addColorStop(1,color+'00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(point.x,point.y,21,0,Math.PI*2);ctx.fill();}ctx.restore();}
  const normal=world(0,-Math.min(w,h)*.43,g.effective);label('Normal 法線',normal.x,normal.y,'#b4cadd',12);
  if($('protractor').checked){const radius=Math.min(w,h)*.29;for(let deg=0;deg<360;deg+=5){const ang=(deg-90+state.rotation)*D,major=deg%30===0;line(cx+(radius-(major?10:5))*Math.cos(ang),cy+(radius-(major?10:5))*Math.sin(ang),cx+radius*Math.cos(ang),cy+radius*Math.sin(ang),'#638399',1);if(major){const num=deg<=90?deg:deg<=180?180-deg:deg<=270?deg-180:360-deg;ctx.font='10px system-ui';ctx.fillStyle=paper?'#485c50':'#a2bdcf';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(num+'°',cx+(radius+14)*Math.cos(ang),cy+(radius+14)*Math.sin(ang));}}}
  ray(g.source.x,g.source.y,cx,cy);
