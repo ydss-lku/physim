@@ -65,7 +65,7 @@
         const open=el.getAttribute('aria-expanded')==='true';
         return toggle(open?'close':'list','Simulation list','模擬目錄',open?'Close simulation list':'Open simulation list',open?'關閉模擬目錄':'開啟模擬目錄');
       }
-      if(el.matches('nav > a') && page!=='index' && !el.textContent.includes('YD Physics'))
+      if(el.matches('nav > a'))
         return choice('home','Home','首頁');
       return;
     }

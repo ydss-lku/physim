@@ -34,7 +34,7 @@
     return block;
   }
 
-  function mast(topic, href, title, logo) {
+  function mast(topic, href, title) {
     const main = q('main');
     const head = mount(main, 'header', 'night-mast', main.firstChild);
     const copy = mount(head, 'div', '');
@@ -42,11 +42,10 @@
     link.href = href;
     link.textContent = topic;
     move(title, copy);
-    move(logo, head);
   }
 
   function lightGate() {
-    mast('ME01 · Motion　運動', 'force-and-motion.html', q('aside h1'), q('.yd-logo'));
+    mast('ME01 · Motion　運動', 'force-and-motion.html', q('aside h1'));
     const bench = q('.workspace');
     frame(bench);
     const tools = mount(bench, 'div', 'night-run', q('.readings'));
@@ -79,7 +78,7 @@
 
   function rayleigh() {
     const title = q('aside h1');
-    mast('AW03 · Probing into the nanoscale　探索納米世界', 'atomic-world.html', title, q('.brand-row img'));
+    mast('AW03 · Probing into the nanoscale　探索納米世界', 'atomic-world.html', title);
     const article = q('article');
     const bench = mount(article, 'div', 'night-optics', article.firstChild);
     frame(bench);

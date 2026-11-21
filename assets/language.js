@@ -127,7 +127,7 @@
     html[data-language="zh-HK"] #phaseZh{font:650 clamp(18px,2vw,26px)/1.25 var(--night-type)!important}
     button[data-language-switch]{min-height:44px;min-width:52px;padding:5px 9px;font:600 14px/1.2 system-ui;cursor:pointer}
     html[data-language] #catalogue .box h2,html[data-language] #catalogue .box h2>span{font-size:clamp(17px,2vw,22px);font-weight:700}
-    html[data-language="zh-HK"]{--optics-caption:"光學 / 工作紙 4 · 第 2 題";--mirror-caption:"YD PHYSICS / 光學"}
+    html[data-language="zh-HK"]{--optics-caption:"光學 / 工作紙 4 · 第 2 題";--mirror-caption:"光學"}
     @media(max-width:450px){button[data-language-switch]{min-width:45px;font-size:13px;padding-inline:5px}}
   `;
   function watch(root) {

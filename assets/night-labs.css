@@ -29,7 +29,6 @@ html[data-theme=tech] {
   & .night-topic {color: #a5ddde; font-size: 13px; text-decoration: none}
   & .night-topic:hover {text-decoration: underline}
   & .night-zh, & h1 .bi-zh {display: block; font: 400 13px/1.5 "Microsoft JhengHei",sans-serif; color: #c2d0d0; letter-spacing: 0}
-  & body .night-mast img {width: 70px; height: 50px; object-fit: contain; mix-blend-mode: normal; filter: brightness(0) invert(.83) !important}
   & .workspace, & .night-optics {
     padding: 16px; min-width: 0; background: var(--metal),#181f23;
     --aug-tl: 25px; --aug-tr: 8px; --aug-br: 28px; --aug-bl: 8px;
