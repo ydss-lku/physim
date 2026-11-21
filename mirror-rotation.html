@@ -45,7 +45,7 @@ function paintAngles(){
   occupied.push(best);tags.push(best);
  }
  for(const t of tags){ctx.strokeStyle=t.color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(t.ax,t.ay);ctx.lineTo(t.x,t.y);ctx.stroke()}
- for(const t of tags){ctx.fillStyle='#fffaf0';ctx.strokeStyle=t.color;ctx.beginPath();ctx.roundRect(t.x-t.w/2,t.y-t.h/2,t.w,t.h,4);ctx.fill();ctx.stroke();ctx.fillStyle=t.color;ctx.fillText(t.label,t.x,t.y)}
+ for(const t of tags){ctx.fillStyle=nightInk('#fffaf0','#101e25');ctx.strokeStyle=t.color;ctx.beginPath();ctx.roundRect(t.x-t.w/2,t.y-t.h/2,t.w,t.h,4);ctx.fill();ctx.stroke();ctx.fillStyle=t.color;ctx.fillText(t.label,t.x,t.y)}
  ctx.restore();
 }
 function draw(){angleLabels=[];occupied=[];scale=Math.max(1,Math.min((W-56)/13,(H-54)/9))*zoom;origin=[W*.5-1.4*scale,H*.63];ctx.clearRect(0,0,W,H);const m=model(),tangent=unit(state.mirror),a=mul(tangent,-state.length/2),b=mul(tangent,state.length/2);

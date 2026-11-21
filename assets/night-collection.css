@@ -95,6 +95,7 @@ html[data-theme=tech]:is([data-night-layout=mirror],[data-night-layout=ticker],[
   & main>article {grid-column:1;grid-row:2;min-width:0;order:initial;padding:12px}
   & main>aside {grid-column:2;grid-row:2;order:initial;position:static;height:auto;max-height:none;padding:14px;border:1px solid var(--night-line);background:var(--night-metal),#181f23;overflow:visible}
   & aside :is(label,p,small,.row,.toggles,h2,output) {color:var(--night-text)}
+  & aside label span, & aside .angle-entry .unit {color:inherit}
   & aside section {border-color:var(--night-line)}
   & main .bar, & main .toolbar {background:#112129;color:var(--night-text)}
   & main .top {background:transparent}
@@ -108,6 +109,9 @@ html[data-theme=tech][data-night-layout=mirror] main>article {height:clamp(470px
 html[data-theme=tech][data-night-layout=mirror] article .stats {background:#12252b;color:var(--night-text)}
 html[data-theme=tech][data-night-layout=mirror] .touch-note {background:#15282d;color:#d3e1df;border-color:#47616a}
 html[data-theme=tech][data-page=mirror-rotation] article>canvas {height:100%;box-sizing:border-box}
+html[data-theme=tech][data-night-layout=ticker] {
+  & main :is(.panelhead .muted,.metric .muted,article>p) {color:var(--night-sub)}
+}
 html[data-theme=tech][data-night-layout=reflection] {
   & main {display:block;background:transparent!important}
   & main>.night-lab-heading {display:block;background:transparent!important;color:var(--night-text);border:0}
@@ -143,12 +147,15 @@ html[data-theme=tech][data-night-layout=calculus] {
 }
 html[data-theme=tech]:is([data-night-layout=gas],[data-night-layout=refraction]) {
   & body>header {background:transparent;color:var(--night-text);border:0;max-width:1240px;margin:auto}
+  & body>header .eyebrow {color:var(--night-sub)}
   & main {max-width:1240px;margin:auto}
   & main .bar, & main .tools, & main .tabs {background:#15252c;color:var(--night-text)}
   & .workspace>section.card,& .layout section.card {padding:12px}
   & main :is(.bench,.chart,.plot) {background:#101e25;border:1px solid #77f5ef;box-shadow:0 0 10px #2fe9ef55}
   & .control,& .num,& .section,& .law,& .law-box {background:#15272d;color:var(--night-text)}
   & .metric label, & .metric small, & .metric b, & .control label, & .status-box {color:var(--night-text)}
+  & .scale output {color:var(--green)}
+  & .law-box math {color:var(--night-text)}
 }
 html[data-theme=tech][data-night-layout=lighting] {
   & main.eu {max-width:1100px;background:transparent!important;color:var(--night-text)}
@@ -173,6 +180,11 @@ html[data-theme=tech][data-night-layout=newton] {
   & main :is(.bench,.intent-plot,.chart) * {filter:none}
 }
 html[data-theme=tech][data-night-layout=pinhole] {
+  & :is(.overline,.row-copy small,.plain-row small,.measurement>span,.measurement p) {color:var(--night-sub)}
+  & :is(.slider-title output,.measurement strong) {color:var(--green)}
+  & .physics-note b {color:var(--night-text)}
+  & .orange .ray-symbol {color:#8c4b00}
+  & .cyan .ray-symbol {color:#096779}
   & #pinhole-root main {max-width:1280px}
   & .masthead,& .lesson {background:transparent;border-color:var(--night-line);color:var(--night-text)}
   & .stage {background:var(--night-metal),#181f23}
