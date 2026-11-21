@@ -76,7 +76,22 @@ aside select{max-width:100%;min-width:0}
  .workspace .explanation{font-size:15px;line-height:1.5}
  .workspace .explanation .bi-zh{font-size:12px}
  .topbar h2 [lang="zh-HK"]{margin-top:4px}
- </style><link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/night-labs.css"><script src="assets/night-labs.js"></script></head>
+ </style><link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/night-labs.css"><script src="assets/night-labs.js"></script><style>html[data-theme=tech][data-page=me01-light-gate] {
+  & main .workspace .apparatus {
+    border-color:#66efff;
+    box-shadow:0 0 3px 1px #42ecffe0,0 0 12px 4px #05d9e878,0 0 21px 5px #05d9e833,inset 0 0 9px #39def51c;
+  }
+  & main :is(.signal-header h2,aside h2) {color:#82e2eb}
+  & main :is(.reading-label,.reading-hint,.scene-caption,aside label,aside .value,aside .note) {color:#bbd4db}
+  & main .reading:nth-child(2) .reading-value {color:#ffa6c9}
+  & main .reading:nth-child(3) .reading-value {color:#67e5f2}
+  & main .reading-value small {color:inherit}
+  & main #beamStatus {color:#9ae8ec}
+  & main #beamStatus .dot {background-color:#82e2eb}
+  & main #beamStatus.blocked {color:#ffb5d1}
+  & main #beamStatus.blocked .dot {background-color:#ff92c0}
+}
+</style></head>
 <body><nav class="rack"><a href="index.html">← 實驗櫃 <span>LAB CABINET</span></a><strong>ME / 02</strong></nav>
 <main>
 <aside>
