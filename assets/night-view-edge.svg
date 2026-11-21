@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <!-- The 64px corner slices stay at native scale. Only the straight runs stretch. -->
+  <defs>
+    <rect id="edge" x="15.5" y="15.5" width="161" height="161" fill="none"/>
+    <filter id="wide" filterUnits="userSpaceOnUse" x="0" y="0" width="192" height="192"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="near" filterUnits="userSpaceOnUse" x="0" y="0" width="192" height="192"><feGaussianBlur stdDeviation="2"/></filter>
+    <linearGradient id="spill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset=".08" stop-color="#222"/>
+      <stop offset=".23" stop-color="white"/>
+      <stop offset=".77" stop-color="white"/>
+      <stop offset=".92" stop-color="#222"/>
+    </linearGradient>
+    <mask id="cuts"><rect width="192" height="192" fill="url(#spill)"/></mask>
+  </defs>
+  <g mask="url(#cuts)">
+    <use href="#edge" stroke="#05d9e8" stroke-width="10" opacity=".53" filter="url(#wide)"/>
+    <use href="#edge" stroke="#42ecff" stroke-width="3" opacity=".83" filter="url(#near)"/>
+  </g>
+  <use href="#edge" stroke="#66efff"/>
+</svg>

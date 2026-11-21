@@ -1,0 +1,35 @@
+/* Opt-in at the simulation entry point. The border image paints outside the
+   existing box without resizing a canvas or introducing a pointer target. */
+html:is([data-theme="tech"],[data-page="s2-circuit-board"][data-style="tech"]) {
+  --instrument-title:#96e9f1;
+  --instrument-label:#c4dce3;
+  --instrument-speed:#67e5f2;
+  --instrument-acceleration:#ffa6c9;
+
+  &:is([data-night-layout="mirror"],[data-night-layout="ticker"],[data-night-layout="reflection"])
+    main :is(article > #scene,.scene-scroll,#apparatusPanel > canvas,.stage > canvas),
+  &[data-night-layout="calculus"] main #plot,
+  &[data-night-layout="gas"] main .bench,
+  &[data-night-layout="refraction"] main .plot,
+  &[data-night-layout="newton"] main .lab > .bench,
+  &[data-night-layout="lighting"] main #diagramViewport,
+  &[data-night-layout="pinhole"] #pinhole-root .canvas-host,
+  &[data-night-layout="practice"] main :is(.hero-art > svg,.evidence .plot,.lab-dashboard .plot),
+  &[data-page="me01-light-gate"] main .workspace .apparatus,
+  &[data-page="rayleigh-criterion"] main :is(.night-comparison,.canvas-wrap),
+  &[data-page="s2-circuit-board"] main .workbench .workspace,
+  & main .workbench > #views {
+    border-image:url("night-view-edge.svg") 64 / 64px / 15px stretch !important;
+    box-shadow:none !important;
+  }
+  & main :is(h2,h3,.panelhead h2,.pane-title,.stage-heading,.sectionhead,.panel-heading) {
+    color:var(--instrument-title);
+  }
+  & main :is(.reading-label,.reading-hint,.metric label,.metric .muted,.panelhead .muted,.control-section label,
+    .scene-caption,.stage-footer,.slider-title,.bench-tag,.legend-label,.scale output,.touch-note,.angle-entry .unit) {
+    color:var(--instrument-label);
+  }
+  &[data-page="me01-ticker-tape-timer"] main :is(#clock,#metrics .metric:nth-child(2) b,#v0Row label,#v0Row input[type=number]),
+  &[data-page="instantaneous-velocity"] main #instantVelocity {color:var(--instrument-speed)}
+  &[data-page="me01-ticker-tape-timer"] main :is(#metrics .metric:nth-child(3) b,#aRow label,#aRow input[type=number]) {color:var(--instrument-acceleration)}
+}
