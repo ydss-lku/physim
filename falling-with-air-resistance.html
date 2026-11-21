@@ -383,7 +383,39 @@ html[data-style=tech] button:focus-visible{outline:3px solid #fff;outline-offset
 </style><script>window.addEventListener('lab-language-change',()=>{if(typeof draw==='function')draw()});</script><script>
 function syncNightFrame(){const night=document.documentElement.dataset.style==='tech';for(const [selector,shape] of [['.night-shell','tl-clip tr-clip br-clip bl-clip border'],['#play','tl-clip br-clip border'],['.plot-picker','tr-clip bl-clip border']]){const e=document.querySelector(selector);if(night)e.setAttribute('data-augmented-ui',shape);else e.removeAttribute('data-augmented-ui')}}syncNightFrame();window.addEventListener('lab-theme-change',syncNightFrame);
 const skin=document.createElement('style');skin.textContent=':host([data-theme=tech]){background:#0b151b;border-bottom:1px solid #4a8089}:host([data-theme=tech]) :is(a,button){font-family:Oxanium,system-ui;min-height:44px}:host([data-theme=tech]) .themes button[aria-pressed=true]{background:#fcee0a;color:#101519;box-shadow:0 0 12px #fcee0a44}';skin.textContent+=':host([data-theme=tech]) nav>button{background:#13242b;border:1px solid #72b6bd;box-shadow:inset 0 0 12px #50dddd22;border-radius:0}:host([data-theme=tech]):after,:host([data-theme=tech]):before{display:none!important;animation:none!important}';document.querySelector('lab-navigation').shadowRoot.append(skin);
-</script><style>.velocity-heading .vt-row{display:block;margin:0}.velocity-heading .vt-row small{font:500 .78em/1.25 system-ui;color:var(--muted);white-space:nowrap}@media(orientation:landscape) and (max-height:540px){.plots .velocity-heading .vt-row{display:block;margin:0;font-size:13px}.plots .velocity-heading .vt-row.zh{font-size:11px}}</style><style>.plots .velocity-heading h2{width:100%}.plots .velocity-heading h2 .vt-row{display:flex;align-items:baseline;gap:.35em;white-space:nowrap}.plots .velocity-heading h2 small{display:inline;width:auto;margin:0;font-size:clamp(10px,.85vw,13px)}.plots .velocity-heading h2 .zh small{font-size:.9em}</style><style>.sky{--mist:#fdfefa;overflow:hidden}html[data-style=tech] .sky{--mist:#819ca9}</style></html>
+</script><style>.velocity-heading .vt-row{display:block;margin:0}.velocity-heading .vt-row small{font:500 .78em/1.25 system-ui;color:var(--muted);white-space:nowrap}@media(orientation:landscape) and (max-height:540px){.plots .velocity-heading .vt-row{display:block;margin:0;font-size:13px}.plots .velocity-heading .vt-row.zh{font-size:11px}}</style><style>.plots .velocity-heading h2{width:100%}.plots .velocity-heading h2 .vt-row{display:flex;align-items:baseline;gap:.35em;white-space:nowrap}.plots .velocity-heading h2 small{display:inline;width:auto;margin:0;font-size:clamp(10px,.85vw,13px)}.plots .velocity-heading h2 .zh small{font-size:.9em}</style><style>.sky{--mist:#fdfefa;overflow:hidden}html[data-style=tech] .sky{--mist:#819ca9}</style><style>html[data-page="falling-with-air-resistance"][data-theme="tech"] {
+  & main .night-shell .lab {
+    border-color:#66efff;
+    box-shadow:inset 0 0 9px #39def51c;
+  }
+  /* Keep the luminous border continuous. Fade only the spill at the two deep cuts. */
+  & main .night-shell .lab::after {
+    content:"";
+    pointer-events:none;
+    position:absolute;
+    inset:-1px;
+    box-shadow:0 0 3px 1px #42ecffe0,0 0 12px 4px #05d9e878,0 0 21px 5px #05d9e833;
+    mask:linear-gradient(135deg,#0002 34px,#000 68px,#000 calc(100% - 68px),#0002 calc(100% - 34px)) center / calc(100% + 48px) calc(100% + 48px) no-repeat;
+    mask-clip:no-clip;
+  }
+  & main .lab .fall-phase :is(strong,small) {color:#a4f2f5}
+  & main .lab .fall-relation {color:#ffd4e4;background-color:#39212e;border-color:#9c647b}
+  & main .lab .panel h2, & main .lab .panel h2 .zh {color:#96e9f1}
+  & main .lab .velocity-heading .vt-row small {color:#c0d7df}
+  & main .lab .plots .chart text {fill:#c4dce3}
+  & main .lab .chart :is(#terminalGuide text,#terminalTick.reached) {fill:#ffd2ac}
+  & main .lab .sky #up text {fill:#b0f2e4!important}
+  & main .lab .sky #down text {fill:#ffd2ac!important}
+  & main .lab :is(.key,.meters) .air {color:#a2eee1}
+  & main .lab :is(.key,.meters) .weight {color:#ffd2ac}
+  & main .lab .meters .net {color:#e8c8ff}
+  & main .lab :is(.key .zh,.gauge-label,.gauge-label small,.reading,.meters b) {color:inherit}
+  & main .lab .stats .velocity {color:#67e5f2}
+  & main .lab .stats .acceleration {color:#ffa6c9}
+  & main .lab .stats :is(strong,.zh) {color:inherit}
+  & main .lab #clock {color:#b8f2f4}
+}
+</style></html>
 
 
 
