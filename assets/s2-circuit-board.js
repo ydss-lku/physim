@@ -11,12 +11,6 @@ const tools = {
   cell:['Cell','電池','Tap a slot to place the cell. An existing cell moves to the new slot.','點選插位放置電池。若板上已有電池，電池會移至新位置。','M0 12h12m0-5v10m5-15v20m0-10h13'],
   erase:['Remove','移除','Tap a component or wire to remove it. Undo restores the last edit.','點選元件或導線將其移除；可按「復原」還原。','M4 14 15 3l10 9-9 9h-5z M8 10l11 10 M16 21h12']
 };
-const tasks = {
- simple:['Predict what will happen when you close the switch. Then open it again.','先預測閉合開關後燈泡會怎樣，再打開開關觀察。'],
- series:['Close the switch. Predict what will happen to the other bulb when you loosen one.','閉合開關。預測扭鬆其中一個燈泡後，另一個會怎樣。'],
- parallel:['Close the switch and loosen one bulb. Compare the remaining bulb with the series circuit.','閉合開關並扭鬆一個燈泡，比較餘下燈泡在並聯和串聯時的表現。'],
- empty:['Build a loop with a cell, a bulb and a switch. Can one switch control two bulbs?','用電池、燈泡和開關接成完整電路。試試用一個開關控制兩個燈泡。']
-};
 const stateText = {noCell:['No cell fitted','未裝上電池'],open:['Open circuit','開路'],closed:['Current flowing','有電流通過燈泡'],short:['Short circuit. Break the direct connection between the cell terminals.','短路。請斷開直接連通電池兩極的支路。']};
 let experiment='simple', parts=preset(experiment), tool='use', schematic=false;
 const history=[];
@@ -101,7 +95,7 @@ function render() {
  if(activeSlot) board.querySelector('[data-slot="'+activeSlot+'"]')?.focus({preventScroll:true});
  el('state').textContent=pick(...stateText[result.state]);
  el('indicator').dataset.state=result.state;el('count').textContent=result.lit+' / '+result.total;
- el('challenge').textContent=pick(...tasks[experiment]);el('preset').value=experiment;
+ el('preset').value=experiment;
  el('real').setAttribute('aria-pressed',String(!schematic));el('diagram').setAttribute('aria-pressed',String(schematic));
  el('undo').disabled=!history.length;
 }

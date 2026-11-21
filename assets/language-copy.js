@@ -148,12 +148,11 @@ window.labVocabulary = [
 ];
 if (document.documentElement.dataset.page === 's2-circuit-board') window.labVocabulary.push(
   ['S2 SCIENCE','中二科學'],['UNIT 8','第 8 單元'],['Circuit workbench','電路實驗板'],
-  ['Unit 8 · Making Use of Electricity','第 8 單元 · 電的應用'],
   ['Experiment','實驗'],['Switch a bulb','開關與燈泡'],['Two bulbs in series','兩個燈泡串聯'],
   ['Two bulbs in parallel','兩個燈泡並聯'],['Build your own circuit','自由接線'],
   ['Patch board','接線板'],['Circuit view','電路顯示方式'],['Board view','實物'],['Circuit diagram','電路圖'],
   ['Circuit board. Choose a tool and then a slot between two terminals.','電路板。先選擇工具，再點選兩個接點之間的插位。'],
-  ['Bulbs lit','亮起的燈泡'],['Tool tray','工具盤'],['Undo','復原'],['Reset','重設'],['Try this','動手試'],
+  ['Bulbs lit','亮起的燈泡'],['Tool tray','工具盤'],['Undo','復原'],['Reset','重設'],
 );
 window.labFormatLanguage = (text,pick) => {
   let m;
