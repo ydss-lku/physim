@@ -80,7 +80,7 @@
   }
   const inline = 'span,small,b,strong,i,em,sub,sup,br,p,h1,h2,h3,tspan';
   function render(el, inherited) {
-    if (el.matches('script,style,noscript,template,[data-language-switch]')) return;
+    if (el.matches('script,style,noscript,template,[data-language-switch],.control-glyph')) return;
     attributes(el);
     if (el.matches('option') && !el.hasAttribute('value')) el.value = el.textContent;
     const own = explicit(el) || inherited;
@@ -116,6 +116,7 @@
       } else value = own ? text : label(text);
       writeText(node,raw,value);
     }
+    if (el.matches('a,button')) window.labControlIcons?.render(el);
   }
   const sheet = `
     [data-language="en"] [data-copy-language="zh-HK"],[data-language="zh-HK"] [data-copy-language="en"]{display:none!important}
@@ -131,7 +132,7 @@
   `;
   function watch(root) {
     const style = document.createElement('style');
-    style.textContent = sheet;
+    style.textContent = sheet + (window.labControlIcons?.styles || '');
     (root === document.body ? document.head : root).append(style);
     const target = root.host ? root.querySelector('nav') : root;
     function refresh() {
@@ -141,7 +142,11 @@
     const observer = new MutationObserver(records => {
       const targets = new Set();
       for (const record of records) {
-        if (record.type === 'attributes') {attributes(record.target);continue;}
+        if (record.type === 'attributes') {
+          if (attrNames.includes(record.attributeName)) attributes(record.target);
+          else if (record.target.matches('button')) window.labControlIcons?.render(record.target);
+          continue;
+        }
         if (record.type === 'characterData' && original.get(record.target)?.rendered === record.target.data) continue;
         const parent = record.target.nodeType === 3 ? record.target.parentElement : record.target;
         if(parent?.nodeType===1 && parent.isConnected && !parent.closest('script,style,[data-language-switch]')) targets.add(parent);
@@ -151,7 +156,7 @@
       }
     });
     roots.push(refresh);refresh();
-    observer.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:attrNames});
+    observer.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:[...attrNames,'aria-pressed','aria-expanded','data-icon']});
     return target;
   }
   let button;
