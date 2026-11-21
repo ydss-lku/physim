@@ -1,0 +1,145 @@
+@font-face {
+  font-family: Oxanium;
+  src: url("../cyberpunk-assets/Oxanium.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+html[data-theme=tech] {
+  color-scheme: dark;
+  --text: #e8f0ef;
+  --muted: #b1c4c5;
+  --mint: #77f5ef;
+  --gold: #ffd183;
+  --line: #41575f;
+  --metal: linear-gradient(120deg,#90bbcb0c,transparent 38%,#0004), url("../cyberpunk-assets/brushed-metal.png");
+  --display: Oxanium, "Microsoft JhengHei", sans-serif;
+  background: #080f13;
+  & body {
+    color: var(--text); background: radial-gradient(ellipse at 5% 12%,#0e2d32,transparent 54%),#080f13;
+    font: 15px/1.45 system-ui,"Microsoft JhengHei",sans-serif; min-height: 100vh;
+  }
+  & main {
+    display: grid; grid-template-columns: minmax(0,1fr) minmax(245px,300px);
+    gap: 18px; align-items: start; max-width: 1240px; min-height: 0;
+    margin: auto; padding: 22px clamp(14px,3vw,40px) 28px;
+  }
+  & .night-mast {display: flex; grid-column: 1/-1; align-items: center; justify-content: space-between; gap: 12px}
+  & .night-mast h1 {margin: 3px 0 0; font: 750 clamp(28px,3.3vw,42px)/1.1 var(--display); letter-spacing: -.025em; color: #fcee0a}
+  & .night-topic {color: #a5ddde; font-size: 13px; text-decoration: none}
+  & .night-topic:hover {text-decoration: underline}
+  & .night-zh, & h1 .bi-zh {display: block; font: 400 13px/1.5 "Microsoft JhengHei",sans-serif; color: #c2d0d0; letter-spacing: 0}
+  & body .night-mast img {width: 70px; height: 50px; object-fit: contain; mix-blend-mode: normal; filter: brightness(0) invert(.83) !important}
+  & .workspace, & .night-optics {
+    padding: 16px; min-width: 0; background: var(--metal),#181f23;
+    --aug-tl: 25px; --aug-tr: 8px; --aug-br: 28px; --aug-bl: 8px;
+    --aug-border-all: 1px; --aug-border-bg: #547880; box-shadow: 0 18px 42px #0009;
+  }
+  & main :is(h2,h3,button,select,summary,.reading-value,.formula,.badge,.equation) {font-family: var(--display)}
+  & main :is(h2,h3) {color: var(--text); text-transform: none; letter-spacing: 0; line-height: 1.3}
+  & main h2 {font-size: 18px}
+  & main h3 {font-size: 15px}
+  & main :is(button,select,input[type=number]) {background: #11242a; color: var(--text); border: 1px solid #5b787e; border-radius: 0; min-height: 44px; max-width: 100%}
+  & main :is(input[type=range],input[type=checkbox]) {accent-color: #77f5ef}
+  & main input[type=range] {min-height: 30px}
+  & main :is(#play,#limit) {background: #fcee0a; color: #101519; font-weight: 750; --aug-br: 13px; --aug-tl: 5px; --aug-border-all: 1px; --aug-border-bg: #ffffac}
+  & main button:hover, & summary:hover {box-shadow: inset 0 0 16px #70f5f122}
+  & :is(a,input,summary,button,select):focus-visible {outline: 3px solid #fcee0a; outline-offset: 2px}
+  & :is(#play,#limit):focus-visible {background: #fff; --aug-border-bg: #fcee0a; --aug-border-all: 4px}
+  & .night-details {margin-top: 12px; border: 1px solid var(--line); background: #101e25; padding: 0 12px}
+  & .night-details summary {cursor: pointer; padding: 12px 0; min-height: 44px; font-weight: 600; color: #c5eeec}
+  & .night-details summary small {display: inline; margin-left: 5px; font-size: 12px}
+  & .night-details[open] {padding-bottom: 12px}
+  & .night-details :is(section,h3) {border-color: var(--line)}
+  & .night-details .toggles label, & .check {min-height: 44px; align-items: center}
+  & .small, & .caption, & .explanation, & .reading-hint, & .subtitle {color: var(--muted)}
+  & body footer.physics-byline {background: transparent; color: var(--muted); border: 0; margin: 0 auto; font-size: 12px}
+  & footer strong {color: inherit}
+  & main [hidden] {display: none !important}
+  & ::selection {background: #fcee0a; color: #101519}
+}
+
+html[data-theme=tech][data-page=me01-light-gate] {
+  & .rack, & .workspace .kicker, & .workspace .topbar:empty, & aside header, & .night-details .controls > h2 {display: none}
+  & .workspace {grid-column: 1; grid-row: 2; gap: 14px; container-type: normal}
+  & aside {grid-column: 2; grid-row: 2; position: static; height: auto; order: initial; display: block; padding: 16px; background: var(--metal),#181f23; border: 1px solid var(--line); border-radius: 0; box-shadow: none}
+  & aside section.controls {margin: 0; border: 0; padding: 0}
+  & .field label .value {margin: 0 0 0 auto; grid-row: 1/3; grid-column: 2}
+  & .field label:has(.value) {display: grid; grid-template-columns: 1fr auto; gap: 0 6px}
+  & .field label .bi-zh {grid-column: 1}
+  & .bi-zh {font-size: 12px}
+  & .workspace > .explanation {order: 1; margin: 0}
+  & .workspace .footer {order: 2}
+  & .workspace .branded-topbar {display: block}
+  & .workspace .branded-topbar h2 {margin: 2px 4px}
+  & .workspace .branded-topbar h2 br {display: none}
+  & .workspace .branded-topbar h2 span {display: block; font-size: 12px; font-weight: 400}
+  & .workspace .apparatus, & .night-comparison {
+    background: #101e25; border: 1px solid #77f5ef; border-radius: 0;
+    box-shadow: 0 0 3px #b7fffd,0 0 13px #2fe9ef60,inset 0 0 12px #2fe9ef20;
+  }
+  & .workspace .apparatus {height: clamp(322px,40vh,430px); min-height: 322px}
+  & body .apparatus #scene {background: transparent}
+  & body .workspace .scene-caption {color: var(--muted); left: 12px}
+  & .night-run {display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; align-items: center}
+  & .night-run .actions {display: flex; gap: 7px}
+  & .night-run .transport {grid-column: 1/-1}
+  & .status.blocked {color: #ffb4b9}
+  & .status.blocked .dot {background: #ff7584}
+  & .readings {display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px}
+  & .readings .reading {display: block; padding: 9px; background: #102127; border: 1px solid var(--line); border-radius: 0}
+  & .reading .reading-value {color: #e8f0ef}
+  & .workspace .signal, & .workspace .signal canvas {background: #101e25; border-color: var(--line); border-radius: 0}
+  & .workspace .signal-header {margin-bottom: 6px}
+  & .workspace > .explanation strong {color: var(--gold) !important}
+}
+
+html[data-theme=tech][data-page=rayleigh-criterion] {
+  & main {grid-template-columns: minmax(0,1fr)}
+  & aside, & .brand-row, & .top, & .image-head {display: none}
+  & article {padding: 0; min-width: 0}
+  & .night-top {display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 3px 0 14px}
+  & .night-top h2 {margin: 0}
+  & #status {padding: 4px 9px; color: #fce6e6; background: #4b242e; border: 1px solid #c96876; font-size: 14px}
+  & .night-comparison {display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); background: #101e25; border: 1px solid #77f5ef; box-shadow: 0 0 3px #b7fffd,0 0 13px #2fe9ef60}
+  & .night-comparison:has(>[hidden]) {grid-template-columns: minmax(0,1fr)}
+  & .night-comparison:has(>#imagePanel[hidden]):has(>#graphPanel[hidden]) {display: none}
+  & .night-comparison > div {display: flex; flex-direction: column; min-width: 0; padding: 12px}
+  & .night-comparison h2 {margin: 0; font-size: 16px; min-height: 44px}
+  & #graphPanel .legend {order: 2; background: transparent}
+  & #graphPanel .caption {order: 3; margin: 0; line-height: 1.4}
+  & #graphPanel #graph, & body .canvas-wrap #ray {background: #101e25}
+  & #graph, & #image {height: 245px}
+  & .night-optics-tools {display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin: 16px 0 8px}
+  & .night-mode {flex: 1 1 190px}
+  & .night-mode select {display: block}
+  & .night-variables {display: grid; grid-template-columns: repeat(auto-fit,minmax(min(185px,100%),1fr)); flex: 2 1 240px; gap: 8px 18px}
+  & .night-variables .control, & .night-optics-tools .actions {margin: 0}
+  & .night-variables input[type=range] {display: block; margin: 0}
+  & #limit .night-zh {color: #263029}
+  & .zoom {font-size: 13px; flex-wrap: wrap}
+  & .zoom input {max-width: 100%}
+  & #values {margin: 10px 0; padding: 9px 12px; background: #101e25; color: var(--text); overflow-wrap: anywhere}
+  & #lockNote:empty, & #explanation:empty {display: none}
+  & .parameter-group, & .parameter-group.instrument {background: #101e25; color: var(--text); border: 0}
+  & .parameter-group h2, & .parameter-group h3 {color: var(--text)}
+  & .night-details > .toggles {display: flex; gap: 14px; flex-wrap: wrap}
+  & .night-details section .toggles {grid-template-columns: repeat(auto-fit,minmax(min(220px,100%),1fr))}
+  & article > h2 {margin: 20px 0 8px}
+}
+
+@media(max-width:800px) {
+  html[data-theme=tech] main {grid-template-columns: minmax(0,1fr); padding: 14px 10px; gap: 12px}
+  html[data-theme=tech][data-page=me01-light-gate] aside {grid-column: 1; grid-row: 3}
+  html[data-theme=tech][data-page=me01-light-gate] .workspace > details {margin: 0}
+  html[data-theme=tech][data-page=me01-light-gate] .workspace aside {padding: 6px 0; background: transparent; border: 0}
+  html[data-theme=tech][data-page=me01-light-gate] .workspace aside > .controls > h2 {display: block}
+  html[data-theme=tech][data-page=rayleigh-criterion] .night-comparison {grid-template-columns: minmax(0,1fr)}
+}
+@media(max-width:600px) {
+  html[data-theme=tech] :is(.workspace,.night-optics) {padding: 10px; --aug-tl: 15px; --aug-br: 16px}
+  html[data-theme=tech][data-page=me01-light-gate] .readings {grid-template-columns: 1fr}
+  html[data-theme=tech][data-page=me01-light-gate] .reading {display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center}
+  html[data-theme=tech][data-page=rayleigh-criterion] .night-comparison > div {padding: 8px}
+  html[data-theme=tech] .calculation {grid-template-columns: 1fr}
+}

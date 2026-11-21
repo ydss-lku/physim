@@ -1,0 +1,23 @@
+:host([data-theme=tech]) {
+  display: block;
+  background: #0b151b;
+  border-bottom: 1px solid #47777f;
+  color: #e8f0ef;
+  box-shadow: 0 1px 8px #50eeee33;
+  font-family: Oxanium, "Microsoft JhengHei", sans-serif;
+}
+:host([data-theme=tech]) nav {max-width: 1240px; align-items: center}
+:host([data-theme=tech]) :is(a,button,select) {color: #a6eeef; border-radius: 0; font: inherit}
+:host([data-theme=tech]) nav > a {display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box}
+:host([data-theme=tech]) button, :host([data-theme=tech]) select {
+  min-height: 44px; background: #12232a; border: 1px solid #54858b;
+}
+:host([data-theme=tech]) .themes {background: #152127; border: 1px solid #52666c; border-radius: 0}
+:host([data-theme=tech]) .themes button {color: #abbdbf; border: 0}
+:host([data-theme=tech]) .themes button[aria-pressed=true] {color: #101519; background: #fcee0a; box-shadow: 0 0 8px #fcee0a40}
+:host([data-theme=tech]) section {background: #101e25}
+:host([data-theme=tech]) :focus-visible {outline: 2px solid #fcee0a; outline-offset: -2px}
+@media(max-width:540px) {
+  :host([data-theme=tech]) nav {gap: 4px; padding: 4px}
+  :host([data-theme=tech]) nav :is(a,button) {font-size: 12px; min-width: 44px; padding: 4px}
+}

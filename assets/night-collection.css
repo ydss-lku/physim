@@ -1,0 +1,289 @@
+@font-face {
+  font-family: Oxanium;
+  src: url("../cyberpunk-assets/Oxanium.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+html[data-theme=tech][data-night-layout] {
+  color-scheme: dark;
+  --night-type: Oxanium,"Microsoft JhengHei",sans-serif;
+  --night-bg: #080f13;
+  --night-view: #101e25;
+  --night-text: #e8f0ef;
+  --night-sub: #abbdbf;
+  --night-line: #47616a;
+  --night-metal: linear-gradient(125deg,#698a9412,transparent 35%,#0005),url("../cyberpunk-assets/brushed-metal.png");
+  --ink: var(--night-text); --text: var(--night-text); --muted: var(--night-sub);
+  --line: var(--night-line); --bg: var(--night-bg); --paper: var(--night-view);
+  --surface: var(--night-view); --green: #85ddcb;
+  background: var(--night-bg);
+  & body {
+    min-height: 100dvh; margin: 0; background: radial-gradient(ellipse at 5% 14%,#10303690,transparent 50%),#080f13 !important;
+    color: var(--night-text);
+  }
+  & main {min-width: 0}
+  & :is(main,body>header) :is(h1,h2,h3,button,select,summary,.value,.reading,.equation,.badge,.bar strong) {font-family: var(--night-type)}
+  & :is(main,body>header) h1 {color: #fcee0a; font-weight: 750; letter-spacing: -.025em; line-height: 1.12}
+  & :is(main,body>header) h1 :is(small,.zh,.sub) {display:block; font:400 14px/1.5 "Microsoft JhengHei",sans-serif; letter-spacing:0; color:#b8c9ca}
+  & :is(main,body>header) :is(h2,h3,h4) {color: var(--night-text); letter-spacing: normal}
+  & :is(main,body>header) a {color: #9de4e0}
+  & .night-parent {display: block; box-sizing:border-box; font: 13px/1.4 var(--night-type); color: #abdddd; text-decoration:none}
+  & body>.night-parent {max-width:1240px; margin: auto; padding: 14px clamp(12px,3vw,36px) 2px}
+  & .night-parent:hover {text-decoration: underline}
+  & body :is(main,body>header) :is(button,select,input[type=number],summary) {
+    min-height:44px; max-width:100%; color:var(--night-text); border-radius:0;
+  }
+  & body :is(main,body>header) :is(button,select,input[type=number]) {
+    background:#15272e; border:1px solid #597881; box-shadow:none;
+  }
+  & body :is(main,body>header) :is(button.active,button.on,button.selected,button[aria-pressed=true],button[aria-selected=true],button.primary,button[data-augmented-ui]) {
+    background:#fcee0a; color:#101519; border-color:#eee36c; font-weight:700;
+  }
+  & button[data-augmented-ui] {--aug-tl:5px; --aug-br:13px; --aug-border-all:1px; --aug-border-bg:#fffbb1}
+  & :is(main,input,body>header) :is(input[type=range],input[type=checkbox],input[type=radio]) {accent-color:#77f5ef}
+  & main input[type=range] {min-height:26px}
+  & :is(a,button,input,select,summary,[tabindex]):focus-visible {outline:3px solid #fcee0a !important;outline-offset:2px}
+  & button[data-augmented-ui]:focus-visible {--aug-border-all:4px;--aug-border-bg:white}
+  & :is(.panel,.card,.hero-art,.stage,article,main>header)[data-augmented-ui] {
+    --aug-tl:24px;--aug-tr:8px;--aug-br:26px;--aug-bl:8px;
+    --aug-border-all:1px;--aug-border-bg:#547880;
+    border:0; border-radius:0; background:var(--night-metal),#181f23; box-shadow:0 18px 42px #0009;
+  }
+  & main :is(.sub,.small,.note,.hint,.legend,.caption,.eyebrow,.scale,.section,.zh,.reading-label,.toolbar label,.lesson-small) {color:var(--night-sub)}
+  & button :is(.sub,.zh,small), & .tool small {color:inherit}
+  & :is(main,body>header) :is(.bar,.toolbar,.modes,.controls,.lesson-pane,.readout,.law-box,.metrics,.metric,.formula-panel,.badge,.stat,.note,.parameter,.mode,.result,.status-box,.bench-tag) {
+    border-color:var(--night-line);color:var(--night-text);box-shadow:none;
+  }
+  & main :is(.readout,.law-box,.metric,.stat,.result,.status-box,.bench-tag) {background:#102329}
+  & main :is(.panel,.card,aside,.toolbar) {background:#13232a;color:var(--night-text);border-color:var(--night-line);border-radius:0;box-shadow:none}
+  & main [data-augmented-ui]:not(button) {background:var(--night-metal),#181f23}
+  & main :is(.value,.readout strong,.metric b,.equation,.sectionhead,.panelhead) {color:#e5efee}
+  & main :is(.stats,.controls,.toolbar) :is(button:hover,select:hover) {border-color:#77f5ef}
+  & main :is(th,td,fieldset) {border-color:var(--night-line)}
+  & body footer.physics-byline, & main>footer:not(.lesson) {background:transparent;color:var(--night-sub);border:0;box-shadow:none}
+  & :is(main,body>header) :is(.yd-brand img,.yd-logo,.logo) {background:transparent!important;mix-blend-mode:normal!important;filter:grayscale(1) brightness(1.8)!important}
+  & [hidden] {display:none!important}
+  & ::selection {background:#fcee0a;color:#101519}
+}
+
+html[data-theme=tech][data-night-layout=topic] {
+  & main {box-sizing:border-box;max-width:1200px;margin:auto;padding:24px clamp(14px,4vw,44px) 28px;background:transparent;color:var(--night-text)}
+  & main>header {display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,32%);align-items:center;gap:20px;padding:14px 18px 14px 30px}
+  & header .tag {font:600 13px var(--night-type);color:#a6d3d7}
+  & header h1 {font-size:clamp(28px,4vw,48px);margin:9px 0}
+  & header p {color:var(--night-sub);margin:0}
+  & header img {width:100%;height:clamp(118px,13vw,162px);object-fit:contain;background:#101e25;border:1px solid #77f5ef;box-shadow:0 0 12px #2fe9ef60}
+  & main header img[data-specimen] {display:block;mix-blend-mode:normal!important;filter:none!important}
+  & .topic-content {display:grid;grid-template-columns:minmax(0,1.25fr) minmax(230px,.8fr);align-items:start;gap:clamp(22px,4vw,55px);margin-top:22px}
+  & .topic-content:has(.topic-guide[hidden]) {grid-template-columns:minmax(0,1fr)}
+  & .topic-content h2 {color:var(--night-text);font-size:21px;border:0;margin:22px 0 9px;padding:0}
+  & .topic-content h2:first-child {margin-top:0}
+  & main small {display:block;font:400 12px/1.5 "Microsoft JhengHei",sans-serif;color:var(--night-sub)}
+  & main .tool {display:flex;align-items:center;box-sizing:border-box;min-height:52px;width:100%;padding:9px 16px;margin:7px 0;color:#dfeded;text-decoration:none;background:#13252c;border:1px solid #45646f;border-radius:0;box-shadow:none;font:600 16px var(--night-type)}
+  & main .tool:after {content:'↗';margin-left:auto;color:#77f5ef}
+  & main .tool:is(:hover,:focus-visible) {background:#203239;border-color:#77f5ef}
+  & .topic-guide ul {display:block;list-style:none;padding:0;background:transparent;border:0}
+  & .topic-guide li {display:flex;align-items:baseline;gap:12px;border:0;border-bottom:1px solid #2c434a;background:transparent;color:var(--night-text);padding:8px 0}
+  & .topic-guide li b {color:#96d2d1;font-family:var(--night-type)}
+}
+
+html[data-theme=tech]:is([data-night-layout=mirror],[data-night-layout=ticker],[data-night-layout=reflection]) {
+  & main {box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,300px);grid-template-rows:auto 1fr;gap:14px;align-items:start;max-width:1280px;margin:auto;padding:18px clamp(12px,3vw,32px);height:auto;min-height:0}
+  & .night-lab-heading {grid-column:1/-1;background:transparent;border:0;box-shadow:none;padding:0}
+  & h1 {font-size:clamp(28px,3vw,38px);margin:6px 0}
+  & main>article {grid-column:1;grid-row:2;min-width:0;order:initial;padding:12px}
+  & main>aside {grid-column:2;grid-row:2;order:initial;position:static;height:auto;max-height:none;padding:14px;border:1px solid var(--night-line);background:var(--night-metal),#181f23;overflow:visible}
+  & aside :is(label,p,small,.row,.toggles,h2,output) {color:var(--night-text)}
+  & aside section {border-color:var(--night-line)}
+  & main .bar, & main .toolbar {background:#112129;color:var(--night-text)}
+  & main .top {background:transparent}
+  & body article #scene, & body .scene-scroll #scene, & body main #graphs, & body main #strip {background:#101e25}
+  & main :is(.scene-scroll,.scroll,.signal) {border-color:#527780}
+  & main article>canvas, & .scene-scroll, & #apparatusPanel>canvas {border:1px solid #77f5ef;box-shadow:0 0 10px #2fe9ef55}
+  & main .heading {background:transparent;color:var(--night-text)}
+  & main>aside>small:first-child {display:none}
+}
+html[data-theme=tech][data-night-layout=mirror] main>article {height:clamp(470px,68dvh,710px)}
+html[data-theme=tech][data-night-layout=mirror] article .stats {background:#12252b;color:var(--night-text)}
+html[data-theme=tech][data-night-layout=mirror] .touch-note {background:#15282d;color:#d3e1df;border-color:#47616a}
+html[data-theme=tech][data-page=mirror-rotation] article>canvas {height:100%;box-sizing:border-box}
+html[data-theme=tech][data-night-layout=reflection] {
+  & main {display:block;background:transparent!important}
+  & main>.night-lab-heading {display:block;background:transparent!important;color:var(--night-text);border:0}
+  & .stage .legend span:first-child::before {background:#d95222;box-shadow:none}
+  & .stage .legend span:nth-child(2)::before {background:#007f9b;box-shadow:none}
+  & .stage {box-sizing:border-box;margin-top:14px;padding:12px;height:clamp(370px,70dvh,710px);background:var(--night-metal),#181f23!important}
+  & .stage canvas {box-sizing:border-box;border:1px solid #77f5ef;box-shadow:0 0 10px #2fe9ef60}
+  & .stage-title,& .legend,& .hint {background:#0e1d23ee;color:var(--night-text);border-color:var(--night-line)}
+}
+html[data-theme=tech][data-night-layout=calculus] {
+  & main {max-width:1240px}
+  & .page-heading {background:transparent;color:var(--night-text);box-shadow:none;border:0}
+  & .page-heading h1 {font-size:clamp(27px,3vw,40px)}
+  & .page-heading .badge {display:none}
+  & .toolbar {padding:8px 12px}
+  & section.panel>.toolbar {margin:12px 0;gap:8px}
+  & .layout {align-items:start}
+  & .layout>section.panel {padding:16px}
+  & #plot {border:1px solid #77f5ef;background:#101e25;box-shadow:0 0 10px #2fe9ef55}
+  & #plot text {fill:#c1d4d6}
+  & #plot [stroke="#ded8c7"], & #plot [stroke="#e3ebef"] {stroke:#324851}
+  & #plot [stroke="#284d41"] {stroke:#8dd7bd} & .key:not(.sec,.tan,.rectkey,.truekey) {background:#8dd7bd}
+  & #plot [stroke="#a44624"] {stroke:#f2a688} & .sec {border-color:#f2a688;background-color:transparent}
+  & #plot [stroke="#69478b"] {stroke:#c2a4dd} & .tan {border-color:#c2a4dd;background-color:transparent}
+  & #plot [stroke="#295b73"] {stroke:#a9ddd9}
+  & .panel.stats {background:#102127;padding:14px}
+  & .panel::before {border-width:0}
+  & .panel.stats::before {content:none}
+  & #slope {color:#f2a688}
+  & #instantVelocity {color:#c2a4dd}
+  & .readout {border-color:#44646e}
+  & .note,& .badge,& .formula,& .value {background:transparent;color:var(--night-text)}
+}
+html[data-theme=tech]:is([data-night-layout=gas],[data-night-layout=refraction]) {
+  & body>header {background:transparent;color:var(--night-text);border:0;max-width:1240px;margin:auto}
+  & main {max-width:1240px;margin:auto}
+  & main .bar, & main .tools, & main .tabs {background:#15252c;color:var(--night-text)}
+  & .workspace>section.card,& .layout section.card {padding:12px}
+  & main :is(.bench,.chart,.plot) {background:#101e25;border:1px solid #77f5ef;box-shadow:0 0 10px #2fe9ef55}
+  & .control,& .num,& .section,& .law,& .law-box {background:#15272d;color:var(--night-text)}
+  & .metric label, & .metric small, & .metric b, & .control label, & .status-box {color:var(--night-text)}
+}
+html[data-theme=tech][data-night-layout=lighting] {
+  & main.eu {max-width:1100px;background:transparent!important;color:var(--night-text)}
+  & main.eu header {background:transparent!important;color:var(--night-sub);border:0}
+  & main.eu article {padding:clamp(14px,2vw,24px);background:var(--night-metal),#181f23!important}
+  & main.eu #diagramViewport {background:#101e25;border:1px solid #77f5ef;box-shadow:0 0 10px #2fe9ef55}
+  & main.eu #view {margin:0;background:#101e25!important;border:0;box-shadow:none!important;filter:none}
+  & main.eu #view * {filter:none!important}
+  & main.eu #view [fill="#155a79"] {fill:#80cee9}
+  & main.eu .ordinal {color:#fcee0a;background:transparent}
+  & main.eu :is(.controls,.reading,.legend,.fieldkey,.playback,.dotkey,fieldset,.caption,.choice) {background:#12252b!important;color:var(--night-text)!important;border-color:var(--night-line)!important;box-shadow:none!important}
+  & main.eu :is(button,select) {background:#15272e!important;color:#e8f0ef!important;border:1px solid #597881!important;box-shadow:none!important}
+  & main.eu :is(#next,#play,#toggle) {background:#fcee0a!important;color:#101519!important}
+}
+html[data-theme=tech][data-night-layout=newton] {
+  & main>header {border:0;border-image:none}
+  & .lab,& .graph-panel {background:var(--night-metal),#181f23}
+  & .lab>svg.bench {background:#101e25;border:1px solid #77f5ef}
+  & .lab::before {display:none}
+  & .method-selector button[aria-pressed=true],& #run {background:#fcee0a!important;color:#101519!important}
+  & main :is(.quantity-control,.held,.calculation,.stopwatch,.lesson-pane,.pane-body,.graph-panel) {border-color:var(--night-line)}
+  & main :is(.bench,.intent-plot,.chart) * {filter:none}
+}
+html[data-theme=tech][data-night-layout=pinhole] {
+  & #pinhole-root main {max-width:1280px}
+  & .masthead,& .lesson {background:transparent;border-color:var(--night-line);color:var(--night-text)}
+  & .stage {background:var(--night-metal),#181f23}
+  & .canvas-host {inset:12px;border:1px solid #77f5ef;box-shadow:0 0 10px #2fe9ef55;background:#101e25}
+  & .controls,& .control-section,& .panel-heading,& .view-controls,& .lesson-small,& .measurement,& .physics-note {background:#13252b;color:var(--night-text);border-color:var(--night-line);box-shadow:none}
+  & #pinhole-root .bilingual {color:inherit}
+  & #pinhole-root :is(.view-badge,.scene-label,.stage-footer) {background:#14262deb;color:var(--night-text);border-color:var(--night-line)}
+  & #pinhole-root :is(.stage-heading,.row-copy,.slider-title,.control-section h3,.object-help,.slider-ends,.object-tabs,.measurement,.header-note,.panel-heading) {color:var(--night-text)}
+}
+html[data-theme=tech][data-night-layout=practice] {
+  --lime:#fcee0a;
+  & body>header,& main .hero,& main .guide-panel,& main .guide-hint,& main .feedback,& main .option,& .toast {background:#14252b;color:var(--night-text);border-color:var(--night-line)}
+  & .hero {background:transparent!important}
+  & main .hero-art,& main .evidence {padding:14px}
+  & .hero-art svg,& main .plot {background:#101e25;border-radius:0}
+  & main .plot {--axis-ink:#c2d4d7;--data-ink:#88daca;--grid-ink:#344b55}
+  & .graphname {color:#c2d4d7}
+  & main .selected,& main .correct {background:#244b46;border-color:#88dcca}
+  & main .wrong,& main .bad {background:#4d2731;border-color:#ff8795}
+  & main :is(.hero h1,.hero p,.brand,.sectionhead,.question,.option-body,.options .en) {color:inherit}
+}
+@media (max-width:800px) {
+  html[data-theme=tech]:is([data-night-layout=mirror],[data-night-layout=ticker]) main {grid-template-columns:minmax(0,1fr)}
+  html[data-theme=tech]:is([data-night-layout=mirror],[data-night-layout=ticker]) main>aside {grid-column:1;grid-row:3}
+  html[data-theme=tech][data-night-layout=topic] .topic-content {grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px) {
+  html[data-theme=tech][data-night-layout=topic] main>header {grid-template-columns:minmax(0,1fr) 30%;padding:14px;gap:10px}
+  html[data-theme=tech][data-night-layout=topic] main>header img {height:auto}
+  html[data-theme=tech][data-night-layout] [data-augmented-ui]:not(button) {--aug-tl:16px;--aug-br:16px}
+}
+
+/* The fall, force balance, and time traces share one instrument face. */
+.fall-phase,.fall-checkpoints,.gauge-label {display:none}
+html[data-theme=tech][data-night-layout=fall] {
+  --air:#81dcce; --weight:#f0a682; --net:#dfc5f0; --v:#98d9ed; --a:#e9beed;
+  & main {max-width:1220px;padding:8px clamp(10px,3vw,36px) 20px}
+  & main>header {float:right;border:0;padding:0}
+  & .brand {color:var(--night-sub)}
+  & .brand img {background:transparent}
+  & main h1 {margin:8px 0 16px}
+  & .night-shell {clear:both;padding:15px}
+  & .lab {display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);grid-template-rows:auto auto auto auto;gap:0;align-items:stretch;background:#101e25}
+  & .fall-phase {grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 20px;background:#17272b;border-bottom:1px solid #39545d}
+  & .fall-phase strong {display:block;font:650 clamp(18px,2vw,26px)/1.2 var(--night-type)}
+  & .fall-phase small,& .fall-checkpoints small {display:block;font:400 12px/1.45 "Microsoft JhengHei",sans-serif;color:inherit}
+  & .fall-relation {font:600 clamp(15px,2vw,22px) var(--night-type);color:#ffd6d8;background:#46272f;border:1px solid #945563;padding:5px 10px}
+  & .lab>.panel {display:block;grid-column:auto;grid-row:auto;border:0;border-radius:0;background:transparent;padding:14px clamp(12px,2vw,24px);box-shadow:none}
+  & .panel h2 {font-size:clamp(16px,1.7vw,22px);min-height:0;margin:0 0 8px}
+  & .panel h2 .zh {font-size:12px}
+  & .sky {display:block;width:100%;height:clamp(215px,31vh,330px);max-height:none;background:radial-gradient(ellipse at 50% 55%,#1e343a,transparent 70%),#101e25;border:0}
+  & .key {display:flex;gap:6px 18px;line-height:1.3}
+  & .key .zh {display:block;margin:0}
+  & .lab>.panel:has(.meters) {border-left:1px solid #344d54;display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+  & .meters {grid-area:auto;align-self:auto;max-width:none;margin:0;padding:0;gap:6px}
+  & .meters>div {display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:linear-gradient(115deg,#1c3036,#101e24 74%);box-shadow:inset 0 0 0 1px #3d535b,inset 0 1px 3px #060a0d;padding:10px 4px;border-bottom:2px solid currentColor}
+  & .meters .well {height:clamp(95px,15vh,150px);width:52px;margin:5px auto;background:repeating-linear-gradient(to bottom,#77929a 0 1px,transparent 1px 12.5%) left center/4px 100% no-repeat,#0b171c;border:1px solid #324952}
+  & .meters .reading {display:block;font:650 clamp(16px,2vw,24px) var(--night-type);white-space:nowrap}
+  & .meters b {height:auto}
+  & .gauge-label {display:block;font:600 clamp(12px,1.1vw,16px)/1.2 var(--night-type);color:#e2efed}
+  & .gauge-label small {display:block;margin-top:2px;font:400 12px/1.3 "Microsoft JhengHei",sans-serif;color:var(--night-sub)}
+  & .stats {grid-area:auto;align-self:end;display:grid;grid-template-columns:1fr 1fr;border:0;gap:8px;margin:8px 0 0;padding:0}
+  & .stats>div {position:relative;display:block;text-align:left;border:0;padding:8px 30px 8px 10px;background:#12252b}
+  & .stats>div>div:first-child {display:block;font:600 14px var(--night-type);height:auto;min-height:0}
+  & .stats .zh {display:block;margin:0}
+  & .stats i {display:none}
+  & .stats .motion {position:absolute;right:3px;top:10px;width:24px;height:54px;margin:0}
+  & .stats strong {display:inline-block;font:650 clamp(19px,2.1vw,27px) var(--night-type);margin-right:3px}
+  & .lab>.controls {grid-column:1/-1;display:flex;position:static;gap:10px;align-items:center;flex-wrap:wrap;padding:11px clamp(10px,2vw,22px);background:var(--night-metal),#192428;border:0;border-block:1px solid #425d66}
+  & .fall-checkpoints {display:flex;gap:4px;flex-wrap:wrap}
+  & .fall-checkpoints button {min-height:44px;padding:5px 8px;font-size:13px}
+  & .controls label {min-width:135px}
+  & .controls output {font:600 16px var(--night-type);min-width:56px;color:#cdf4ed}
+  & .lab>.plots {grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+  & .plots .plot {display:block;min-width:0}
+  & .plots .plot+.plot {margin:0;padding:0;border:0}
+  & .plots .chart {max-width:100%;height:auto;max-height:215px;margin:4px auto 0}
+  & .velocity-heading {display:block}
+  & .velocity-heading small {display:block;font-size:11px}
+  & .plot-picker {display:none}
+  & .plots .chart text {fill:#c6d6d7}
+  & #velocityCurve,& #curve {stroke-width:2.7}
+}
+@media(max-width:640px) {
+  html[data-theme=tech][data-night-layout=fall] {
+    & .brand {display:none}
+    & main h1 {font-size:26px}
+    & .night-shell {padding:8px}
+    & .lab {grid-template-columns:minmax(0,1fr)}
+    & .fall-phase {align-items:flex-start;flex-direction:column;gap:5px;padding:10px}
+    & .fall-relation {font-size:14px;padding:3px 7px}
+    & .lab>.panel {padding:12px}
+    & .lab>.panel:has(.meters) {order:2;border-left:0}
+    & .lab>.controls {order:1}
+    & .lab>.plots {order:3}
+    & .sky {height:220px}
+    & .key {font-size:12px;gap:16px}
+    & .meters {gap:5px}
+    & .meters .well {width:38px;height:74px}
+    & .meters b {font-size:16px}
+    & .meters .reading {font-size:17px}
+    & .stats {grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+    & .stats>div {padding:4px 21px 4px 6px;font-size:12px}
+    & .stats .motion {height:32px;width:15px;top:6px}
+    & .stats>div>div:first-child {font-size:12px}
+    & .stats .zh {display:inline;font-size:10px}
+    & .stats strong {font-size:17px}
+    & .fall-checkpoints {width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+    & .fall-checkpoints button {font-size:11px;padding:3px}
+    & .lab>.plots {display:block}
+    & .plot-picker {display:flex;margin-bottom:10px}
+    & .plots[data-active=velocity] .drag-plot,& .plots[data-active=drag] .velocity-plot {display:none}
+  }
+}
