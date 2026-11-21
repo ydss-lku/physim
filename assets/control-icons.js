@@ -12,6 +12,7 @@
     stop:'M5.5 5.5h13v13h-13z',
     replay:'M4.2 9A8.2 8.2 0 1 1 4 14 M4 4v5.5h5.5 M10 9l5 3-5 3z',
     reset:'M4 9a8 8 0 1 1-.1 5 M4 4v5.5h5.5',
+    undo:'M9 4 3 10l6 6 M4 10h10a6 6 0 0 1 0 12',
     start:'M5 5v14 M18 5l-10 7 10 7z',
     next:'M6 5l10 7-10 7z M19 5v14', previous:'M18 5l-10 7 10 7z M5 5v14',
     fast:'M3 6l8 6-8 6z M12 6l8 6-8 6z',
@@ -75,6 +76,7 @@
       return;
     }
     const id=el.id;
+    if(page==='s2-circuit-board' && id==='undo') return choice('undo','Undo last change','復原上一步');
     if(id==='reset'){
       if(page==='falling-with-air-resistance'||page==='me01-light-gate') return choice('start','Reset to start','重設至起點');
       return choice('reset','Reset simulation','重設模擬');

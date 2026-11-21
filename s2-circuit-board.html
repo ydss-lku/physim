@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-page="s2-circuit-board" data-own-theme-css>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-en="Circuit workbench · S2 Science" data-zh="電路實驗板 · 中二科學">Circuit workbench · S2 Science</title>
+<script src="assets/language-copy.js"></script>
+<script src="assets/language.js"></script>
+<script defer src="assets/control-icons.js"></script>
+<link rel="stylesheet" href="assets/author-credit.css">
+<link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css">
+<link rel="stylesheet" href="assets/s2-circuit-board.css">
+</head>
+<body>
+<main id="bench-app">
+<header class="mast"><div><div class="unit">S2 SCIENCE <span>/</span> UNIT 8</div><h1>Circuit workbench</h1></div>
+<label class="preset"><span>Experiment</span><select id="preset"><option value="simple">Switch a bulb</option><option value="series">Two bulbs in series</option><option value="parallel">Two bulbs in parallel</option><option value="empty">Build your own circuit</option></select></label></header>
+<section class="workbench" id="frame" aria-label="Circuit workbench">
+<div class="workspace">
+<div class="left"><div class="board-head"><h2>Patch board</h2><div class="seg" role="group" aria-label="Circuit view"><button id="real" aria-pressed="true">Board view</button><button id="diagram" aria-pressed="false">Circuit diagram</button></div></div>
+<svg id="board" viewBox="0 0 640 394" role="group" aria-label="Circuit board. Choose a tool and then a slot between two terminals."></svg>
+<div class="readout" aria-live="polite"><span id="indicator"></span><div><strong id="state"></strong></div><div class="counter"><b id="count"></b><span>Bulbs lit</span></div></div></div>
+<aside class="rack"><h2>Tool tray</h2><div id="tools"></div><p class="instruction" id="hint" aria-live="polite"></p><div class="edit"><button type="button" id="undo" disabled>Undo</button><button type="button" id="reset">Reset</button></div></aside></div>
+</section>
+<section class="task"><div class="task-title"><span class="task-mark" aria-hidden="true">?</span><h2>Try this</h2></div><p id="challenge"></p></section>
+<p class="source">Unit 8 · Making Use of Electricity <span>§8.1–8.2 · §8.6</span></p>
+<footer data-author-credit><span class="credit-lockup"><span class="credit-mark" role="img" aria-label="YD Physics"></span>Designed by Mr. Lai Ka Chun (LKU) | CPCYDSS | GPT-6.2 Astra</span></footer>
+</main>
+<script src="assets/s2-circuit-model.js"></script>
+<script>
+try {
+  const url = new URL(location.href);
+  if (!url.searchParams.has('theme') && !localStorage.getItem('yd-physics-theme')) {
+    url.searchParams.set('theme', 'tech');
+    history.replaceState(null, '', url);
+  }
+} catch { /* The shared navigation still handles explicit theme links. */ }
+</script>
+<script src="lab-nav.js"></script>
+<script src="assets/s2-circuit-board.js"></script>
+</body></html>
