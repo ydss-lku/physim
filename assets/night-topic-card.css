@@ -1,0 +1,153 @@
+@font-face {
+  font-family: Oxanium;
+  src: url("../cyberpunk-assets/Oxanium.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+html[data-theme=tech],
+html[data-theme=tech] body {
+  background: #080f13;
+  color: #e8f0ef;
+}
+
+html[data-theme=tech] #catalogue {
+  font-family: Oxanium, "Microsoft JhengHei", sans-serif;
+}
+
+html[data-theme=tech] #catalogue header {
+  border: 0;
+  display: block;
+  padding: 3px 0 22px;
+}
+
+html[data-theme=tech] #catalogue header p,
+html[data-theme=tech] #catalogue > p {
+  color: #abbdbf;
+  font-family: inherit;
+}
+
+html[data-theme=tech] #catalogue header p {
+  margin: 5px 0 0;
+  font-size: 17px;
+}
+
+html[data-theme=tech] #catalogue > p {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+html[data-theme=tech] #catalogue h1 {
+  margin: 4px 0;
+  color: #fcee0a;
+  font: 750 clamp(32px, 5vw, 58px)/1.06 Oxanium, sans-serif;
+  letter-spacing: -.025em;
+}
+
+html[data-theme=tech] #catalogue section {
+  gap: clamp(10px, 1.4vw, 18px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-theme=tech] #catalogue .box {
+  --aug-tl: 16px;
+  --aug-tr: 6px;
+  --aug-br: 18px;
+  --aug-bl: 6px;
+  --aug-border-all: 1px;
+  --aug-border-bg: #547880;
+  padding: 11px;
+  border: 0 !important;
+  border-radius: 0;
+  background: #181f23 url("../cyberpunk-assets/brushed-metal.png") repeat;
+  box-shadow: 0 12px 26px #0009;
+  color: #e8f0ef;
+  font-family: Oxanium, "Microsoft JhengHei", sans-serif;
+}
+
+html[data-theme=tech] #catalogue .box figure {
+  position: relative;
+  background: #101e25;
+  border: 1px solid #77f5ef;
+  box-shadow: 0 0 9px #2fe9ef60;
+}
+
+html[data-theme=tech] #catalogue .box img {
+  aspect-ratio: 3 / 2;
+  object-fit: contain;
+}
+
+html[data-theme=tech] #catalogue .box span {
+  order: 2;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+  margin: 12px 0 0;
+  font-size: clamp(17px, 2vw, 22px);
+  font-weight: 750;
+  line-height: 1.15;
+  color: #e8f0ef;
+}
+
+html[data-theme=tech] #catalogue .box span::after {
+  content: "›";
+  color: #77f5ef;
+  font: 20px/1 system-ui;
+}
+
+html[data-theme=tech] #catalogue .box h2 {
+  order: 3;
+  margin: 2px 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #abbdbf;
+}
+
+html[data-theme=tech] #catalogue .box:is(:hover, :focus-visible) {
+  --aug-border-bg: #fcee0a;
+  --aug-border-all: 3px;
+}
+
+html[data-theme=tech] #catalogue .box:is(:hover, :focus-visible) span {
+  color: #fcee0a;
+}
+
+/* The separate S1 entry follows the eight senior topic cards. */
+html[data-theme=tech] #catalogue .junior {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: clamp(100px, 15vw, 150px) minmax(0, 1fr);
+  column-gap: 18px;
+  grid-template-rows: 1fr 1fr;
+  align-content: center;
+}
+
+html[data-theme=tech] #catalogue .junior figure {
+  grid-row: 1 / span 2;
+}
+
+html[data-theme=tech] #catalogue .junior :is(span, h2) {
+  grid-column: 2;
+  align-self: start;
+  margin: 0;
+}
+
+html[data-theme=tech] #catalogue .junior span {
+  align-self: end;
+  margin-top: 12px;
+}
+
+@media (max-width: 520px) {
+  html[data-theme=tech] #catalogue header { padding-bottom: 15px; }
+  html[data-theme=tech] #catalogue header p { font-size: 15px; }
+  html[data-theme=tech] #catalogue .box {
+    padding: 8px;
+  }
+  html[data-theme=tech] #catalogue .junior {
+    column-gap: 12px;
+  }
+}
