@@ -123,7 +123,13 @@ svg text{font:15px 'Segoe UI',sans-serif;fill:var(--ink)}#up text,#up path:last-
 @media(orientation:landscape) and (max-height:540px) and (min-width:561px){.plot-picker{display:flex;gap:3px;margin-bottom:4px}.plot-picker button{font-size:12px;min-height:34px;padding:4px 7px}.plots .plot h2{font-size:14px}.plot+.plot{border:0;padding:0;margin:0}.plots[data-active=velocity] .drag-plot,.plots[data-active=drag] .velocity-plot{display:none}.plot small,#terminalNote{font-size:11px}}
 #terminalGuide{color:var(--weight)}#terminalGuide text,#terminalTick.reached{fill:var(--weight);font-weight:750}#terminalGuide path{stroke-width:2}.velocity-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 12px}.velocity-heading small{white-space:nowrap}.plots .drag-plot .chart{margin-top:4px}.controls #play,.controls #reset{display:grid;place-items:center;width:46px;height:44px;min-width:46px;padding:0;flex:none}.controls button svg{width:22px;height:22px;fill:currentColor}.controls #play svg{display:none}#play[data-icon=play] .icon-play,#play[data-icon=pause] .icon-pause,#play[data-icon=replay] .icon-replay{display:block}.controls #play[data-icon=play] .icon-play,.controls #play[data-icon=pause] .icon-pause,.controls #play[data-icon=replay] .icon-replay{display:block}.zh{display:block;font:500 .8em/1.25 system-ui;color:var(--muted)}.key .zh,.stats .zh{display:inline;margin-left:.25em}.stats .zh{font-size:11px}.key .zh{font-size:12px}.brand{font-size:14px}main>header{padding:0;border:0}h1{margin:8px 0 14px}h1 .zh{font-size:.52em}h2 .zh{font-size:.74em}@media(orientation:landscape) and (max-height:540px){main>header{display:none}h1 .zh,.panel h2 .zh{display:inline;margin-left:4px}.stats .zh{display:none}.plots .plot-picker .zh{display:inline;margin-left:2px}}</style><main><h1>Falling with air resistance<span class="zh" lang="zh-HK">有空氣阻力的下落運動</span></h1><div class="night-shell"><div class="lab">
 <div class="fall-phase" aria-live="polite"><div><strong id="phaseTitle"></strong><small id="phaseZh" lang="zh-HK"></small></div><div class="fall-relation" id="phaseRelation"></div></div><section class="panel"><h2>Forces on the skydiver<span class="zh" lang="zh-HK">跳傘員受力圖</span></h2>
-<svg class="sky" viewBox="0 0 300 335" role="img" aria-label="Skydiver and force arrows"><defs><pattern id="scale" width="300" height="48" patternUnits="userSpaceOnUse"><path d="M0 1h27m246 0h27M0 25h13m274 0h13" stroke="#74999d"/></pattern></defs><rect width="300" height="335" fill="url(#scale)"/><g id="helicopter" aria-hidden="true" stroke="#304c54" stroke-linejoin="round">
+<svg class="sky" viewBox="0 0 300 335" role="img" aria-label="Skydiver and force arrows"><defs><pattern id="scale" width="300" height="48" patternUnits="userSpaceOnUse"><path d="M0 1h27m246 0h27M0 25h13m274 0h13" stroke="#74999d"/></pattern>
+<linearGradient id="mist" x2="0" y2="1"><stop stop-color="var(--mist)" stop-opacity=".72"/><stop offset="1" stop-color="var(--mist)" stop-opacity=".04"/></linearGradient>
+<path id="cloudBank" d="M-24 29 Q-12 17 6 17 Q17 -1 35 9 Q48 -8 68 5 Q83 1 94 14 Q110 12 130 27 Q81 38 -24 31Z"/>
+<pattern id="cloudFar" width="300" height="360" patternUnits="userSpaceOnUse"><g fill="url(#mist)" opacity=".68"><use href="#cloudBank" transform="translate(-8 33) scale(.85 .62)"/><use href="#cloudBank" transform="translate(220 176) scale(.93 .8)"/></g></pattern>
+<pattern id="cloudNear" width="300" height="440" patternUnits="userSpaceOnUse"><g fill="url(#mist)"><use href="#cloudBank" transform="translate(-65 294) scale(1.28 1.12)"/><use href="#cloudBank" transform="translate(221 403) scale(1.25 .86)"/></g></pattern>
+<pattern id="slipstream" width="300" height="120" patternUnits="userSpaceOnUse"><path d="M42 11v11m34 58v18m155-62v12m30 42v20" stroke="var(--muted)" stroke-width="1.4" stroke-linecap="round"/></pattern>
+</defs><rect width="300" height="335" fill="url(#cloudFar)"/><rect width="300" height="335" fill="url(#cloudNear)"/><rect id="airStreaks" width="300" height="335" opacity="0" fill="url(#slipstream)"/><rect width="300" height="335" fill="url(#scale)"/><g id="helicopter" aria-hidden="true" stroke="#304c54" stroke-linejoin="round">
 <path d="M91 91 32 76 20 53 15 55 20 85 92 104Z" fill="#78938a"/>
 <path d="m67 87 10 4 -3 7 -10 -4z" fill="#eed8a2"/>
 <path d="M88 85Q91 63 122 61L149 62Q175 64 188 87L190 97Q181 112 153 113H105Q83 111 85 97Z" fill="#bc7650" stroke-width="2"/>
@@ -203,11 +209,18 @@ function motionArrow(id,fraction,doubleHead){
  el(id).setAttribute('d',length<.01?'':shaft+headAt(tip)+(doubleHead?headAt(tip-head*1.15):''));
 }
 function draw(){
- const m=model(t),shift=m.distance*1.5,descent=85*(1-Math.exp(-shift/85));
-  const exit=Math.min(1,t/.85),ease=exit*exit*(3-2*exit);
- const camera=shift-descent;
- el('helicopter').setAttribute('transform','translate(0 '+(-camera)+')');
- el('helicopter').style.display=camera>145?'none':'';
+ const m=model(t);
+ // Close tracking at the door widens smoothly into a steady side view.
+ const shift=3*m.distance+80*(1-Math.exp(-m.distance/12));
+ const descent=85*(1-Math.exp(-shift/85)), camera=shift-descent;
+ const exit=Math.min(1,t/.85),ease=exit*exit*(3-2*exit);
+ const apparentSize=1/(1+m.distance/105);
+ el('helicopter').setAttribute('transform','translate(133 '+(98-camera*apparentSize)+') scale('+apparentSize+') translate(-133 -98)');
+ el('scale').setAttribute('patternTransform','translate(0 '+(-camera%48)+')');
+ for(const [id,depth,period] of [['cloudFar',.24,360],['cloudNear',.65,440],['slipstream',1,120]]){
+  el(id).setAttribute('patternTransform','translate(0 '+(-(camera*depth)%period)+')');
+ }
+ el('airStreaks').setAttribute('opacity',.47*(m.speed/terminalSpeed)**1.5);
  el('person').setAttribute('transform','translate('+(-17+17*ease)+' '+(98+descent)+')');
  el('pose').setAttribute('transform','translate(150 0) rotate('+(-52*(1-ease))+') scale('+(.34+.66*ease)+') translate(-150 0)');
  const supported=t===0;
@@ -370,7 +383,7 @@ html[data-style=tech] button:focus-visible{outline:3px solid #fff;outline-offset
 </style><script>window.addEventListener('lab-language-change',()=>{if(typeof draw==='function')draw()});</script><script>
 function syncNightFrame(){const night=document.documentElement.dataset.style==='tech';for(const [selector,shape] of [['.night-shell','tl-clip tr-clip br-clip bl-clip border'],['#play','tl-clip br-clip border'],['.plot-picker','tr-clip bl-clip border']]){const e=document.querySelector(selector);if(night)e.setAttribute('data-augmented-ui',shape);else e.removeAttribute('data-augmented-ui')}}syncNightFrame();window.addEventListener('lab-theme-change',syncNightFrame);
 const skin=document.createElement('style');skin.textContent=':host([data-theme=tech]){background:#0b151b;border-bottom:1px solid #4a8089}:host([data-theme=tech]) :is(a,button){font-family:Oxanium,system-ui;min-height:44px}:host([data-theme=tech]) .themes button[aria-pressed=true]{background:#fcee0a;color:#101519;box-shadow:0 0 12px #fcee0a44}';skin.textContent+=':host([data-theme=tech]) nav>button{background:#13242b;border:1px solid #72b6bd;box-shadow:inset 0 0 12px #50dddd22;border-radius:0}:host([data-theme=tech]):after,:host([data-theme=tech]):before{display:none!important;animation:none!important}';document.querySelector('lab-navigation').shadowRoot.append(skin);
-</script><style>.velocity-heading .vt-row{display:block;margin:0}.velocity-heading .vt-row small{font:500 .78em/1.25 system-ui;color:var(--muted);white-space:nowrap}@media(orientation:landscape) and (max-height:540px){.plots .velocity-heading .vt-row{display:block;margin:0;font-size:13px}.plots .velocity-heading .vt-row.zh{font-size:11px}}</style><style>.plots .velocity-heading h2{width:100%}.plots .velocity-heading h2 .vt-row{display:flex;align-items:baseline;gap:.35em;white-space:nowrap}.plots .velocity-heading h2 small{display:inline;width:auto;margin:0;font-size:clamp(10px,.85vw,13px)}.plots .velocity-heading h2 .zh small{font-size:.9em}</style></html>
+</script><style>.velocity-heading .vt-row{display:block;margin:0}.velocity-heading .vt-row small{font:500 .78em/1.25 system-ui;color:var(--muted);white-space:nowrap}@media(orientation:landscape) and (max-height:540px){.plots .velocity-heading .vt-row{display:block;margin:0;font-size:13px}.plots .velocity-heading .vt-row.zh{font-size:11px}}</style><style>.plots .velocity-heading h2{width:100%}.plots .velocity-heading h2 .vt-row{display:flex;align-items:baseline;gap:.35em;white-space:nowrap}.plots .velocity-heading h2 small{display:inline;width:auto;margin:0;font-size:clamp(10px,.85vw,13px)}.plots .velocity-heading h2 .zh small{font-size:.9em}</style><style>.sky{--mist:#fdfefa;overflow:hidden}html[data-style=tech] .sky{--mist:#819ca9}</style></html>
 
 
 
