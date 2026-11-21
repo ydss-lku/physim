@@ -68,7 +68,7 @@
     const guide = insert(make('div','topic-guide'),grid);
     let inGuide = false;
     for (const el of content) {
-      if (el.matches('h2') && el.textContent.includes('Topic guide')) inGuide = true;
+      if (el.matches('[data-topic-guide]')) inGuide = true;
       move(el,inGuide ? guide : tools);
     }
     if (!guide.children.length) guide.hidden = true;

@@ -1,4 +1,4 @@
-<!doctype html><html data-page="falling-with-air-resistance" data-night-layout="fall" lang="en"><meta charset="utf-8"><link rel="stylesheet" href="assets/night-collection.css"><script src="assets/night-theme.js"></script><script defer src="assets/night-collection.js"></script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Falling with air resistance · YD Physics</title>
+<!doctype html><html data-page="falling-with-air-resistance" data-night-layout="fall" lang="en"><meta charset="utf-8"><script src="assets/language-copy.js"></script><script src="assets/language.js"></script><link rel="stylesheet" href="assets/night-collection.css"><script src="assets/night-theme.js"></script><script defer src="assets/night-collection.js"></script><meta name="viewport" content="width=device-width,initial-scale=1"><title data-en="Falling with air resistance · YD Physics" data-zh="有空氣阻力的下落運動 · YD Physics">Falling with air resistance · YD Physics</title>
 <style>/* BSD 2-Clause License
 
 Copyright (c) 2020 James0x57, PropJockey
@@ -147,8 +147,8 @@ const airDensity=1.21, dragCoefficient=1.0, frontalArea=0.70;
 const terminalSpeed=Math.sqrt(2*weight/(airDensity*dragCoefficient*frontalArea));
 const accelerationThreshold=0.10; // Treat accelerations below 0.10 m/s² as negligible for this demonstration.
 const terminalTime=Math.ceil(10*terminalSpeed/g*Math.acosh(Math.sqrt(g/accelerationThreshold)))/10;
-let t=0,running=false,last=0,frame=0,zh=false;
-const bilingual=(en,cn)=>zh?cn:en;
+let t=0,running=false,last=0,frame=0;
+const bilingual=labLanguage.pick;
 const transitionDistance=terminalSpeed**2/g*Math.log(Math.cosh(g*terminalTime/terminalSpeed));
 function model(time){
  if(time>=terminalTime)return {speed:terminalSpeed,net:0,drag:weight,acc:0,distance:transitionDistance+terminalSpeed*(time-terminalTime)};
@@ -367,7 +367,7 @@ html[data-style=tech] button:focus-visible{outline:3px solid #fff;outline-offset
 @media(max-width:600px){html[data-style=tech] .night-shell{padding:8px;--aug-tl:15px;--aug-br:16px}}
 @media(max-height:540px) and (orientation:landscape){html[data-style=tech] h1{font-size:20px;margin:3px 0}html[data-style=tech] .night-shell{padding:7px 10px}html[data-style=tech] .plot-picker button{min-height:44px}}
 @media(orientation:landscape) and (max-height:540px){html[data-style=tech] .stats .motion{height:clamp(78px,calc(100dvh - 275px),125px)}html[data-style=tech] .sky{height:clamp(96px,32vh,156px)}}
-</style><script>
+</style><script>window.addEventListener('lab-language-change',()=>{if(typeof draw==='function')draw()});</script><script>
 function syncNightFrame(){const night=document.documentElement.dataset.style==='tech';for(const [selector,shape] of [['.night-shell','tl-clip tr-clip br-clip bl-clip border'],['#play','tl-clip br-clip border'],['.plot-picker','tr-clip bl-clip border']]){const e=document.querySelector(selector);if(night)e.setAttribute('data-augmented-ui',shape);else e.removeAttribute('data-augmented-ui')}}syncNightFrame();window.addEventListener('lab-theme-change',syncNightFrame);
 const skin=document.createElement('style');skin.textContent=':host([data-theme=tech]){background:#0b151b;border-bottom:1px solid #4a8089}:host([data-theme=tech]) :is(a,button){font-family:Oxanium,system-ui;min-height:44px}:host([data-theme=tech]) .themes button[aria-pressed=true]{background:#fcee0a;color:#101519;box-shadow:0 0 12px #fcee0a44}';skin.textContent+=':host([data-theme=tech]) nav>button{background:#13242b;border:1px solid #72b6bd;box-shadow:inset 0 0 12px #50dddd22;border-radius:0}:host([data-theme=tech]):after,:host([data-theme=tech]):before{display:none!important;animation:none!important}';document.querySelector('lab-navigation').shadowRoot.append(skin);
 </script></html>

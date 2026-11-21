@@ -79,10 +79,6 @@
 
   function rayleigh() {
     const title = q('aside h1');
-    const titleText = title.textContent;
-    title.textContent = 'Rayleigh criterion';
-    mount(title, 'span', 'night-zh').textContent = '瑞利判據';
-    cleanup.push(() => { title.textContent = titleText; });
     mast('AW03 · Probing into the nanoscale　探索納米世界', 'atomic-world.html', title, q('.brand-row img'));
     const article = q('article');
     const bench = mount(article, 'div', 'night-optics', article.firstChild);
@@ -128,15 +124,6 @@
     move(q('#lockNote'), bench);
     const remaining = details(article, 'Fixed & calculated parameters', '固定及計算所得的參量', q('article > .canvas-wrap').previousElementSibling);
     move(q('#parameters'), remaining);
-    for (const el of [q('.night-top h2'), q('#imagePanel h2'), q('#graphPanel h2'),
-      q('article > h2'), q('.night-mode label'), q('#limit'), q('#reset')]) {
-      const original = el.textContent;
-      const [en, zh] = original.split(' / ');
-      if (!zh) continue;
-      el.textContent = en;
-      mount(el, 'span', 'night-zh').textContent = zh;
-      cleanup.push(() => { el.textContent = original; });
-    }
   }
 
   window.layoutNightLab = theme => {
