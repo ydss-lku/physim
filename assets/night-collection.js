@@ -32,6 +32,10 @@
   const undo = [];
   function move(el, target, before = null) {
     if (!el) return;
+    if (layout !== 'topic') {
+      target.insertBefore(el, before);
+      return;
+    }
     const place = document.createComment('paper layout');
     el.before(place);
     target.insertBefore(el, before);
@@ -39,7 +43,7 @@
   }
   function insert(el, target, before = null) {
     target.insertBefore(el, before);
-    undo.push(() => el.remove());
+    if (layout === 'topic') undo.push(() => el.remove());
     return el;
   }
   function indexLayout() {
@@ -86,7 +90,6 @@
     }
   }
   function arrange() {
-    if (layout === 'topic') return indexLayout();
     if (['ticker','mirror','reflection'].includes(layout)) benchLayout();
     else {
       const target = layout === 'pinhole' ? q('#pinhole-root') : document.body;
@@ -139,7 +142,7 @@
     if (active === night) return;
     active = night;
     if (night) {
-      arrange();
+      if (layout === 'topic') indexLayout();
       markFrames(document);
       if (dynamic) dynamic.observe(q(layout==='practice'?'#app':'#pinhole-root'),{childList:true,subtree:true});
     } else {
@@ -148,6 +151,7 @@
       while (undo.length) undo.pop()();
     }
   }
+  if (layout !== 'topic') arrange();
   sync();
   window.addEventListener('lab-theme-change',sync);
 })();

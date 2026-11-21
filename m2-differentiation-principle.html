@@ -9,7 +9,8 @@
 </style><style>
 html body img:is(.yd-logo,[alt*="YD Physics" i],#logo){filter:grayscale(1) sepia(.82) hue-rotate(36deg) saturate(.72) contrast(1.12)!important;mix-blend-mode:normal!important}
 html body footer.physics-byline{display:block;position:static;grid-column:1/-1;box-sizing:border-box;width:100%;height:auto;margin:16px auto 0;padding:12px 16px;text-align:center;background:#f3eddf;color:#394b3e;border-top:1px solid #b8baa3;font:500 14px/1.55 system-ui,sans-serif}
-</style></head><body><main>
+</style><link rel="stylesheet" href="assets/simulation-layout.css">
+</head><body><main>
 <header class="page-heading"><div class="page-heading-copy"><div class="badge">M2 MATHEMATICS / DIFFERENTIATION</div><h1>Differentiation <span class="sub">導數與切線</span></h1><p class="sub">Move two points closer together. Watch the secant approach the tangent.<br>將兩點移近，觀察割線如何接近切線。</p>
 </div></header><div class="toolbar"><div class="modes"><button id="average" aria-pressed="true">Secant · 割線與差商</button><button id="instant" aria-pressed="false">Derivative · 導數與切線</button></div><label>Graph 圖像 <select id="graph"><option value="cubic">Cubic · 三次函數</option><option value="slow">Concave down · 凹向下</option><option value="linear">Linear · 一次函數</option><option value="rest">Constant · 常數函數</option><option value="turn">Quadratic · 二次函數</option><option value="wavy">Many rises & falls · 多重起伏</option></select></label></div>
 <div class="layout"><section class="panel"><div class="plot-heading"><div class="plot-heading-info"><div class="legend"><span><i class="key"></i>y = f(x)</span><span id="secLegend"><i class="key sec"></i>Secant AB / 割線 AB</span><span id="tanLegend"><i class="key tan"></i>Tangent at P / P 點切線</span></div><div id="functionRule" class="formula"></div></div></div><svg id="plot" class="chart" role="img" aria-label="Interactive function graph. Use the x controls below as a keyboard alternative."></svg><p id="instruction" class="small"></p>

@@ -2,28 +2,23 @@
   const q = selector => document.querySelector(selector);
   const all = selector => [...document.querySelectorAll(selector)];
   const shell = 'tl-clip tr-clip br-clip bl-clip border';
-  const cleanup = [];
-  let active = false;
+  const frames = new Map();
+  let arranged = false;
 
   function mount(parent, tag, className, before = null) {
     const el = document.createElement(tag);
     el.className = className;
     parent.insertBefore(el, before);
-    cleanup.push(() => el.remove());
     return el;
   }
 
   // Reparent the existing controls so input listeners and experiment state survive.
   function move(node, parent, before = null) {
-    const anchor = document.createComment('original position');
-    node.before(anchor);
     parent.insertBefore(node, before);
-    cleanup.push(() => anchor.replaceWith(node));
   }
 
   function frame(el, shape = shell) {
-    el.setAttribute('data-augmented-ui', shape);
-    cleanup.push(() => el.removeAttribute('data-augmented-ui'));
+    frames.set(el, shape);
   }
 
   function details(parent, en, zh, before = null) {
@@ -69,10 +64,6 @@
       else anchor.after(rail);
     }
     compact.addEventListener('change', placeSettings);
-    cleanup.push(() => {
-      compact.removeEventListener('change', placeSettings);
-      anchor.replaceWith(rail);
-    });
     placeSettings();
   }
 
@@ -99,7 +90,6 @@
     const controls = all('#parameters .control').map(node => {
       const anchor = document.createComment('parameter');
       node.before(anchor);
-      cleanup.push(() => anchor.replaceWith(node));
       return {node, anchor};
     });
     function showVariables() {
@@ -110,7 +100,6 @@
     }
     const select = q('#mode');
     select.addEventListener('change', showVariables);
-    cleanup.push(() => select.removeEventListener('change', showVariables));
     showVariables();
     move(q('aside .actions'), toolbar);
     frame(q('#limit'), 'tl-clip br-clip border');
@@ -126,14 +115,14 @@
   }
 
   window.layoutNightLab = theme => {
-    const night = theme === 'tech';
-    if (night === active) return;
-    active = night;
-    if (night) {
+    if (!arranged) {
       if (q('#scene')) lightGate();
       else rayleigh();
-    } else {
-      while (cleanup.length) cleanup.pop()();
+      arranged = true;
+    }
+    for (const [el, shape] of frames) {
+      if (theme === 'tech') el.setAttribute('data-augmented-ui', shape);
+      else el.removeAttribute('data-augmented-ui');
     }
   };
 })();

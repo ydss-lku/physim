@@ -27,7 +27,8 @@ html[data-style=tech] #graphPanel .legend .p {color:#61e2d5}
 html[data-style=tech] #graphPanel .legend .q {color:#ffb67b}
 html[data-style=tech] #graphPanel .legend .total {color:#e7e9ff}
 html[data-style=tech] body .canvas-wrap #ray {background:#192b46}
-</style><link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/night-labs.css"><script src="assets/night-labs.js"></script></head><body><main>
+</style><link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/night-labs.css"><script src="assets/night-labs.js"></script><link rel="stylesheet" href="assets/simulation-layout.css">
+</head><body><main>
 <aside><h1>Rayleigh criterion / 瑞利判據</h1><label for="mode">Investigate one variable / 探究單一變量</label><select id="mode"><option value="lambda">Wavelength λ / 波長 λ</option><option value="D">Aperture diameter D / 孔徑直徑 D</option><option value="theta">Angular separation θ / 角距 θ</option><option value="s">Source separation s / 光源間距 s</option><option value="L">Observation distance L / 觀察距離 L</option><option value="free">Free exploration / 自由探究</option></select>
 <div id="parameters">
 <section class="parameter-group" aria-labelledby="sourceHeading"><h2 id="sourceHeading">Light sources &amp; viewing geometry / 光源與觀察幾何</h2><p class="small">Properties of the light and positions of the sources relative to the instrument. / 光的性質，以及光源相對於儀器的位置。</p><div class="toggles"><label><input type="checkbox" id="P" checked>Source <i>P</i> / 光源 <i>P</i></label><label><input type="checkbox" id="Q" checked>Source <i>Q</i> / 光源 <i>Q</i></label></div><div class="controls" id="sourceControls"></div><h3>Viewing geometry · θ ≈ s/L / 觀察幾何 · θ ≈ s/L</h3><div class="controls" id="geometryControls"></div></section>

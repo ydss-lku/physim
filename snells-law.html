@@ -42,7 +42,8 @@ html body footer.physics-byline{display:block;position:static;grid-column:1/-1;b
 [data-style=paper] .legend .reflect:before{background:#795184}
 [data-style=paper] input{accent-color:#35644e}
 html[data-style=tech] body #logo{filter:grayscale(1) invert(1) brightness(1.25)!important;mix-blend-mode:screen!important}
-</style></head><body>
+</style><link rel="stylesheet" href="assets/simulation-layout.css">
+</head><body>
 <header><div><div class="eyebrow">INTERACTIVE OPTICS</div><h1>Refraction Lab <span>折射實驗室</span></h1></div></header>
 <main><div class="workspace"><section class="card" aria-label="Ray diagram 光線圖"><div class="toolbar"><strong>Ray diagram <span style="font-weight:400;color:var(--muted)">光線圖</span></strong><div class="tools"><label><input type="checkbox" id="ray-labels" checked><span>Ray labels<small lang="zh-HK" style="display:block">光線名稱</small></span></label><label><input type="checkbox" id="protractor">Protractor 量角器</label><label><input type="checkbox" id="reflection">Reflection 反射線</label></div></div>
 <div class="plot"><canvas id="canvas" tabindex="0" role="img" aria-label="Refraction ray diagram. Drag the incident ray or use left and right arrow keys to change the angle."></canvas><div class="medium top"><span id="medium1-name">Air · 空氣</span><strong id="medium1"></strong></div><div class="medium bottom"><span id="medium2-name">Glass · 玻璃</span><strong id="medium2"></strong></div></div>

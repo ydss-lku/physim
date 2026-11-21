@@ -1,0 +1,315 @@
+/* Responsive placement of the shared instrument panels. Paper paint and typography come from each simulation. */
+html[data-style=paper][data-page="eu01-doping"] .eu .reading { padding: 10px; }
+html[data-style=paper][data-page="eu01-doping"] .eu .fieldkey, html[data-style=paper][data-page="eu01-doping"] .eu .legend { padding: 10px; }
+html[data-style=paper][data-page="eu01-doping"] .eu .dotkey { padding: 5px 10px; }
+html[data-style=paper][data-page="eu01-doping"] main.eu .fieldkey, html[data-style=paper][data-page="eu01-doping"] main.eu .legend, html[data-style=paper][data-page="eu01-doping"] main.eu .dotkey { padding: 10px; }
+
+html[data-style=paper][data-page="eu01-led"] .eu .reading { padding: 10px; }
+html[data-style=paper][data-page="eu01-led"] .eu .fieldkey, html[data-style=paper][data-page="eu01-led"] .eu .legend { padding: 10px; }
+html[data-style=paper][data-page="eu01-led"] .eu .dotkey { padding: 5px 10px; }
+html[data-style=paper][data-page="eu01-led"] main.eu .fieldkey, html[data-style=paper][data-page="eu01-led"] main.eu .legend, html[data-style=paper][data-page="eu01-led"] main.eu .dotkey { padding: 10px; }
+
+html[data-style=paper][data-page="eu01-pn-junction"] .eu .reading { padding: 10px; }
+html[data-style=paper][data-page="eu01-pn-junction"] .eu .fieldkey, html[data-style=paper][data-page="eu01-pn-junction"] .eu .legend { padding: 10px; }
+html[data-style=paper][data-page="eu01-pn-junction"] .eu .dotkey { padding: 5px 10px; }
+html[data-style=paper][data-page="eu01-pn-junction"] main.eu .fieldkey, html[data-style=paper][data-page="eu01-pn-junction"] main.eu .legend, html[data-style=paper][data-page="eu01-pn-junction"] main.eu .dotkey { padding: 10px; }
+
+html[data-style=paper][data-page="falling-with-air-resistance"] main { max-width: 1200px; }
+html[data-style=paper][data-page="falling-with-air-resistance"] .night-shell { display: block; padding: 14px; }
+@media (max-width: 600px) {
+html[data-style=paper][data-page="falling-with-air-resistance"] .night-shell { padding: 8px; }
+}
+@media (max-height: 540px) and (orientation: landscape) {
+html[data-style=paper][data-page="falling-with-air-resistance"] h1 { margin: 3px 0px; }
+html[data-style=paper][data-page="falling-with-air-resistance"] .night-shell { padding: 7px 10px; }
+html[data-style=paper][data-page="falling-with-air-resistance"] .plot-picker button { min-height: 44px; }
+}
+@media (orientation: landscape) and (max-height: 540px) {
+html[data-style=paper][data-page="falling-with-air-resistance"] .stats .motion { height: clamp(78px, 100dvh - 275px, 125px); }
+html[data-style=paper][data-page="falling-with-air-resistance"] .sky { height: clamp(96px, 32vh, 156px); }
+}
+
+html[data-style=paper][data-page="newton-second-law"] main > header { padding-bottom: 8px; }
+html[data-style=paper][data-page="newton-second-law"] .lab { position: relative; }
+html[data-style=paper][data-page="newton-second-law"] .lab > svg { margin: 10px 0px; }
+html[data-style=paper][data-page="newton-second-law"] .lesson-pane > summary { padding-inline-start: 8px; }
+
+html[data-style=paper]:has(#views) body { min-height: 100vh; }
+html[data-style=paper]:has(#views) main { padding-top: 24px; }
+html[data-style=paper]:has(#views) .workbench { padding: 14px; overflow: visible; }
+html[data-style=paper]:has(#views) .views { position: relative; }
+html[data-style=paper]:has(#views) .pane-top { padding: 14px 18px; height: 64px; }
+html[data-style=paper]:has(#views) .controls { margin-top: 14px; padding: 14px 10px 8px; }
+html[data-style=paper]:has(#views) .view-tools { padding: 10px 14px; }
+html[data-style=paper]:has(#views) .selector { padding: 13px 18px; }
+html[data-style=paper]:has(#views) button { min-height: 44px; }
+html[data-style=paper]:has(#views) .primary { position: relative; min-width: 150px; }
+html[data-style=paper]:has(#views) .steps button { position: relative; }
+@media (max-width: 600px) {
+html[data-style=paper]:has(#views) .workbench { padding: 8px; }
+html[data-style=paper]:has(#views) .controls { padding: 10px 0px 4px; }
+html[data-style=paper]:has(#views) .primary { min-width: 0px; }
+html[data-style=paper]:has(#views) .view-tools { padding: 8px; }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+html[data-style=paper]:has(#views) .controls { margin-top: 0px; padding: 0px 0px 0px 10px; }
+}
+
+html[data-style=paper][data-night-layout] {
+  & body { min-height: 100dvh; margin: 0px; }
+  & main { min-width: 0px; }
+  & :is(main, body > header) h1 :is(small, .zh, .sub) { display: block; }
+  & .night-parent { display: block; box-sizing: border-box; }
+  & body > .night-parent { max-width: 1240px; margin: auto; padding: 14px clamp(12px, 3vw, 36px) 2px; }
+  & body :is(main, body > header) :is(button, select, input[type="number"], summary) { min-height: 44px; max-width: 100%; }
+  & main input[type="range"] { min-height: 26px; }
+  & [hidden] { display: none !important; }
+}
+html[data-style=paper]:is([data-night-layout="mirror"], [data-night-layout="ticker"], [data-night-layout="reflection"]) {
+  & main { box-sizing: border-box; display: grid; grid-template-columns: minmax(0px, 1fr) minmax(240px, 300px); grid-template-rows: auto 1fr; gap: 14px; align-items: start; max-width: 1280px; margin: auto; padding: 18px clamp(12px, 3vw, 32px); height: auto; min-height: 0px; }
+  & .night-lab-heading { grid-column: 1 / -1; padding: 0px; }
+  & h1 { margin: 6px 0px; }
+  & main > article { grid-area: 2 / 1; min-width: 0px; order: initial; padding: 12px; }
+  & main > aside { grid-area: 2 / 2; order: initial; position: static; height: auto; max-height: none; padding: 14px; overflow: visible; }
+  & main > aside > small:first-child { display: none; }
+}
+html[data-style=paper][data-night-layout="mirror"] main > article { height: clamp(470px, 68dvh, 710px); }
+html[data-style=paper][data-night-layout][data-page="mirror-rotation"] article > canvas { height: 100%; box-sizing: border-box; }
+html[data-style=paper][data-night-layout="reflection"] {
+  & main { display: block; }
+  & main > .night-lab-heading { display: block; }
+  & .stage { box-sizing: border-box; margin-top: 14px; padding: 12px; height: clamp(370px, 70dvh, 710px); }
+  & .stage canvas { box-sizing: border-box; }
+}
+html[data-style=paper][data-night-layout="calculus"] {
+  & main { max-width: 1240px; }
+  & .page-heading .badge { display: none; }
+  & .toolbar { padding: 8px 12px; }
+  & section.panel > .toolbar { margin: 12px 0px; gap: 8px; }
+  & .layout { align-items: start; }
+  & .layout > section.panel { padding: 16px; }
+  & .panel.stats { padding: 14px; }
+}
+html[data-style=paper]:is([data-night-layout="gas"], [data-night-layout="refraction"]) {
+  & body > header { max-width: 1240px; margin: auto; }
+  & main { max-width: 1240px; margin: auto; }
+  & .workspace > section.card, & .layout section.card { padding: 12px; }
+}
+html[data-style=paper][data-night-layout="lighting"] {
+  & main.eu { max-width: 1100px; }
+  & main.eu article { padding: clamp(14px, 2vw, 24px); }
+  & main.eu #view { margin: 0px; }
+}
+html[data-style=paper][data-night-layout="pinhole"] {
+  & #pinhole-root main { max-width: 1280px; }
+  & .canvas-host { inset: 12px; }
+}
+html[data-style=paper][data-night-layout="practice"] {
+  & main .hero-art, & main .evidence { padding: 14px; }
+}
+@media (max-width: 800px) {
+html[data-style=paper]:is([data-night-layout="mirror"], [data-night-layout="ticker"]) main { grid-template-columns: minmax(0px, 1fr); }
+html[data-style=paper]:is([data-night-layout="mirror"], [data-night-layout="ticker"]) main > aside { grid-area: 3 / 1; }
+}
+html[data-style=paper][data-night-layout="fall"] {
+  & main { max-width: 1220px; padding: 8px clamp(10px, 3vw, 36px) 20px; }
+  & main > header { float: right; padding: 0px; }
+  & main h1 { margin: 8px 0px 16px; }
+  & .night-shell { clear: both; padding: 15px; }
+  & .lab { display: grid; grid-template-columns: minmax(0px, 1.12fr) minmax(0px, 1fr); grid-template-rows: auto auto auto auto; gap: 0px; align-items: stretch; }
+  & .fall-phase { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; }
+  & .fall-phase strong { display: block; }
+  & .fall-phase small, & .fall-checkpoints small { display: block; }
+  & .fall-relation { padding: 5px 10px; }
+  & .lab > .panel { display: block; grid-area: auto; padding: 14px clamp(12px, 2vw, 24px); }
+  & .panel h2 { min-height: 0px; margin: 0px 0px 8px; }
+  & .sky { display: block; width: 100%; height: clamp(215px, 31vh, 330px); max-height: none; }
+  & .key { display: flex; gap: 6px 18px; }
+  & .key .zh { display: block; margin: 0px; }
+  & .lab > .panel:has(.meters) { display: grid; grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  & .meters { grid-area: auto; align-self: auto; max-width: none; margin: 0px; padding: 0px; gap: 6px; }
+  & .meters > div { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 4px; }
+  & .meters .well { height: clamp(95px, 15vh, 150px); width: 52px; margin: 5px auto; }
+  & .meters .reading { display: block; white-space: nowrap; }
+  & .meters b { height: auto; }
+  & .gauge-label { display: block; }
+  & .gauge-label small { display: block; margin-top: 2px; }
+  & .stats { grid-area: auto; align-self: end; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0px 0px; padding: 0px; }
+  & .stats > div { position: relative; display: block; padding: 8px 30px 8px 10px; }
+  & .stats > div > div:first-child { display: block; height: auto; min-height: 0px; }
+  & .stats .zh { display: block; margin: 0px; }
+  & .stats i { display: none; }
+  & .stats .motion { position: absolute; right: 3px; top: 10px; width: 24px; height: 54px; margin: 0px; }
+  & .stats strong { display: inline-block; margin-right: 3px; }
+  & .lab > .controls { grid-column: 1 / -1; display: flex; position: static; gap: 10px; align-items: center; flex-wrap: wrap; padding: 11px clamp(10px, 2vw, 22px); }
+  & .fall-checkpoints { display: flex; gap: 4px; flex-wrap: wrap; }
+  & .fall-checkpoints button { min-height: 44px; padding: 5px 8px; }
+  & .controls label { min-width: 135px; }
+  & .controls output { min-width: 56px; }
+  & .lab > .plots { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0px, 1fr)); gap: 20px; }
+  & .plots .plot { display: block; min-width: 0px; }
+  & .plots .plot + .plot { margin: 0px; padding: 0px; }
+  & .plots .chart { max-width: 100%; height: auto; max-height: 215px; margin: 4px auto 0px; }
+  & .velocity-heading { display: block; }
+  & .velocity-heading small { display: block; }
+  & .plot-picker { display: none; }
+}
+@media (max-width: 640px) {
+html[data-style=paper][data-night-layout="fall"] {
+  & .brand { display: none; }
+  & .night-shell { padding: 8px; }
+  & .lab { grid-template-columns: minmax(0px, 1fr); }
+  & .fall-phase { align-items: flex-start; flex-direction: column; gap: 5px; padding: 10px; }
+  & .fall-relation { padding: 3px 7px; }
+  & .lab > .panel { padding: 12px; }
+  & .lab > .panel:has(.meters) { order: 2; }
+  & .lab > .controls { order: 1; }
+  & .lab > .plots { order: 3; }
+  & .sky { height: 220px; }
+  & .key { gap: 16px; }
+  & .meters { gap: 5px; }
+  & .meters .well { width: 38px; height: 74px; }
+  & .stats { grid-template-columns: repeat(2, minmax(0px, 1fr)); gap: 5px; }
+  & .stats > div { padding: 4px 21px 4px 6px; }
+  & .stats .motion { height: 32px; width: 15px; top: 6px; }
+  & .stats .zh { display: inline; }
+  & .fall-checkpoints { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0px, 1fr)); }
+  & .fall-checkpoints button { padding: 3px; }
+  & .lab > .plots { display: block; }
+  & .plot-picker { display: flex; margin-bottom: 10px; }
+  & .plots[data-active="velocity"] .drag-plot, & .plots[data-active="drag"] .velocity-plot { display: none; }
+}
+}
+
+html[data-style=paper]:is([data-page=me01-light-gate],[data-page=rayleigh-criterion]) {
+  & body { min-height: 100vh; }
+  & main { display: grid; grid-template-columns: minmax(0px, 1fr) minmax(245px, 300px); gap: 18px; align-items: start; max-width: 1240px; min-height: 0px; margin: auto; padding: 22px clamp(14px, 3vw, 40px) 28px; }
+  & .night-mast { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 12px; }
+  & .night-mast h1 { margin: 3px 0px 0px; }
+  & .night-zh, & h1 .bi-zh { display: block; }
+  & .workspace, & .night-optics { padding: 16px; min-width: 0px; }
+  & main :is(button, select, input[type="number"]) { min-height: 44px; max-width: 100%; }
+  & main input[type="range"] { min-height: 30px; }
+  & .night-details { margin-top: 12px; padding: 0px 12px; }
+  & .night-details summary { padding: 12px 0px; min-height: 44px; }
+  & .night-details summary small { display: inline; margin-left: 5px; }
+  & .night-details[open] { padding-bottom: 12px; }
+  & .night-details .toggles label, & .check { min-height: 44px; align-items: center; }
+  & body footer.physics-byline { margin: 0px auto; }
+  & main [hidden] { display: none !important; }
+}
+html[data-style=paper][data-page="me01-light-gate"] {
+  & .rack, & .workspace .kicker, & .workspace .topbar:empty, & aside header, & .night-details .controls > h2 { display: none; }
+  & .workspace { grid-area: 2 / 1; gap: 14px; container-type: normal; }
+  & aside { grid-area: 2 / 2; position: static; height: auto; order: initial; display: block; padding: 16px; }
+  & aside section.controls { margin: 0px; padding: 0px; }
+  & .field label .value { margin: 0px 0px 0px auto; grid-area: 1 / 2 / 3; }
+  & .field label:has(.value) { display: grid; grid-template-columns: 1fr auto; gap: 0px 6px; }
+  & .field label .bi-zh { grid-column: 1; }
+  & .workspace > .explanation { order: 1; margin: 0px; }
+  & .workspace .footer { order: 2; }
+  & .workspace .branded-topbar { display: block; }
+  & .workspace .branded-topbar h2 { margin: 2px 4px; }
+  & .workspace .branded-topbar h2 br { display: none; }
+  & .workspace .branded-topbar h2 span { display: block; }
+  & .workspace .apparatus { height: clamp(322px, 40vh, 430px); min-height: 322px; }
+  & body .workspace .scene-caption { left: 12px; }
+  & .night-run { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; align-items: center; }
+  & .night-run .actions { display: flex; gap: 7px; }
+  & .night-run .transport { grid-column: 1 / -1; }
+  & .readings { display: grid; grid-template-columns: repeat(3, minmax(0px, 1fr)); gap: 8px; }
+  & .readings .reading { display: block; padding: 9px; }
+  & .workspace .signal-header { margin-bottom: 6px; }
+}
+html[data-style=paper][data-page="rayleigh-criterion"] {
+  & main { grid-template-columns: minmax(0px, 1fr); }
+  & aside, & .brand-row, & .top, & .image-head { display: none; }
+  & article { padding: 0px; min-width: 0px; }
+  & .night-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 3px 0px 14px; }
+  & .night-top h2 { margin: 0px; }
+  & #status { padding: 4px 9px; }
+  & .night-comparison { display: grid; grid-template-columns: repeat(2, minmax(0px, 1fr)); }
+  & .night-comparison:has(> [hidden]) { grid-template-columns: minmax(0px, 1fr); }
+  & .night-comparison:has(> #imagePanel[hidden]):has(> #graphPanel[hidden]) { display: none; }
+  & .night-comparison > div { display: flex; flex-direction: column; min-width: 0px; padding: 12px; }
+  & .night-comparison h2 { margin: 0px; min-height: 44px; }
+  & #graphPanel .legend { order: 2; }
+  & #graphPanel .caption { order: 3; margin: 0px; }
+  & #graph, & #image { height: 245px; }
+  & .night-optics-tools { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin: 16px 0px 8px; }
+  & .night-mode { flex: 1 1 190px; }
+  & .night-mode select { display: block; }
+  & .night-variables { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(185px, 100%), 1fr)); flex: 2 1 240px; gap: 8px 18px; }
+  & .night-variables .control, & .night-optics-tools .actions { margin: 0px; }
+  & .night-variables input[type="range"] { display: block; margin: 0px; }
+  & .zoom { flex-wrap: wrap; }
+  & .zoom input { max-width: 100%; }
+  & #values { margin: 10px 0px; padding: 9px 12px; }
+  & #lockNote:empty, & #explanation:empty { display: none; }
+  & .night-details > .toggles { display: flex; gap: 14px; flex-wrap: wrap; }
+  & .night-details section .toggles { grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
+  & article > h2 { margin: 20px 0px 8px; }
+}
+@media (max-width: 800px) {
+html[data-style=paper]:is([data-page=me01-light-gate],[data-page=rayleigh-criterion]) main { grid-template-columns: minmax(0px, 1fr); padding: 14px 10px; gap: 12px; }
+html[data-style=paper][data-page="me01-light-gate"] aside { grid-area: 3 / 1; }
+html[data-style=paper][data-page="me01-light-gate"] .workspace > details { margin: 0px; }
+html[data-style=paper][data-page="me01-light-gate"] .workspace aside { padding: 6px 0px; }
+html[data-style=paper][data-page="me01-light-gate"] .workspace aside > .controls > h2 { display: block; }
+html[data-style=paper][data-page="rayleigh-criterion"] .night-comparison { grid-template-columns: minmax(0px, 1fr); }
+}
+@media (max-width: 600px) {
+html[data-style=paper]:is([data-page=me01-light-gate],[data-page=rayleigh-criterion]) :is(.workspace, .night-optics) { padding: 10px; }
+html[data-style=paper][data-page="me01-light-gate"] .readings { grid-template-columns: 1fr; }
+html[data-style=paper][data-page="me01-light-gate"] .reading { display: grid; grid-template-columns: minmax(0px, 1fr) auto; align-items: center; }
+html[data-style=paper][data-page="rayleigh-criterion"] .night-comparison > div { padding: 8px; }
+html[data-style=paper]:is([data-page=me01-light-gate],[data-page=rayleigh-criterion]) .calculation { grid-template-columns: 1fr; }
+}
+
+/* The two typefaces have different natural line boxes. Reserve space for the
+   masthead so switching materials does not move the experiment underneath. */
+html:is([data-night-layout="ticker"], [data-night-layout="mirror"], [data-night-layout="reflection"]) .night-lab-heading {
+  min-block-size: calc(30px + clamp(31.36px, 3.36vw, 42.56px));
+}
+html:is([data-page="me01-light-gate"], [data-page="rayleigh-criterion"]) .night-mast {
+  min-block-size: calc(25px + clamp(30.8px, 3.63vw, 46.2px));
+}
+html[data-page="me01-light-gate"] .branded-topbar { min-block-size: 36px; }
+html:is([data-night-layout="mirror"], [data-night-layout="ticker"], [data-page="me01-light-gate"], [data-page="rayleigh-criterion"]) lab-navigation {
+  min-block-size: 66px;
+}
+@media (max-width: 440px) {
+  html:is([data-night-layout="mirror"], [data-night-layout="ticker"], [data-page="me01-light-gate"], [data-page="rayleigh-criterion"]) lab-navigation { min-block-size: 60px; }
+  html[data-page="mirror-image-2"] .night-lab-heading { min-block-size: 94px; }
+  html[data-page="me01-light-gate"] .branded-topbar { min-block-size: 52px; }
+}
+@media (max-width: 375px) {
+  html[data-page="mirror-rotation"] .toolbar { flex-direction: column; align-items: flex-start; }
+}
+@media (min-width: 801px) and (max-width: 960px) {
+  html[data-night-layout="pinhole"] .view-controls { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+/* Give the model and its transport explicit cells. Decorative frame pseudo-
+   elements otherwise participate in grid auto-placement in Night. */
+@media (orientation: landscape) and (max-height: 560px) and (max-width: 1100px) {
+  .workbench > #views { grid-area: 1 / 1; }
+  .workbench:has(> #views) > .controls { grid-area: 1 / 2; }
+}
+/* Reserve the same instrument header and tool rows when text wraps. */
+html[data-night-layout="calculus"] .page-heading h1 { min-block-size: clamp(30px,3.36vw,45px); }
+@media (min-width: 601px) and (min-height: 561px) {
+  html[data-style="paper"]:has(#views) .workbench { padding-block-start: 34px; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  html[data-style="paper"]:has(#views) .workbench { padding-block-start: 15px; }
+}
+@media (max-width: 440px) {
+  html[data-night-layout="gas"] .bar:has(.view-tools) { display: grid; grid-template-columns: minmax(0,1fr); }
+  html[data-night-layout="gas"] .view-tools { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 375px) {
+  html[lang="en"][data-night-layout="ticker"] article .heading { min-block-size: 80px; }
+}
+@media (max-width: 400px) {
+  html[data-night-layout="ticker"] .toolbar .reset-mode { flex-basis: 100%; }
+}
