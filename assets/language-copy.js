@@ -15,7 +15,7 @@ window.labVocabulary = [
   ['Yellow rays:','黃線：'],['Two rays entering the edges of the pupil','兩條進入瞳孔邊緣的光線'],['Dashed red lines:','紅虛線：'],['Backward extensions of the rays','視覺反向延伸'],
   ['HTML5 Canvas & Three.js Physics Simulation','以 HTML5 Canvas 及 Three.js 製作的物理模擬'],
   ['2D ray diagram (side view)','2D 光路圖'],['3D simulation (observer view)','3D 模擬（觀察者視角）'],
-  ['Designed by Mr. Lai Ka Chun (LKU) with ChatGPT 6.2 Astra · CPCYDSS','設計：賴老師（LKU） with ChatGPT 6.2 Astra · CPCYDSS'],
+  ['Designed by Mr. Lai Ka Chun (LKU) | CPCYDSS | GPT-6.2 Astra','設計：賴老師 (LKU) | CPCYDSS | GPT-6.2 Astra'],
   ['Designed by Mr. Lai Ka Chun (','設計：賴老師（'],['Designed and created by','設計及製作：'],['YD Physics','YD Physics'],
   ['Explore simulations','探索模擬'],['Open simulation','開啟模擬'],['Falling with air resistance','有空氣阻力的下落運動'],
   ['Ideal Gas Lab','理想氣體實驗室'],['Refraction Lab','折射實驗室'],['Laws of reflection','反射定律'],['Physics Simulations','物理互動模擬'],
