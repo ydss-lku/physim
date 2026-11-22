@@ -138,16 +138,16 @@ svg text{font:15px 'Segoe UI',sans-serif;fill:var(--ink)}#up text,#up path:last-
 <path d="m102 113 -5 10m68-11 6 11M84 123h95l6-4" fill="none" stroke-width="3"/>
 <path d="M129 61V49" stroke-width="4"/><path d="M45 48h169l-8 3H52Z" fill="#586b70"/>
 <circle cx="21" cy="72" r="3" fill="#edce8d"/><path d="m10 66 23 12m-17 6 11-23" stroke-width="2"/>
-</g><g id="person"><g id="pose" stroke-linejoin="round" stroke-linecap="round" stroke="#284751" stroke-width="2"><path fill="#3c626f" d="m146 -4 -30 5 -17 -14 -7 5 19 23 39 -4z"/><path fill="#4d7380" d="m148 1 -26 13 -22 -6 -3 7 28 11 31 -15z"/><path fill="#db8240" d="m134 -6 25 -7 16 10 -20 13 -22 -4z"/><path fill="#394f5b" d="m133 -9 15 -10 14 4 -6 10 -19 5z"/><circle cx="173" cy="-12" r="9" fill="#ecc39c"/><path fill="#38606d" d="M164 -12q0 -17 15 -10l4 6 -13 4z"/><path fill="#dd9258" d="m158 2 19 3 13 -14 5 4 -14 20 -26 -4z"/></g><g id="up"></g><g id="down"></g></g></svg>
+</g><g id="person"><g id="canopy" display="none" aria-hidden="true"><path d="M88 -77 Q96 -109 150 -112 Q204 -109 212 -77 Q198 -87 187 -78 Q177 -89 165 -80 Q150 -90 135 -80 Q121 -89 112 -78 Q102 -87 88 -77Z" fill="#e5ac52" stroke="#664c30" stroke-width="2"/><path d="M88 -77 145 -6m-33 -72 33 72m20 -74 -13 74m35 -72 -35 72m60 -71 -60 71" fill="none" stroke="var(--muted)" stroke-width="1.5"/></g><g id="pose" stroke-linejoin="round" stroke-linecap="round" stroke="#284751" stroke-width="2"><path fill="#3c626f" d="m146 -4 -30 5 -17 -14 -7 5 19 23 39 -4z"/><path fill="#4d7380" d="m148 1 -26 13 -22 -6 -3 7 28 11 31 -15z"/><path fill="#db8240" d="m134 -6 25 -7 16 10 -20 13 -22 -4z"/><path fill="#394f5b" d="m133 -9 15 -10 14 4 -6 10 -19 5z"/><circle cx="173" cy="-12" r="9" fill="#ecc39c"/><path fill="#38606d" d="M164 -12q0 -17 15 -10l4 6 -13 4z"/><path fill="#dd9258" d="m158 2 19 3 13 -14 5 4 -14 20 -26 -4z"/></g><g id="up"></g><g id="down"></g></g></svg>
 <div class="key"><span class="air"><i>R</i><sub>air</sub> = <span>air resistance<span class="zh" lang="zh-HK">空氣阻力</span></span></span><span class="weight"><i>W</i> = <span>weight<span class="zh" lang="zh-HK">重量</span></span></span></div></section>
 <section class="panel"><h2>Force vectors<span class="zh" lang="zh-HK">力的方向和大小</span></h2><div class="meters" id="meters"></div><div class="stats"><div class="velocity"><div><span>Velocity<span class="zh" lang="zh-HK">速度</span></span> <i>v</i></div><svg aria-hidden="true" class="motion velocity" viewBox="0 0 34 126"><path id="velocityArrow"/></svg><strong id="speed"></strong>m/s</div><div class="acceleration"><div class="acc-heading"><span>Acceleration<span class="zh" lang="zh-HK">加速度</span></span> <i>a</i></div><svg aria-hidden="true" class="motion acceleration" viewBox="0 0 34 126"><path id="accelerationArrow"/></svg><strong id="acc"></strong>m/s²</div></div></section>
 <section class="panel plots" data-active="velocity"><div class="plot-picker" role="group" aria-label="Graph / 圖表"><button id="pickVelocity" aria-pressed="true">Velocity<span class="zh" lang="zh-HK">速度</span></button><button id="pickDrag" aria-pressed="false">Air resistance<span class="zh" lang="zh-HK">空氣阻力</span></button></div>
 <div class="plot velocity-plot"><div class="velocity-heading"><h2><span class="vt-row">Velocity–time graph <small>(Positive direction: down)</small></span><span class="zh vt-row" lang="zh-HK">速度－時間圖 <small>（正方向：下）</small></span></h2></div><svg class="chart" viewBox="0 0 410 178" role="img" aria-label="Velocity against time"><g id="velocityAxes"></g><path id="velocityCurve"/><g id="terminalGuide" visibility="hidden"><path fill="none" stroke="currentColor" stroke-dasharray="4 3"/><text text-anchor="middle"></text></g><circle id="velocityDot" r="4"/></svg></div>
 <div class="plot drag-plot"><h2>Air resistance against time<span class="zh" lang="zh-HK">空氣阻力－時間圖</span></h2><svg class="chart" viewBox="0 0 410 178" role="img" aria-label="Air resistance against time"><g id="axes"></g><path id="curve"/><circle id="dot" r="4"/></svg></div>
 </section></div></div>
-<div class="controls"><div class="fall-checkpoints" role="group" aria-label="Compare stages · 比較階段"><button data-fall-time="release">Before release<small>離開機艙前</small></button><button data-fall-time="half">½ terminal speed<small>半終端速率</small></button><button data-fall-time="terminal">Terminal speed<small>終端速率</small></button></div><button id="play" data-icon="play" aria-label="Play"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.8 20 12 7 20.2Z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h5v16H5zm9 0h5v16h-5z"/></svg><svg class="icon-replay" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6 M4.5 9A8 8 0 1 1 5 17"/></svg></button><label><input aria-label="Time / 時間" type="range" id="timeline" min="0" max="25" step=".01" value="0"><output id="clock"></output></label><button id="reset" aria-label="Reset"><svg class="icon-reset" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h3v16H4zm15 0L8 12l11 8z"/></svg></button></div><footer data-author-credit><span class="credit-lockup"><span class="credit-mark" role="img" aria-label="YD Physics"></span>Designed by Mr. Lai Ka Chun (LKU) | CPCYDSS | GPT-6.2 Astra</span></footer></main>
+<div class="controls"><div class="fall-checkpoints" role="group" aria-label="Compare stages · 比較階段"><button data-fall-time="release">Before release<small>離開機艙前</small></button><button data-fall-time="half">½ terminal speed<small>半終端速率</small></button><button data-fall-time="terminal">Terminal speed<small>終端速率</small></button></div><button id="deploy" type="button" disabled></button><button id="play" data-icon="play" aria-label="Play"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.8 20 12 7 20.2Z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h5v16H5zm9 0h5v16h-5z"/></svg><svg class="icon-replay" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6 M4.5 9A8 8 0 1 1 5 17"/></svg></button><label><input aria-label="Time / 時間" type="range" id="timeline" min="0" max="25" step=".01" value="0"><output id="clock"></output></label><button id="reset" aria-label="Reset"><svg class="icon-reset" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h3v16H4zm15 0L8 12l11 8z"/></svg></button></div><footer data-author-credit><span class="credit-lockup"><span class="credit-mark" role="img" aria-label="YD Physics"></span>Designed by Mr. Lai Ka Chun (LKU) | CPCYDSS | GPT-6.2 Astra</span></footer></main>
 <script>
-const el=id=>document.getElementById(id),mass=75,g=9.8,weight=mass*g,end=25;
+const el=id=>document.getElementById(id),mass=75,g=9.8,weight=mass*g;let end=25,openedAt=null;
 // Belly-to-earth, limbs spread. Area is the projected frontal area in square metres.
 const airDensity=1.21, dragCoefficient=1.0, frontalArea=0.70;
 const terminalSpeed=Math.sqrt(2*weight/(airDensity*dragCoefficient*frontalArea));
@@ -156,7 +156,18 @@ const terminalTime=Math.ceil(10*terminalSpeed/g*Math.acosh(Math.sqrt(g/accelerat
 let t=0,running=false,last=0,frame=0;
 const bilingual=labLanguage.pick;
 const transitionDistance=terminalSpeed**2/g*Math.log(Math.cosh(g*terminalTime/terminalSpeed));
+// A smooth classroom opening transient. Speed and distance are continuous.
+const canopySpeed=5.5, openingTau=1.8, settleAfter=16;
 function model(time){
+ if(openedAt!==null && time>=openedAt){
+  const dt=time-openedAt, u=Math.min(dt,settleAfter)/openingTau, remaining=Math.exp(-u);
+  const difference=terminalSpeed-canopySpeed;
+  const speed=dt>=settleAfter?canopySpeed:canopySpeed+difference*(1+u)*remaining;
+  const acc=dt>=settleAfter?0:-difference*u*remaining/openingTau;
+  const distance=transitionDistance+terminalSpeed*(openedAt-terminalTime)+canopySpeed*dt+difference*openingTau*(2-(u+2)*remaining);
+  return {speed,acc,net:mass*acc,drag:weight-mass*acc,distance};
+ }
+
  if(time>=terminalTime)return {speed:terminalSpeed,net:0,drag:weight,acc:0,distance:transitionDistance+terminalSpeed*(time-terminalTime)};
  const u=g*time/terminalSpeed,ratio=Math.tanh(u),net=weight/(Math.cosh(u)**2);
  return {speed:terminalSpeed*ratio,net,drag:weight-net,acc:net/mass,distance:terminalSpeed**2/g*Math.log(Math.cosh(u))};
@@ -179,7 +190,7 @@ function arrow(id,length,sign,color,label){
 const X=time=>48+time/end*344;
 const plots=[
  {axes:'velocityAxes',curve:'velocityCurve',dot:'velocityDot',field:'speed',max:terminalSpeed,ticks:[0,20,terminalSpeed],unit:'<tspan class="quantity">v</tspan> / m s⁻¹'},
- {axes:'axes',curve:'curve',dot:'dot',field:'drag',max:weight,ticks:[0,250,500,weight],unit:'<tspan class="quantity">R</tspan><tspan baseline-shift="sub" font-size="10">air</tspan> / N'}
+ {axes:'axes',curve:'curve',dot:'dot',field:'drag',max:2*weight,ticks:[0,weight,2*weight],unit:'<tspan class="quantity">R</tspan><tspan baseline-shift="sub" font-size="10">air</tspan> / N'}
 ];
 const graphY=(value,max)=>135-value/max*100;
 function axes(){
@@ -223,11 +234,20 @@ function draw(){
  el('airStreaks').setAttribute('opacity',.47*(m.speed/terminalSpeed)**1.5);
  el('person').setAttribute('transform','translate('+(-17+17*ease)+' '+(98+descent)+')');
  el('pose').setAttribute('transform','translate(150 0) rotate('+(-52*(1-ease))+') scale('+(.34+.66*ease)+') translate(-150 0)');
+ const deployed=openedAt!==null && t>=openedAt;
+ const canopy=el('canopy');
+ canopy.setAttribute('display',deployed?'inline':'none');
+ if(deployed){const spread=Math.min(1,(t-openedAt)/3);el('pose').setAttribute('transform','rotate('+(-63*spread)+' 150 0)');canopy.setAttribute('transform','scale('+(.08+.92*spread)+' '+(.1+.9*spread)+') translate('+(150/(.08+.92*spread)-150)+' 0)');}
+ el('deploy').disabled=t<terminalTime||deployed;
+ el('deploy').textContent=deployed?bilingual('Parachute open','已開傘'):bilingual('Open parachute','打開降落傘');
+ const forceScale=2*weight;
  const supported=t===0;
  if(supported){m.net=0;m.acc=0;}
- arrow('up',82*m.drag/weight,-1,'var(--air)','<tspan class="quantity">R</tspan><tspan baseline-shift="sub" font-size="11">air</tspan>');if(supported)arrow('up',82,-1,'var(--air)',bilingual('Support','支持力'));arrow('down',82,1,'var(--weight)','<tspan class="quantity">W</tspan>');
- [m.drag,weight,m.net].forEach((f,i)=>{document.querySelectorAll('.fill')[i].style.height=50*f/weight+'%';document.querySelectorAll('.reading')[i].textContent=Math.round(f)+' N';});
- motionArrow('velocityArrow',m.speed/terminalSpeed,false);motionArrow('accelerationArrow',m.acc/g,true);el('speed').textContent=m.speed.toFixed(1);el('acc').textContent=m.acc.toFixed(2);
+ arrow('up',90*m.drag/forceScale,-1,'var(--air)','<tspan class="quantity">R</tspan><tspan baseline-shift="sub" font-size="11">air</tspan>');if(supported)arrow('up',45,-1,'var(--air)',bilingual('Support','支持力'));arrow('down',45,1,'var(--weight)','<tspan class="quantity">W</tspan>');
+ [m.drag,weight,m.net].forEach((f,i)=>{document.querySelectorAll('.fill')[i].style.height=50*Math.abs(f)/forceScale+'%';document.querySelectorAll('.reading')[i].textContent=Math.round(Math.abs(f))+' N';});
+ document.querySelector('.net .well').classList.toggle('upward',m.net<0);
+ el('accelerationArrow').setAttribute('transform',m.acc<0?'translate(0 126) scale(1 -1)':'');
+ motionArrow('velocityArrow',m.speed/terminalSpeed,false);motionArrow('accelerationArrow',Math.abs(m.acc)/g,true);el('speed').textContent=m.speed.toFixed(1);el('acc').textContent=m.acc.toFixed(2);
  for(const plot of plots){
   let path='M48 135';
   for(let time=.15;time<t;time+=.15)path+='L'+X(time)+' '+graphY(model(time)[plot.field],plot.max);
@@ -240,11 +260,14 @@ function draw(){
   const atStage=button.dataset.fallTime==='terminal'?reached:Math.abs(t-stageTimes[button.dataset.fallTime])<0.001;
   if(button.getAttribute('aria-pressed')!==String(atStage))button.setAttribute('aria-pressed',String(atStage));
  }
- const phase=supported?'release':reached?'terminal':'falling';
+ const phase=supported?'release':deployed?(t===openedAt?'opening':t-openedAt>=settleAfter?'canopyTerminal':'braking'):reached?'terminal':'falling';
  if(el('phaseTitle').dataset.phase!==phase){
   const descriptions={
    release:['Supported in the helicopter','直升機承托跳傘員','Support = W　·　a = 0'],
    falling:['Accelerating downwards','向下加速','W > Rₐᵢᵣ　·　a > 0'],
+   opening:['Canopy deploying','降落傘開始張開','W = Rₐᵢᵣ　·　a = 0'],
+   braking:['Slowing down after opening','開傘後向下減速','Rₐᵢᵣ > W　·　a < 0'],
+   canopyTerminal:['Second terminal speed','第二次終端速率','W = Rₐᵢᵣ　·　a = 0'],
    terminal:['At terminal speed','已達終端速率','W = Rₐᵢᵣ　·　a = 0']
   };
   const [en,cn,relation]=descriptions[phase];
@@ -261,8 +284,10 @@ function draw(){
 }
 function stop(){running=false;cancelAnimationFrame(frame);}
 function tick(now){t=Math.min(end,t+(now-last)/1000);last=now;if(t>=end)stop();draw();if(running)frame=requestAnimationFrame(tick);}
-el('play').onclick=()=>{if(running)stop();else{if(t>=end)t=0;running=true;last=performance.now();frame=requestAnimationFrame(tick);}draw();};
-el('reset').onclick=()=>{stop();t=0;draw();};
+el('play').onclick=()=>{if(running)stop();else{if(t>=end){clearOpening();t=0;}running=true;last=performance.now();frame=requestAnimationFrame(tick);}draw();};
+function clearOpening(){openedAt=null;end=25;el('timeline').max=end;axes();}
+el('reset').onclick=()=>{stop();clearOpening();t=0;draw();};
+el('deploy').onclick=()=>{if(t<terminalTime||el('deploy').disabled)return;openedAt=t;end=Math.ceil((openedAt+settleAfter+3)/5)*5;el('timeline').max=end;axes();if(!running){running=true;last=performance.now();frame=requestAnimationFrame(tick);}draw();};
 el('timeline').oninput=e=>{stop();t=Number(e.target.value);draw();};
 const stageTimes={release:0,half:terminalSpeed/g*Math.atanh(.5),terminal:terminalTime};
 const stageButtons=document.querySelectorAll('[data-fall-time]');
@@ -415,6 +440,11 @@ const skin=document.createElement('style');skin.textContent=':host([data-theme=t
   & main .lab .stats :is(strong,.zh) {color:inherit}
   & main .lab #clock {color:#b8f2f4}
 }
+</style><style>
+html[data-style=paper] .sky{--mist:#66869a;background:linear-gradient(#c7dfe8,#ecf1e6)}
+.net .well.upward .fill{top:auto;bottom:50%}.meters .net .upward .fill::before{transform:rotate(180deg)}
+#deploy{min-height:44px}#deploy:disabled{opacity:.55;cursor:default}
+@media(max-width:560px){.controls #deploy{font-size:12px;padding:3px 5px}}
 </style></html>
 
 
