@@ -142,7 +142,8 @@ svg text{font:15px 'Segoe UI',sans-serif;fill:var(--ink)}#up text,#up path:last-
 <div class="key"><span class="air"><i>R</i><sub>air</sub> = <span>air resistance<span class="zh" lang="zh-HK">空氣阻力</span></span></span><span class="weight"><i>W</i> = <span>weight<span class="zh" lang="zh-HK">重量</span></span></span></div></section>
 <section class="panel"><h2>Force vectors<span class="zh" lang="zh-HK">力的方向和大小</span></h2><div class="meters" id="meters"></div><div class="stats"><div class="velocity"><div><span>Velocity<span class="zh" lang="zh-HK">速度</span></span> <i>v</i></div><svg aria-hidden="true" class="motion velocity" viewBox="0 0 34 126"><path id="velocityArrow"/></svg><span class="motion-reading"><strong id="speed"></strong> <span>m/s</span></span></div><div class="acceleration"><div class="acc-heading"><span>Acceleration<span class="zh" lang="zh-HK">加速度</span></span> <i>a</i></div><svg aria-hidden="true" class="motion acceleration" viewBox="0 0 34 126"><path id="accelerationArrow"/></svg><span class="motion-reading"><strong id="acc"></strong> <span>m/s²</span></span></div></div></section>
 <section class="panel plots" data-active="velocity"><div class="plot-picker" role="group" aria-label="Graph / 圖表"><button id="pickVelocity" aria-pressed="true">Velocity<span class="zh" lang="zh-HK">速度</span></button><button id="pickDrag" aria-pressed="false">Air resistance<span class="zh" lang="zh-HK">空氣阻力</span></button></div>
-<div class="plot velocity-plot"><div class="velocity-heading"><h2><span class="vt-row">Velocity–time graph <small>(Positive direction: down)</small></span><span class="zh vt-row" lang="zh-HK">速度－時間圖 <small>（正方向：下）</small></span></h2></div><svg class="chart" viewBox="0 0 410 178" role="img" aria-label="Velocity against time"><g id="velocityAxes"></g><path id="velocityCurve"/><g id="terminalGuide" visibility="hidden"><path fill="none" stroke="currentColor" stroke-dasharray="4 3"/><text text-anchor="middle"></text></g><circle id="velocityDot" r="4"/></svg></div>
+<div class="plot velocity-plot"><div class="velocity-heading"><h2><span class="vt-row">Velocity–time graph <small>(Positive direction: down)</small></span><span class="zh vt-row" lang="zh-HK">速度－時間圖 <small>（正方向：下）</small></span></h2></div><svg class="chart" viewBox="0 0 410 178" role="img" aria-label="Velocity against time"><g id="velocityAxes"></g><path id="velocityCurve"/><g id="terminalGuide" visibility="hidden"><path fill="none" stroke="currentColor" stroke-dasharray="4 3"/><text text-anchor="middle"></text></g><circle id="velocityDot" r="4"/><defs><clipPath id="tangentCrop"><rect x="48" y="24" width="344" height="111"/></clipPath></defs>
+<g id="tangentProbe" pointer-events="none" display="none"><path id="tangentLine" clip-path="url(#tangentCrop)"/><g id="tangentCaption"><text id="tangentValue" y="-2"></text></g><circle id="tangentPoint" r="3.8"/></g></svg></div>
 <div class="plot drag-plot"><h2>Air resistance against time<span class="zh" lang="zh-HK">空氣阻力－時間圖</span></h2><svg class="chart" viewBox="0 0 410 178" role="img" aria-label="Air resistance against time"><g id="axes"></g><path id="curve"/><circle id="dot" r="4"/></svg></div>
 </section></div></div>
 <div class="controls"><div class="fall-checkpoints" role="group" aria-label="Compare stages · 比較階段"><button data-fall-time="release">Before release<small>離開機艙前</small></button><button data-fall-time="half">½ terminal speed<small>半終端速率</small></button><button data-fall-time="terminal">Terminal speed<small>終端速率</small></button></div><button id="deploy" type="button" disabled></button><button id="play" data-icon="play" aria-label="Play"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.8 20 12 7 20.2Z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h5v16H5zm9 0h5v16h-5z"/></svg><svg class="icon-replay" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6 M4.5 9A8 8 0 1 1 5 17"/></svg></button><label><input aria-label="Time / 時間" type="range" id="timeline" min="0" max="25" step=".01" value="0"><output id="clock"></output></label><button id="reset" aria-label="Reset"><svg class="icon-reset" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h3v16H4zm15 0L8 12l11 8z"/></svg></button></div><footer data-author-credit><span class="credit-lockup"><span class="credit-mark" role="img" aria-label="YD Physics"></span>Designed by Mr. Lai Ka Chun (LKU) | CPCYDSS | GPT-6.2 Astra</span></footer></main>
@@ -193,6 +194,54 @@ const plots=[
  {axes:'axes',curve:'curve',dot:'dot',field:'drag',max:2*weight,ticks:[0,weight,2*weight],unit:'<tspan class="quantity">R</tspan><tspan baseline-shift="sub" font-size="10">air</tspan> / N'}
 ];
 const graphY=(value,max)=>135-value/max*100;
+const velocityGraph=el('velocityCurve').ownerSVGElement;
+velocityGraph.setAttribute('tabindex','0');
+let probeTime=null;
+function renderTangent(){
+ const visible=probeTime!==null && t>0;
+ el('tangentProbe').setAttribute('display',visible?'inline':'none');
+ if(!visible)return;
+ const sample=Math.min(t,probeTime), state=model(sample);
+ const x=X(sample), y=graphY(state.speed,terminalSpeed);
+ // Convert physical slope to SVG slope: the vertical coordinate increases downwards.
+ const slope=-state.acc*100/terminalSpeed*end/344;
+ el('tangentLine').setAttribute('d','M48 '+(y+(48-x)*slope)+' L392 '+(y+(392-x)*slope));
+ el('tangentPoint').setAttribute('cx',x);el('tangentPoint').setAttribute('cy',y);
+ const caption=el('tangentValue');
+ const value=Number(state.acc.toFixed(2))===0?'0.00':state.acc.toFixed(2).replace('-','−');
+ caption.innerHTML='<tspan class="quantity">a</tspan> = '+value+' m/s²';
+ const angle=Math.atan(slope), dx=Math.cos(angle), dy=Math.sin(angle);
+ function room(sign){
+  const horizontal=(sign>0?398-x:x-40)/dx;
+  const vertical=Math.abs(dy)<1e-8?Infinity:(dy*sign>0?140-y:y-17)/Math.abs(dy);
+  return Math.min(horizontal,vertical);
+ }
+ const width=caption.getComputedTextLength(), right=room(1),left=room(-1);
+ const sign=right>=width+9||right>=left?1:-1;
+ caption.setAttribute('text-anchor',sign>0?'start':'end');
+ caption.setAttribute('x',sign*7);
+ el('tangentCaption').setAttribute('transform','translate('+x+' '+y+') rotate('+(angle*180/Math.PI)+') scale('+Math.min(1,Math.max(.48,room(sign)/(width+9)))+')');
+}
+function pointOnVelocityGraph(event){
+ const matrix=velocityGraph.getScreenCTM();if(!matrix||!t)return;
+ const local=new DOMPoint(event.clientX,event.clientY).matrixTransform(matrix.inverse());
+ probeTime=Math.max(0,Math.min(t,(local.x-48)*end/344));renderTangent();
+}
+velocityGraph.addEventListener('pointerdown',event=>{
+ if(!event.isPrimary)return;
+ velocityGraph.setPointerCapture(event.pointerId);pointOnVelocityGraph(event);
+});
+velocityGraph.addEventListener('pointermove',event=>{
+ if(event.isPrimary&&(event.pointerType==='mouse'||velocityGraph.hasPointerCapture(event.pointerId)))pointOnVelocityGraph(event);
+});
+velocityGraph.addEventListener('pointerleave',event=>{if(event.pointerType==='mouse'&&!event.buttons){probeTime=null;renderTangent();}});
+document.addEventListener('pointerdown',event=>{if(!velocityGraph.contains(event.target)){probeTime=null;renderTangent();}});
+velocityGraph.addEventListener('keydown',event=>{
+ if(event.key==='Escape')probeTime=null;
+ else if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();probeTime=Math.max(0,Math.min(t,(probeTime??t)+(event.key==='ArrowLeft'?-.1:.1)));}
+ else return;
+ renderTangent();
+});
 function axes(){
  const gx=X(Number(terminalTime.toFixed(1)));
  el("terminalGuide").querySelector("path").setAttribute("d","M48 35H"+gx+"V135");
@@ -264,6 +313,7 @@ function draw(){
   el(plot.curve).setAttribute('d',path+'L'+X(t)+' '+y);
   el(plot.dot).setAttribute('cx',X(t));el(plot.dot).setAttribute('cy',y);
  }
+ if(t===0)probeTime=null;renderTangent();
  const reached=t>=terminalTime;
  for(const button of stageButtons){
   const atStage=button.dataset.fallTime==='terminal'?reached:Math.abs(t-stageTimes[button.dataset.fallTime])<0.001;
@@ -463,6 +513,11 @@ html[data-page] main .panel .stats .motion{position:static;grid-area:1/1/3/2;mar
 html[data-page] main .panel .stats .motion-reading{grid-area:2/2;white-space:nowrap;line-height:1.1}
 html[data-page] main .panel .stats .motion-reading strong{display:inline;margin:0}
 @media(max-width:600px),(max-height:540px){html[data-page] main .panel .stats>div{grid-template-columns:14px max-content;column-gap:3px}html[data-page] main .panel .stats .motion{width:14px;height:42px}}
+</style><style>
+.velocity-plot svg.chart{touch-action:none;cursor:crosshair}
+#tangentLine{fill:none;stroke:var(--a);stroke-width:1.8}
+#tangentPoint{fill:var(--a);stroke:var(--surface);stroke-width:1.5}
+#tangentValue{font:600 12px system-ui;fill:var(--a);stroke:var(--surface);stroke-width:3;paint-order:stroke;stroke-linejoin:round}
 </style></html>
 
 
