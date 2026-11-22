@@ -115,8 +115,7 @@ html[data-theme=tech][data-night-layout=ticker] {
 html[data-theme=tech][data-night-layout=reflection] {
   & main {display:block;background:transparent!important}
   & main>.night-lab-heading {display:block;background:transparent!important;color:var(--night-text);border:0}
-  & .stage .legend span:first-child::before {background:#d95222;box-shadow:none}
-  & .stage .legend span:nth-child(2)::before {background:#007f9b;box-shadow:none}
+  & .stage .legend > span:nth-child(-n+2)::before {background:#ffd45a;box-shadow:none}
   & .stage {box-sizing:border-box;margin-top:14px;padding:12px;height:clamp(370px,70dvh,710px);background:var(--night-metal),#181f23!important}
   & .stage canvas {box-sizing:border-box;border:1px solid #77f5ef;box-shadow:0 0 10px #2fe9ef60}
   & .stage-title,& .legend,& .hint {background:#0e1d23ee;color:var(--night-text);border-color:var(--night-line)}
