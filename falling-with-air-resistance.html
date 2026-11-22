@@ -128,8 +128,8 @@ svg text{font:15px 'Segoe UI',sans-serif;fill:var(--ink)}#up text,#up path:last-
 <path id="cloudBank" d="M-24 29 Q-12 17 6 17 Q17 -1 35 9 Q48 -8 68 5 Q83 1 94 14 Q110 12 130 27 Q81 38 -24 31Z"/>
 <pattern id="cloudFar" width="300" height="360" patternUnits="userSpaceOnUse"><g fill="url(#mist)" opacity=".68"><use href="#cloudBank" transform="translate(-8 33) scale(.85 .62)"/><use href="#cloudBank" transform="translate(220 176) scale(.93 .8)"/></g></pattern>
 <pattern id="cloudNear" width="300" height="440" patternUnits="userSpaceOnUse"><g fill="url(#mist)"><use href="#cloudBank" transform="translate(-65 294) scale(1.28 1.12)"/><use href="#cloudBank" transform="translate(221 403) scale(1.25 .86)"/></g></pattern>
-<pattern id="slipstream" width="300" height="120" patternUnits="userSpaceOnUse"><path d="M42 11v11m34 58v18m155-62v12m30 42v20" stroke="var(--muted)" stroke-width="1.4" stroke-linecap="round"/></pattern>
-</defs><rect width="300" height="335" fill="url(#cloudFar)"/><rect width="300" height="335" fill="url(#cloudNear)"/><rect id="airStreaks" width="300" height="335" opacity="0" fill="url(#slipstream)"/><rect width="300" height="335" fill="url(#scale)"/><g id="helicopter" aria-hidden="true" stroke="#304c54" stroke-linejoin="round">
+<pattern id="slipstream" width="300" height="257" patternUnits="userSpaceOnUse"><g fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path pathLength="100" d="M11 17v54"/><path pathLength="100" d="M36 107v48"/><path pathLength="100" d="M56 55v38"/><path pathLength="100" d="M78 187v34"/><path pathLength="100" d="M225 22v36"/><path pathLength="100" d="M244 135v52"/><path pathLength="100" d="M279 65v55"/><path pathLength="100" d="M291 199v42"/></g></pattern><pattern id="fastFlow" width="300" height="353" patternUnits="userSpaceOnUse"><g fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path pathLength="100" d="M7 37v98"/><path pathLength="100" d="M23 196v76"/><path pathLength="100" d="M48 94v65"/><path pathLength="100" d="M63 264v60"/><path pathLength="100" d="M237 93v60"/><path pathLength="100" d="M255 252v80"/><path pathLength="100" d="M275 18v88"/><path pathLength="100" d="M294 146v98"/></g></pattern>
+</defs><rect width="300" height="335" fill="url(#cloudFar)"/><rect width="300" height="335" fill="url(#cloudNear)"/><rect id="fastStreaks" width="300" height="335" opacity="0" fill="url(#fastFlow)"/><rect id="airStreaks" width="300" height="335" opacity="0" fill="url(#slipstream)"/><rect width="300" height="335" fill="url(#scale)"/><g id="helicopter" aria-hidden="true" stroke="#304c54" stroke-linejoin="round">
 <path d="M91 91 32 76 20 53 15 55 20 85 92 104Z" fill="#78938a"/>
 <path d="m67 87 10 4 -3 7 -10 -4z" fill="#eed8a2"/>
 <path d="M88 85Q91 63 122 61L149 62Q175 64 188 87L190 97Q181 112 153 113H105Q83 111 85 97Z" fill="#bc7650" stroke-width="2"/>
@@ -228,10 +228,19 @@ function draw(){
  const apparentSize=1/(1+m.distance/105);
  el('helicopter').setAttribute('transform','translate(133 '+(98-camera*apparentSize)+') scale('+apparentSize+') translate(-133 -98)');
  el('scale').setAttribute('patternTransform','translate(0 '+(-camera%48)+')');
- for(const [id,depth,period] of [['cloudFar',.24,360],['cloudNear',.65,440],['slipstream',1,120]]){
+ for(const [id,depth,period] of [['cloudFar',.24,360],['cloudNear',.65,440]]){
   el(id).setAttribute('patternTransform','translate(0 '+(-(camera*depth)%period)+')');
  }
- el('airStreaks').setAttribute('opacity',.47*(m.speed/terminalSpeed)**1.5);
+ // Displacement drives parallax, so a doubled speed doubles each layer's screen velocity.
+ const speedFraction=m.speed/terminalSpeed;
+ for(const [pattern,overlay,scale,period,contrast] of [
+  ['slipstream','airStreaks',8,257,.42],['fastFlow','fastStreaks',17,353,.72]
+ ]){
+  const layer=el(pattern);
+  layer.setAttribute('patternTransform','translate(0 '+(-(m.distance*scale)%period)+')');
+  layer.setAttribute('stroke-dasharray',(10+90*speedFraction)+' 110');
+  el(overlay).setAttribute('opacity',contrast*speedFraction);
+ }
  el('person').setAttribute('transform','translate('+(-17+17*ease)+' '+(98+descent)+')');
  el('pose').setAttribute('transform','translate(150 0) rotate('+(-52*(1-ease))+') scale('+(.34+.66*ease)+') translate(-150 0)');
  const deployed=openedAt!==null && t>=openedAt;
@@ -445,7 +454,7 @@ html[data-style=paper] .sky{--mist:#66869a;background:linear-gradient(#c7dfe8,#e
 .net .well.upward .fill{top:auto;bottom:50%}.meters .net .upward .fill::before{transform:rotate(180deg)}
 #deploy{min-height:44px}#deploy:disabled{opacity:.55;cursor:default}
 @media(max-width:560px){.controls #deploy{font-size:12px;padding:3px 5px}}
-</style></html>
+</style><style>.sky #slipstream,.sky #fastFlow{color:#304b55}html[data-style=tech] .sky :is(#slipstream,#fastFlow){color:#b1c9d4}</style></html>
 
 
 
