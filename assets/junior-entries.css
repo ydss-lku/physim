@@ -1,0 +1,73 @@
+#catalogue .junior-links {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: inherit;
+}
+#catalogue .junior-links figure {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 350 / 131;
+}
+#catalogue .junior-links figure img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+#catalogue .junior-links h2 { margin: 9px 10px; }
+#catalogue .junior-links .box.flash-entry figure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5%;
+  background: #f7f8ef;
+}
+#catalogue .flash-entry figure img { width: 35%; height: 87%; }
+#catalogue .flash-entry b { color: #294839; font: bold clamp(20px,3vw,35px)/1 Georgia,serif; letter-spacing: -.04em; }
+#catalogue .junior-links .box.laser-entry figure,
+#catalogue .laser-entry figure::before {
+  background: #0d4648 url("yd-lab-laser-entry.webp") center / 100% 100% no-repeat;
+}
+#catalogue .laser-entry figure::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0,33% 0,28.2% 100%,0 100%);
+  transform-origin: 10% 65%;
+  transform: var(--recoil,none);
+  transition: transform .26s ease-out;
+}
+.palm-beam {
+  position: absolute;
+  right: 38%;
+  top: 61.6%;
+  width: 28.5%;
+  height: 2px;
+  border-radius: 2px;
+  background: #ffffca;
+  box-shadow: var(--beam-glow,0 0 0 1px #6cf0a6,0 0 3px 2px #195e52);
+  transform-origin: right center;
+  transform: rotate(-7deg) scaleX(var(--reach,1));
+  transition: transform .25s ease-out,box-shadow .2s;
+}
+.palm-beam::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: -5px;
+  width: 13px;
+  height: 13px;
+  background: #fff2a0;
+  clip-path: polygon(50% 0,60% 35%,94% 16%,70% 45%,100% 61%,62% 65%,60% 100%,45% 72%,16% 92%,32% 60%,0 48%,38% 40%);
+}
+@media (hover:hover) and (pointer:fine) {
+  .laser-entry:hover { --reach:1.24; --recoil:translateX(-1%) rotate(-1deg) scale(1.035); --beam-glow:0 0 4px 2px #a6ffd1,0 0 12px 3px #2ae695; }
+}
+.laser-entry:is(:focus-visible,:active) { --reach:1.24; --recoil:translateX(-1%) rotate(-1deg) scale(1.035); --beam-glow:0 0 4px 2px #a6ffd1,0 0 12px 3px #2ae695; }
+@media (prefers-reduced-motion:reduce) {
+  #catalogue .laser-entry figure::before,#catalogue .palm-beam { transition:none; --recoil:none; --reach:1; }
+}
+@media (max-width:600px) {
+  #catalogue .junior-links { grid-template-columns:minmax(0,1fr); }
+}
