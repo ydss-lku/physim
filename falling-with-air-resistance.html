@@ -138,7 +138,16 @@ svg text{font:15px 'Segoe UI',sans-serif;fill:var(--ink)}#up text,#up path:last-
 <path d="m102 113 -5 10m68-11 6 11M84 123h95l6-4" fill="none" stroke-width="3"/>
 <path d="M129 61V49" stroke-width="4"/><path d="M45 48h169l-8 3H52Z" fill="#586b70"/>
 <circle cx="21" cy="72" r="3" fill="#edce8d"/><path d="m10 66 23 12m-17 6 11-23" stroke-width="2"/>
-</g><g id="person"><g id="canopy" display="none" aria-hidden="true"><path d="M88 -77 Q96 -109 150 -112 Q204 -109 212 -77 Q198 -87 187 -78 Q177 -89 165 -80 Q150 -90 135 -80 Q121 -89 112 -78 Q102 -87 88 -77Z" fill="#e5ac52" stroke="#664c30" stroke-width="2"/><path d="M88 -77 145 -6m-33 -72 33 72m20 -74 -13 74m35 -72 -35 72m60 -71 -60 71" fill="none" stroke="var(--muted)" stroke-width="1.5"/></g><g id="pose" stroke-linejoin="round" stroke-linecap="round" stroke="#284751" stroke-width="2"><path fill="#3c626f" d="m146 -4 -30 5 -17 -14 -7 5 19 23 39 -4z"/><path fill="#4d7380" d="m148 1 -26 13 -22 -6 -3 7 28 11 31 -15z"/><path fill="#db8240" d="m134 -6 25 -7 16 10 -20 13 -22 -4z"/><path fill="#394f5b" d="m133 -9 15 -10 14 4 -6 10 -19 5z"/><circle cx="173" cy="-12" r="9" fill="#ecc39c"/><path fill="#38606d" d="M164 -12q0 -17 15 -10l4 6 -13 4z"/><path fill="#dd9258" d="m158 2 19 3 13 -14 5 4 -14 20 -26 -4z"/></g><g id="up"></g><g id="down"></g></g></svg>
+</g><g id="person"><g id="canopy" display="none" aria-hidden="true"><path d="M88 -77 Q96 -109 150 -112 Q204 -109 212 -77 Q198 -87 187 -78 Q177 -89 165 -80 Q150 -90 135 -80 Q121 -89 112 -78 Q102 -87 88 -77Z" fill="#e5ac52" stroke="#664c30" stroke-width="2"/></g><path id="risers" display="none" fill="none" stroke="var(--muted)" stroke-width="1.4"/>
+<g id="seated" display="none" stroke="#284751" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M144 3 Q140 14 150 17 L162 12 167 27 M152 8 L169 5 176 20" fill="none" stroke="#3c626f" stroke-width="8"/>
+ <path d="m165 27 7 1m3-8 7 0" stroke-width="5"/>
+ <path d="M139 -11 Q147 -16 156 -10 L159 6 Q152 13 141 9Z" fill="#db8240" stroke-width="2"/>
+ <path d="m140 -9 4 17q6 5 14-2m-5-16 2 15" fill="none" stroke-width="3.5"/>
+ <path d="m142 -8 -10 1 -5 -17m29 15 12 1 8 -16" fill="none" stroke="#d38a50" stroke-width="5"/>
+ <path d="m127 -24 -1 -3m50 3 1-3" stroke="#edc6a0" stroke-width="4"/>
+ <circle cx="159" cy="-20" r="8" fill="#ecc39c"/><path d="M150 -20q-1 -16 14 -10l4 7 -14 4z" fill="#38606d"/>
+</g><g id="pose" stroke-linejoin="round" stroke-linecap="round" stroke="#284751" stroke-width="2"><path fill="#3c626f" d="m146 -4 -30 5 -17 -14 -7 5 19 23 39 -4z"/><path fill="#4d7380" d="m148 1 -26 13 -22 -6 -3 7 28 11 31 -15z"/><path fill="#db8240" d="m134 -6 25 -7 16 10 -20 13 -22 -4z"/><path fill="#394f5b" d="m133 -9 15 -10 14 4 -6 10 -19 5z"/><circle cx="173" cy="-12" r="9" fill="#ecc39c"/><path fill="#38606d" d="M164 -12q0 -17 15 -10l4 6 -13 4z"/><path fill="#dd9258" d="m158 2 19 3 13 -14 5 4 -14 20 -26 -4z"/></g><g id="up"></g><g id="down"></g></g></svg>
 <div class="key"><span class="air"><i>R</i><sub>air</sub> = <span>air resistance<span class="zh" lang="zh-HK">空氣阻力</span></span></span><span class="weight"><i>W</i> = <span>weight<span class="zh" lang="zh-HK">重量</span></span></span></div></section>
 <section class="panel"><h2>Force vectors<span class="zh" lang="zh-HK">力的方向和大小</span></h2><div class="meters" id="meters"></div><div class="stats"><div class="velocity"><div><span>Velocity<span class="zh" lang="zh-HK">速度</span></span> <i>v</i></div><svg aria-hidden="true" class="motion velocity" viewBox="0 0 34 126"><path id="velocityArrow"/></svg><span class="motion-reading"><strong id="speed"></strong> <span>m/s</span></span></div><div class="acceleration"><div class="acc-heading"><span>Acceleration<span class="zh" lang="zh-HK">加速度</span></span> <i>a</i></div><svg aria-hidden="true" class="motion acceleration" viewBox="0 0 34 126"><path id="accelerationArrow"/></svg><span class="motion-reading"><strong id="acc"></strong> <span>m s⁻²</span></span></div></div></section>
 <section class="panel plots" data-active="velocity"><div class="plot-picker" role="group" aria-label="Graph / 圖表"><button id="pickVelocity" aria-pressed="true">Velocity<span class="zh" lang="zh-HK">速度</span></button><button id="pickDrag" aria-pressed="false">Air resistance<span class="zh" lang="zh-HK">空氣阻力</span></button></div>
@@ -296,7 +305,21 @@ function draw(){
  const deployed=openedAt!==null && t>=openedAt;
  const canopy=el('canopy');
  canopy.setAttribute('display',deployed?'inline':'none');
- if(deployed){const spread=Math.min(1,(t-openedAt)/3);el('pose').setAttribute('transform','rotate('+(-63*spread)+' 150 0)');canopy.setAttribute('transform','scale('+(.08+.92*spread)+' '+(.1+.9*spread)+') translate('+(150/(.08+.92*spread)-150)+' 0)');}
+ const spread=deployed?Math.min(1,(t-openedAt)/3):0;
+ const sit=Math.min(1,spread*2.4);
+ el('pose').setAttribute('opacity',1-sit);
+ el('seated').setAttribute('display',deployed?'inline':'none');
+ el('seated').setAttribute('opacity',sit);
+ el('risers').setAttribute('display',deployed?'inline':'none');
+ if(deployed){
+  const sx=.08+.92*spread, sy=.1+.9*spread;
+  canopy.setAttribute('transform','translate(150 0) scale('+sx+' '+sy+') translate(-150 0)');
+  const top=x=>(150+(x-150)*sx)+' '+(-77*sy);
+  el('risers').setAttribute('d','M'+top(88)+' L126 -27 144 8 M'+top(112)+' L126 -27 M'+top(212)+' L177 -27 156 7 M'+top(187)+' L177 -27');
+  el('risers').setAttribute('opacity',sit);
+  el('pose').setAttribute('transform','rotate('+(-32*sit)+' 150 0)');
+  el('seated').setAttribute('transform','rotate('+(16*(1-sit))+' 150 0)');
+ }
  el('deploy').disabled=t<terminalTime||deployed;
  el('deploy').textContent=deployed?bilingual('Parachute open','已開傘'):bilingual('Open parachute','打開降落傘');
  const forceScale=2*weight;
