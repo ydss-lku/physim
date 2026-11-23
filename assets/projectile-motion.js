@@ -126,7 +126,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const strokeScale = Math.max(0.5, Math.min(1, w / 700));
+    // Use screen dimensions so a small plot or a narrow desktop window keeps its normal ink.
+    const phoneScreen = Math.min(screen.width, screen.height) < 600 && matchMedia("(pointer: coarse)").matches;
+    const strokeScale = phoneScreen ? Math.max(0.5, Math.min(0.75, w / 700)) : 1;
     return { ctx, w, h, strokeScale };
   }
 
