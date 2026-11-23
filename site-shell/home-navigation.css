@@ -1,0 +1,17 @@
+nav{flex-wrap:wrap}.themes{margin-left:auto;display:flex;gap:2px;background:#e5decf;padding:3px;border-radius:8px}
+ .themes button{min-width:62px;background:transparent;color:#314737;padding:3px 8px;font-weight:650}.themes small{display:block;font:12px/1.25 system-ui}
+ .themes button[aria-pressed=true]{color:white;background:#315340}
+ button:focus-visible,a:focus-visible{outline:3px solid #c57a19;outline-offset:2px}
+ @media(max-width:440px){nav{gap:4px;padding:5px}nav a,nav>button{font-size:12px;padding:7px 4px}.themes button{font-size:12px;min-width:46px}}
+ :host([data-theme=tech]){color:#e8f0ef;background:#0b151b;border-bottom:1px solid #4a8089;box-shadow:0 1px 8px #50eeee33}
+ :host([data-theme=tech]) :is(a,button,select){font-family:Oxanium,'Microsoft JhengHei',sans-serif;border-radius:0;min-height:44px}
+ :host([data-theme=tech]) a{color:#77f5ef}
+ :host([data-theme=tech]) .themes{border:1px solid #547880;border-radius:0;background:#101e25}
+ :host([data-theme=tech]) .themes button{color:#abbdbf}
+ :host([data-theme=tech]) .themes button[aria-pressed=true]{color:#11180f;background:#fcee0a;box-shadow:0 0 12px #fcee0a44}
+ :host([data-theme=tech]) nav>button,:host([data-theme=tech]) select{color:#e8f0ef;background:#101e25;border:1px solid #547880}
+ :host([data-theme=tech]) section{background:#101e25}
+ :host([data-theme=tech]) :focus-visible{outline:2px solid #fcee0a;outline-offset:2px}
+ :host([data-theme=tech]) nav{max-width:1250px;box-sizing:border-box;padding-inline:clamp(16px,5vw,60px)}
+ :host([data-theme=tech]) nav>a{display:flex;align-items:center;padding:0;color:#abbdbf;font-size:14px;font-weight:550;text-shadow:none}
+ @media(max-width:700px){:host([data-theme=tech]) nav{padding-inline:8px}}

@@ -22,7 +22,7 @@ function installThemes(host,root,menuButton){
 
 `;root.append(css);
  const navSkin=document.createElement('link');
- navSkin.rel='stylesheet';navSkin.href='assets/night-lab-nav.css';root.append(navSkin);
+ navSkin.rel='stylesheet';navSkin.href=document.documentElement.dataset.page === 'index' ? 'site-shell/home-navigation.css' : 'assets/night-lab-nav.css';root.append(navSkin);
 
  const key='yd-physics-theme';
  function syncLinks(){
