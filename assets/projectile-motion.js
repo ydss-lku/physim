@@ -46,8 +46,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const outOptAngle = document.getElementById("outOptAngle");
   const outVx = document.getElementById("outVx");
   const outVy = document.getElementById("outVy");
-  const outHRRatio = document.getElementById("outHRRatio");
-  const outQuarterTan = document.getElementById("outQuarterTan");
   const hrFormulaBox = document.getElementById("hrFormulaBox");
 
   const livePosTag = document.getElementById("livePosTag");
@@ -62,7 +60,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const trajCanvas = document.getElementById("trajCanvas");
   const hCanvas = document.getElementById("hCanvas");
   const rCanvas = document.getElementById("rCanvas");
-  const hrCanvas = document.getElementById("hrCanvas");
 
   // ====== 物理計算核心 ======
   function calcPhysics(thetaDeg, v0, y0, g) {
@@ -689,159 +686,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.fillText(tagText, boxX + 6, boxY + 11);
   }
 
-  // ====== 3. 繪製 H 與 R 關係圖 (H vs R) ======
-  let hrCurvePoints = [];
-  function drawHRChart() {
-    const { ctx, w, h, strokeScale } = setupCanvas(hrCanvas);
-    ctx.clearRect(0, 0, w, h);
-
-    const pad = { left: 52, right: 22, top: 24, bottom: 42 };
-    const plotW = w - pad.left - pad.right;
-    const plotH = h - pad.top - pad.bottom;
-
-    const env = getEnvelopeBounds(state.v0, state.y0, state.g);
-    const maxR = env.maxR * 1.15;
-    const maxH = env.maxH * 1.15;
-
-    const toPxX = (r) => pad.left + (r / maxR) * plotW;
-    const toPxY = (heightVal) => pad.top + plotH - (heightVal / maxH) * plotH;
-
-    ctx.strokeStyle = chartInk.grid;
-    ctx.lineWidth = 1.5 * strokeScale;
-    ctx.font = "bold 11.5px sans-serif";
-    ctx.fillStyle = chartInk.muted;
-
-    const xStep = niceStep(maxR, 4);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    for (let x = 0; x <= maxR; x += xStep) {
-      const px = toPxX(x);
-      ctx.beginPath();
-      ctx.moveTo(px, pad.top);
-      ctx.lineTo(px, pad.top + plotH);
-      ctx.stroke();
-      ctx.fillText(axisLabel(x, xStep), px, pad.top + plotH + 7);
-    }
-
-    const yStep = niceStep(maxH, 4);
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-    for (let y = 0; y <= maxH; y += yStep) {
-      const py = toPxY(y);
-      ctx.beginPath();
-      ctx.moveTo(pad.left, py);
-      ctx.lineTo(pad.left + plotW, py);
-      ctx.stroke();
-      ctx.fillText(axisLabel(y, yStep), pad.left - 7, py);
-    }
-
-    ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 2.6 * strokeScale;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, pad.top);
-    ctx.lineTo(pad.left, pad.top + plotH);
-    ctx.lineTo(pad.left + plotW, pad.top + plotH);
-    ctx.stroke();
-
-    ctx.fillStyle = chartInk.ink;
-    ctx.font = "bold 12.5px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText("R (m)", pad.left + plotW, pad.top + plotH + 24);
-    ctx.textAlign = "left";
-    ctx.fillText("H (m)", pad.left - 42, pad.top - 13);
-
-    hrCurvePoints = [];
-    for (let deg = state.minTheta; deg <= state.maxTheta; deg += 0.5) {
-      const p = calcPhysics(deg, state.v0, state.y0, state.g);
-      hrCurvePoints.push({
-        deg,
-        R: p.R,
-        H: p.H,
-        px: toPxX(p.R),
-        py: toPxY(p.H)
-      });
-    }
-
-    ctx.beginPath();
-    for (let i = 0; i < hrCurvePoints.length; i++) {
-      if (i === 0) ctx.moveTo(hrCurvePoints[i].px, hrCurvePoints[i].py);
-      else ctx.lineTo(hrCurvePoints[i].px, hrCurvePoints[i].py);
-    }
-    ctx.strokeStyle = chartInk.trace;
-    ctx.lineWidth = 4.5 * strokeScale;
-    ctx.lineJoin = "round";
-    ctx.stroke();
-
-    const p0 = calcPhysics(0, state.v0, state.y0, state.g);
-    const pOpt = calcPhysics(env.optDeg, state.v0, state.y0, state.g);
-    const p90 = calcPhysics(90, state.v0, state.y0, state.g);
-
-    ctx.font = "bold 11px sans-serif";
-
-    ctx.beginPath();
-    ctx.arc(toPxX(pOpt.R), toPxY(pOpt.H), 4.5 * strokeScale, 0, Math.PI * 2);
-    ctx.fillStyle = chartInk.measure;
-    ctx.fill();
-    ctx.textAlign = "right";
-    ctx.textBaseline = "bottom";
-    ctx.fillText(`θ*=${env.optDeg.toFixed(0)}° (Rₘₐₓ)`, toPxX(pOpt.R) - 6, toPxY(pOpt.H) - 4);
-
-    ctx.beginPath();
-    ctx.arc(toPxX(p0.R), toPxY(p0.H), 4.5 * strokeScale, 0, Math.PI * 2);
-    ctx.fillStyle = chartInk.trace;
-    ctx.fill();
-    ctx.textAlign = "left";
-    ctx.textBaseline = "bottom";
-    ctx.fillText("0°", toPxX(p0.R) + 6, toPxY(p0.H) - 3);
-
-    ctx.beginPath();
-    ctx.arc(toPxX(p90.R), toPxY(p90.H), 4.5 * strokeScale, 0, Math.PI * 2);
-    ctx.fillStyle = chartInk.measure;
-    ctx.fill();
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillText("+90° (Hₘₐₓ)", toPxX(p90.R) + 7, toPxY(p90.H) + 2);
-
-    const curP = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    const cx = toPxX(curP.R);
-    const cy = toPxY(curP.H);
-
-    if (state.y0 === 0 && curP.R > 0.2) {
-      ctx.save();
-      ctx.strokeStyle = chartInk.ink;
-      ctx.lineWidth = 2.5 * strokeScale;
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath();
-      ctx.moveTo(toPxX(0), toPxY(0));
-      ctx.lineTo(cx, cy);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, 7.5 * strokeScale, 0, Math.PI * 2);
-    ctx.fillStyle = chartInk.field;
-    ctx.fill();
-    ctx.lineWidth = 3.8 * strokeScale;
-    ctx.strokeStyle = chartInk.ink;
-    ctx.stroke();
-
-    const tagText = `R=${curP.R.toFixed(1)}, H=${curP.H.toFixed(1)}`;
-    ctx.font = "bold 12px sans-serif";
-    const textW = ctx.measureText(tagText).width + 12;
-    let boxX = cx + 10;
-    if (boxX + textW > w - 6) boxX = cx - textW - 10;
-    let boxY = cy - 26;
-    if (boxY < 4) boxY = cy + 10;
-
-    ctx.fillStyle = chartInk.ink;
-    fillRoundRect(ctx, boxX, boxY, textW, 22, 5);
-    ctx.fillStyle = chartInk.field;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillText(tagText, boxX + 6, boxY + 11);
-  }
-
   // ====== 更新按鈕狀態 ======
   function updatePlayButtons() {
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
@@ -870,9 +714,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     outVx.textContent = `${p.vx.toFixed(2)} m/s`;
     outVy.textContent = `${(p.vy0 - state.g * state.t).toFixed(2)} m/s`;
 
-    outHRRatio.textContent = p.R > 1e-9 ? (p.H / p.R).toFixed(3) : "—";
-    outQuarterTan.hidden = !(state.y0 === 0 && p.R > 1e-9);
-    outQuarterTan.textContent = " = ¼ tan θ";
     hrFormulaBox.textContent = state.theta > 0
       ? "H = y₀ + (v₀ sin θ)² / (2g)"
       : "H = y₀";
@@ -886,8 +727,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     drawTrajectory();
     if (state.mode === "analysis") {
-      if (state.chart === "hr") drawHRChart();
-      else if (state.chart === "r") drawAngleChart(rCanvas, "R");
+      if (state.chart === "r") drawAngleChart(rCanvas, "R");
       else drawAngleChart(hCanvas, "H");
     }
   }
@@ -1090,42 +930,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     canvas.addEventListener("pointercancel", () => { dragging = false; });
   }
 
-  function bindHRChartScrub(canvas) {
-    let dragging = false;
-    function updateFromPointer(clientX, clientY) {
-      if (!hrCurvePoints.length) return;
-      const rect = canvas.getBoundingClientRect();
-      const mx = clientX - rect.left;
-      const my = clientY - rect.top;
-      let bestDeg = state.theta;
-      let bestDist = Infinity;
-      for (const pt of hrCurvePoints) {
-        const d = (pt.px - mx) ** 2 + (pt.py - my) ** 2;
-        if (d < bestDist) {
-          bestDist = d;
-          bestDeg = Math.round(pt.deg);
-        }
-      }
-      if (bestDeg !== state.theta) {
-        state.theta = bestDeg;
-        sliderTheta.value = bestDeg;
-        onParamChanged();
-      }
-    }
-
-    canvas.addEventListener("pointerdown", (e) => {
-      dragging = true;
-      canvas.setPointerCapture(e.pointerId);
-      updateFromPointer(e.clientX, e.clientY);
-    });
-    canvas.addEventListener("pointermove", (e) => { if (dragging) updateFromPointer(e.clientX, e.clientY); });
-    canvas.addEventListener("pointerup", () => { dragging = false; });
-    canvas.addEventListener("pointercancel", () => { dragging = false; });
-  }
-
   bindAngleChartScrub(hCanvas);
   bindAngleChartScrub(rCanvas);
-  bindHRChartScrub(hrCanvas);
 
   const main = document.querySelector("main");
   function selectChart(chart) {
@@ -1159,7 +965,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   ro.observe(trajCanvas.parentElement);
   ro.observe(hCanvas.parentElement);
   ro.observe(rCanvas.parentElement);
-  ro.observe(hrCanvas.parentElement);
 
   updatePlayButtons();
   updateUI();
