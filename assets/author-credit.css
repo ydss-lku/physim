@@ -36,17 +36,14 @@ html[data-page="falling-with-air-resistance"] main > [data-author-credit] {
   }
 }
 
-[data-author-credit]:has(.usage-notice) {
-  flex-direction: column;
-}
-[data-author-credit] .usage-notice {
+[data-author-credit]:has(.usage-link) { flex-direction: column; }
+[data-author-credit] .usage-link {
   display: block;
-  max-width: 78ch;
-  margin: 0.5rem auto 0;
-  padding-inline: 0.5rem;
-  font: normal 0.875rem/1.55 system-ui, sans-serif;
-  text-align: start;
-  white-space: normal;
+  width: fit-content;
+  margin: 0.2rem auto 0;
+  padding: 0.2rem;
+  color: inherit;
+  font: normal 0.8125rem/1.4 system-ui, sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
 }
-.usage-notice > [lang] { display: block; }
-.usage-notice > [lang="zh-HK"] { margin-top: 0.25rem; }
