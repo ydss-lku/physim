@@ -61,3 +61,6 @@ html[data-theme=tech] {
   background:var(--toggle-bg); color:var(--toggle-ink); border-color:var(--trace);
 }
 html[data-theme=tech] #outVx,html[data-theme=tech] #outVy {color:var(--trace)}
+
+#trajCanvas{touch-action:none;cursor:crosshair}
+main canvas:active{outline:2px solid var(--trace);outline-offset:-2px;cursor:grabbing}

@@ -57,7 +57,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const btnRangePos = document.getElementById("btnRangePos");
   const btnRangeFull = document.getElementById("btnRangeFull");
   const btnLaunch = document.getElementById("btnLaunch");
-  const btnPauseResume = document.getElementById("btnPauseResume");
   const btnResetTime = document.getElementById("btnResetTime");
   const btnSlow = document.getElementById("btnSlow");
   const btnResetDefaults = document.getElementById("btnResetDefaults");
@@ -218,6 +217,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
 
   // ====== 1. 繪製即時拋射軌跡圖 ======
+  let trajectoryView;
   function drawTrajectory() {
     const { ctx, w, h } = setupCanvas(trajCanvas);
     ctx.clearRect(0, 0, w, h);
@@ -238,6 +238,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const toPxX = (x) => pad.left + x * scaleX;
     const toPxY = (y) => pad.top + plotH - y * scaleY;
 
+    trajectoryView = { p, toPxX, toPxY };
     // 格線
     const xStep = niceStep(worldMaxX, 6);
     const yStep = niceStep(worldMaxY, 5);
@@ -863,25 +864,14 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 更新按鈕狀態 ======
   function updatePlayButtons() {
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    const canMove = p.T > 0;
-    btnLaunch.disabled = !canMove;
+    btnLaunch.disabled = p.T <= 0;
+    const label = state.playing ? labLanguage.pick("Pause","暫停")
+      : state.t >= p.T && p.T > 0 ? labLanguage.pick("Replay","重播")
+      : state.t > 0 ? labLanguage.pick("Resume","繼續") : labLanguage.pick("Play","播放");
+    btnLaunch.title = label;
+    btnLaunch.setAttribute("aria-label", label);
+    btnLaunch.querySelector("path").setAttribute("d", state.playing ? "M8 5v14 M16 5v14" : "M6 4l14 8-14 8z");
 
-    if (!canMove) {
-      btnPauseResume.disabled = true;
-      setTransport(false);
-      return;
-    }
-
-    if (state.playing) {
-      btnPauseResume.disabled = false;
-      setTransport(false);
-    } else if (state.t > 0 && state.t < p.T - 1e-6) {
-      btnPauseResume.disabled = false;
-      setTransport(true);
-    } else {
-      btnPauseResume.disabled = true;
-      setTransport(false);
-    }
   }
 
   // ====== 更新介面數據與重繪 ======
@@ -966,18 +956,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
   }
 
-  // 永遠從 t = 0 開始發射
-  function launchFromStart() {
-    const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    if (p.T <= 0) return;
-    stopAnimationLoop();
-    state.t = 0;
-    state.playing = true;
-    updatePlayButtons();
-    updateUI();
-    animFrameId = requestAnimationFrame(animate);
-  }
-
   function togglePauseResume() {
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
     if (p.T <= 0) return;
@@ -987,7 +965,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       stopAnimationLoop();
     } else {
       if (state.t >= p.T - 1e-6) state.t = 0;
-      state.playing = true;
       stopAnimationLoop();
       state.playing = true;
       animFrameId = requestAnimationFrame(animate);
@@ -1064,8 +1041,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   btnG98.addEventListener("click", () => setG(9.8));
   btnG10.addEventListener("click", () => setG(10));
 
-  btnLaunch.addEventListener("click", launchFromStart);
-  btnPauseResume.addEventListener("click", togglePauseResume);
+  btnLaunch.addEventListener("click", togglePauseResume);
+
   btnResetTime.addEventListener("click", onParamChanged);
 
   btnSlow.addEventListener("click", () => {
@@ -1089,6 +1066,45 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   chkStrobe.addEventListener("change", (e) => { state.showStrobe = e.target.checked; updateUI(); });
   chkCompare.addEventListener("change", (e) => { state.showCompare = e.target.checked; updateUI(); });
+
+  function seekTrajectory(event) {
+    const { p, toPxX, toPxY } = trajectoryView;
+    const bounds = trajCanvas.getBoundingClientRect();
+    const x = event.clientX - bounds.left;
+    const y = event.clientY - bounds.top;
+    let best = state.t;
+    let distance = Infinity;
+    // A vertical launch visits the same height twice. Keep the nearest time branch.
+    for (let step = 0; step <= 500; step++) {
+      const t = p.T * step / 500;
+      const point = posAtTime(t, p);
+      const d = (toPxX(point.x) - x) ** 2 + (toPxY(point.y) - y) ** 2;
+      if (d < distance - 0.000001 || (Math.abs(d - distance) <= 0.000001 && Math.abs(t - state.t) < Math.abs(best - state.t))) {
+        distance = d;
+        best = t;
+      }
+    }
+    state.t = best;
+    updatePlayButtons();
+    updateUI();
+  }
+  let graphPress;
+  trajCanvas.addEventListener("pointerdown", event => {
+    if (!event.isPrimary || event.button !== 0) return;
+    graphPress = { id: event.pointerId, x: event.clientX, y: event.clientY, dragging: false };
+    trajCanvas.setPointerCapture(event.pointerId);
+    if (state.playing) {
+      state.playing = false;
+      stopAnimationLoop();
+      updatePlayButtons();
+    } else seekTrajectory(event);
+  });
+  trajCanvas.addEventListener("pointermove", event => {
+    if (graphPress?.id !== event.pointerId) return;
+    if (Math.hypot(event.clientX - graphPress.x, event.clientY - graphPress.y) >= 3) graphPress.dragging = true;
+    if (graphPress.dragging) seekTrajectory(event);
+  });
+  trajCanvas.addEventListener("lostpointercapture", () => { graphPress = null; });
 
   function bindAngleChartScrub(canvas) {
     let dragging = false;
