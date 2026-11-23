@@ -11,7 +11,8 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     t: 0,
     playing: false,
     speedFactor: 1.0,
-    showVectors: true,
+    mode: "trajectory",
+    chart: "r",
     showStrobe: true,
     showCompare: false
   };
@@ -55,7 +56,6 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
   const btnG98 = document.getElementById("btnG98");
   const btnG10 = document.getElementById("btnG10");
 
-  const chkVectors = document.getElementById("chkVectors");
   const chkStrobe = document.getElementById("chkStrobe");
   const chkCompare = document.getElementById("chkCompare");
 
@@ -289,7 +289,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     }
 
     // 對照線 (+45° 參考軌跡)
-    if (state.showCompare && state.theta !== 45) {
+    if (state.mode === "analysis" && state.showCompare && state.theta !== 45) {
       const p45 = calcPhysics(45, state.v0, state.y0, state.g);
       ctx.save();
       ctx.strokeStyle = "#94a3b8";
@@ -327,7 +327,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     }
 
     // 等時距閃光點
-    if (state.showStrobe && p.T > 0) {
+    if (state.mode === "trajectory" && state.showStrobe && p.T > 0) {
       const dt = p.T / 10;
       for (let i = 0; i <= 10; i++) {
         const tt = i * dt;
@@ -358,7 +358,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     }
 
     // 最大高度 H 標記
-    if (p.H > 0) {
+    if (state.mode !== "velocity" && p.H > 0) {
       const peakX = state.theta > 0 ? p.vx * p.tPeak : 0;
       const pxPeak = toPxX(peakX);
       const pyPeak = toPxY(p.H);
@@ -388,7 +388,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     }
 
     // 水平射程 R 標記
-    if (p.R > 0.1) {
+    if (state.mode !== "velocity" && p.R > 0.1) {
       const pxEnd = toPxX(p.R);
       const pyGround = toPxY(0);
 
@@ -434,7 +434,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     const ballPxX = toPxX(cur.x);
     const ballPxY = toPxY(cur.y);
 
-    if (state.showVectors) {
+    if (state.mode === "velocity") {
       const vImpact = Math.sqrt(state.v0 * state.v0 + 2 * state.g * state.y0);
       const vRef = Math.max(state.v0, vImpact * 0.78);
       const targetLenPx = Math.min(plotW, plotH) * 0.36;
@@ -485,7 +485,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     ctx.strokeStyle = ink("#0f172a", "#e6f2f3");
     ctx.stroke();
 
-    if (state.showVectors) {
+    if (state.mode === "velocity") {
       ctx.font = "bold 13px sans-serif";
       ctx.textAlign = "right";
       ctx.textBaseline = "top";
@@ -883,7 +883,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     outT.textContent = `${p.T.toFixed(2)} s`;
     outOptAngle.textContent = `${p.optDeg.toFixed(1)}°`;
     outVx.textContent = `${p.vx.toFixed(2)} m/s`;
-    outVy.textContent = `${p.vy0.toFixed(2)} m/s`;
+    outVy.textContent = `${(p.vy0 - state.g * state.t).toFixed(2)} m/s`;
 
     outHRRatio.textContent = p.R > 1e-9 ? (p.H / p.R).toFixed(3) : "—";
     outQuarterTan.hidden = !(state.y0 === 0 && p.R > 1e-9);
@@ -900,9 +900,11 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     livePosTag.textContent = `t = ${curT.toFixed(2)} s ｜ x = ${cur.x.toFixed(1)} m, y = ${cur.y.toFixed(1)} m`;
 
     drawTrajectory();
-    drawAngleChart(hCanvas, "H");
-    drawAngleChart(rCanvas, "R");
-    drawHRChart();
+    if (state.mode === "analysis") {
+      if (state.chart === "hr") drawHRChart();
+      else if (state.chart === "r") drawAngleChart(rCanvas, "R");
+      else drawAngleChart(hCanvas, "H");
+    }
   }
 
   // ====== 動畫迴圈 (確保從 t = 0 穩定起飛，絕不中途跳動) ======
@@ -1071,7 +1073,6 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     setG(9.8);
   });
 
-  chkVectors.addEventListener("change", (e) => { state.showVectors = e.target.checked; updateUI(); });
   chkStrobe.addEventListener("change", (e) => { state.showStrobe = e.target.checked; updateUI(); });
   chkCompare.addEventListener("change", (e) => { state.showCompare = e.target.checked; updateUI(); });
 
@@ -1138,6 +1139,33 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
   bindAngleChartScrub(rCanvas);
   bindHRChartScrub(hrCanvas);
 
+  const main = document.querySelector("main");
+  function selectChart(chart) {
+    state.chart = chart;
+    for (const panel of main.querySelectorAll("[data-plot]")) panel.hidden = panel.dataset.plot !== chart;
+    for (const button of main.querySelectorAll("button[data-chart]")) {
+      button.setAttribute("aria-pressed", String(button.dataset.chart === chart));
+    }
+    updateUI();
+  }
+  for (const button of main.querySelectorAll("button[data-chart]")) {
+    button.addEventListener("click", () => selectChart(button.dataset.chart));
+  }
+  for (const button of main.querySelectorAll("button[data-mode]")) {
+    button.addEventListener("click", () => {
+      state.mode = main.dataset.mode = button.dataset.mode;
+      if (state.mode === "analysis" && state.playing) {
+        state.playing = false;
+        stopAnimationLoop();
+      }
+      for (const choice of main.querySelectorAll("button[data-mode]")) {
+        choice.setAttribute("aria-pressed", String(choice === button));
+      }
+      updatePlayButtons();
+      updateUI();
+    });
+  }
+  selectChart(state.chart);
   const ro = new ResizeObserver(() => updateUI());
   ro.observe(trajCanvas.parentElement);
   ro.observe(hCanvas.parentElement);
