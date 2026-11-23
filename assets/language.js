@@ -160,6 +160,46 @@
     return target;
   }
   let button;
+  function addShareButton(nav) {
+    const share = document.createElement('button');
+    share.type = 'button';
+    share.textContent = '↗';
+    share.style.cssText = 'flex:none;min-width:32px;min-height:36px;padding:3px 7px;font-size:20px';
+    const status = document.createElement('span');
+    status.setAttribute('role','status');
+    status.style.cssText = 'position:fixed;top:4rem;right:1rem;z-index:9999;background:#24342e;color:white;padding:6px 12px;border-radius:5px;font:14px system-ui';
+    status.hidden = true;
+    document.body.append(status);
+    const labelShare = () => {
+      const name = pick('Share this page','分享此頁');
+      share.title = name;
+      share.setAttribute('aria-label',name);
+    };
+    labelShare();
+    roots.push(labelShare);
+    let timer;
+    share.addEventListener('click',async () => {
+      const url = new URL(location.pathname,location.origin).href;
+      if (navigator.share) {
+        try {
+          await navigator.share({title:document.title,url});
+          return;
+        } catch (error) {
+          if (error.name === 'AbortError') return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        status.textContent = pick('Link copied','已複製連結');
+        status.hidden = false;
+        clearTimeout(timer);
+        timer = setTimeout(() => { status.hidden = true; },2500);
+      } catch {
+        window.prompt(pick('Copy this link','請複製以下連結'),url);
+      }
+    });
+    nav.append(share);
+  }
   function updateButton(){
     button.lang=pick('zh-HK','en');
     button.textContent=pick('繁中','English');
@@ -185,6 +225,7 @@
       const updateTitle=()=>{title.textContent=title.dataset.en ? pick(title.dataset.en,title.dataset.zh) : label(raw);};
       roots.push(updateTitle);updateTitle();
     }
+    addShareButton(nav);
     watch(document.body);if(shadow)watch(shadow);
     window.addEventListener('storage',e=>{if(e.key===key && (e.newValue==='en'||e.newValue==='zh-HK') && e.newValue!==language)set(e.newValue);});
   });
