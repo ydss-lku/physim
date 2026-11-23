@@ -149,11 +149,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.fill();
   }
 
-  function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 5, headSize = 15) {
+  function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 5, headSize = 15, dash = []) {
     const dx = x2 - x1;
     const dy = y2 - y1;
     const len = Math.hypot(dx, dy);
     if (len < 3) return;
+    headSize = Math.min(headSize, len * 0.45);
     const angle = Math.atan2(dy, dx);
 
     const lineEndX = x2 - (headSize * 0.55) * Math.cos(angle);
@@ -167,15 +168,17 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     ctx.beginPath();
     ctx.moveTo(x1, y1);
-    ctx.lineTo(lineEndX, lineEndY);
+    ctx.setLineDash(dash);
+    ctx.lineTo(dash.length ? x2 : lineEndX, dash.length ? y2 : lineEndY);
     ctx.stroke();
 
+    ctx.setLineDash([]);
     ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - headSize * Math.cos(angle - Math.PI / 6.5), y2 - headSize * Math.sin(angle - Math.PI / 6.5));
+    ctx.moveTo(x2 - headSize * Math.cos(angle - Math.PI / 6.5), y2 - headSize * Math.sin(angle - Math.PI / 6.5));
+    ctx.lineTo(x2, y2);
     ctx.lineTo(x2 - headSize * Math.cos(angle + Math.PI / 6.5), y2 - headSize * Math.sin(angle + Math.PI / 6.5));
-    ctx.closePath();
-    ctx.fill();
+    if (dash.length) ctx.stroke();
+    else { ctx.closePath(); ctx.fill(); }
     ctx.restore();
   }
 
@@ -317,8 +320,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     // 拋射軌跡線
     if (p.T > 0) {
       ctx.save();
-      ctx.strokeStyle = chartInk.trace;
-      ctx.lineWidth = 4.5;
+      ctx.strokeStyle = state.mode === "velocity" ? chartInk.axis : chartInk.trace;
+      ctx.lineWidth = state.mode === "velocity" ? 1.5 : 4.5;
       ctx.lineCap = "round";
       ctx.beginPath();
       const steps = 120;
@@ -451,6 +454,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const tipX = ballPxX + cur.vx * vScale;
       const tipY = ballPxY - cur.vy * vScale;
 
+      const horizontalOnly = Math.abs(cur.vy) < 1e-9;
+      const verticalOnly = Math.abs(cur.vx) < 1e-9;
       if (Math.abs(cur.vx) > 0.2 && Math.abs(cur.vy) > 0.2) {
         ctx.save();
         ctx.strokeStyle = chartInk.guide;
@@ -464,14 +469,14 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         ctx.restore();
       }
 
-      if (Math.abs(cur.vx) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, tipX, ballPxY, chartInk.component, 5, 15);
+      if (!horizontalOnly && Math.abs(cur.vx) > 0.1) {
+        drawArrow(ctx, ballPxX, ballPxY, tipX, ballPxY, chartInk.component, 2.5, 12, [9, 5]);
         const lblY = cur.vy >= 0 ? ballPxY + 20 : ballPxY - 20;
         drawVectorLabel(ctx, `vₓ=${cur.vx.toFixed(1)}`, (ballPxX + tipX) / 2, lblY, chartInk.component, w, h);
       }
 
-      if (Math.abs(cur.vy) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, ballPxX, tipY, chartInk.component, 5, 15);
+      if (!verticalOnly && Math.abs(cur.vy) > 0.1) {
+        drawArrow(ctx, ballPxX, ballPxY, ballPxX, tipY, chartInk.component, 2.5, 12, [2, 4]);
         drawVectorLabel(ctx, `vᵧ=${cur.vy.toFixed(1)}`, ballPxX - 42, (ballPxY + tipY) / 2, chartInk.component, w, h);
       }
 
@@ -480,7 +485,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         drawArrow(ctx, ballPxX, ballPxY, tipX, tipY, chartInk.trace, 5.5, 17);
         const offsetX = cur.vx >= 0 ? 18 : -18;
         const offsetY = cur.vy >= 0 ? -16 : 16;
-        drawVectorLabel(ctx, `v=${vTotal.toFixed(1)}`, tipX + offsetX, tipY + offsetY, chartInk.trace, w, h);
+        const name = horizontalOnly ? "v = vₓ" : verticalOnly ? (cur.vy < 0 ? "v = |vᵧ|" : "v = vᵧ") : "v";
+        drawVectorLabel(ctx, `${name}=${vTotal.toFixed(1)}`, tipX + offsetX, tipY + offsetY, chartInk.trace, w, h);
+      }
+      if (horizontalOnly || verticalOnly) {
+        const zero = horizontalOnly && verticalOnly ? "vₓ = vᵧ = 0" : horizontalOnly ? "vᵧ = 0" : "vₓ = 0";
+        drawVectorLabel(ctx, zero, ballPxX - 40, ballPxY + 19, chartInk.component, w, h);
       }
     }
 
@@ -497,12 +507,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.font = "bold 13px sans-serif";
       ctx.textAlign = "right";
       ctx.textBaseline = "top";
-      ctx.fillStyle = chartInk.trace;
-      ctx.fillText("━ v (m/s)", w - 16, 10);
       ctx.fillStyle = chartInk.component;
-      ctx.fillText("━ vₓ (m/s)", w - 16, 29);
-      ctx.fillStyle = chartInk.component;
-      ctx.fillText("━ vᵧ (m/s)", w - 16, 48);
+      ctx.fillText("m/s", w - 16, 10);
     }
   }
 
