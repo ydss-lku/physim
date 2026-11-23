@@ -11,7 +11,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 物理與介面狀態 (預設：θ = +45°, y0 = 0 m, 角度範圍 0° ~ +90°) ======
   const state = {
     theta: 45,
-    minTheta: 0,
+    minTheta: -90,
     maxTheta: 90,
     v0: 20,
     y0: 0,
@@ -39,7 +39,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const valY0 = document.getElementById("valY0");
 
   
-  const thetaQuickBtns = document.getElementById("thetaQuickBtns");
 
   const outH = document.getElementById("outH");
   const outR = document.getElementById("outR");
@@ -54,13 +53,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const livePosTag = document.getElementById("livePosTag");
   const timeLabel = document.getElementById("timeLabel");
 
-  const btnRangePos = document.getElementById("btnRangePos");
-  const btnRangeFull = document.getElementById("btnRangeFull");
   const btnLaunch = document.getElementById("btnLaunch");
   const btnSlow = document.getElementById("btnSlow");
-  const btnResetDefaults = document.getElementById("btnResetDefaults");
-  const btnG98 = document.getElementById("btnG98");
-  const btnG10 = document.getElementById("btnG10");
 
   const chkStrobe = document.getElementById("chkStrobe");
   const chkCompare = document.getElementById("chkCompare");
@@ -839,37 +833,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.fillText(tagText, boxX + 6, boxY + 11);
   }
 
-  // ====== 角度控制按鈕 ======
-  function rebuildAngleControls() {
-    sliderTheta.min = state.minTheta;
-    sliderTheta.max = state.maxTheta;
-    if (state.theta < state.minTheta) state.theta = state.minTheta;
-    if (state.theta > state.maxTheta) state.theta = state.maxTheta;
-    sliderTheta.value = state.theta;
-
-    if (state.minTheta === 0) {
-
-      const presets = [0, 15, 30, 45, 60, 75, 90];
-      thetaQuickBtns.innerHTML = presets.map(d =>
-        `<button class="btn-mini" data-theta="${d}">${d > 0 ? "+" + d : d}°</button>`
-      ).join("");
-    } else {
-
-      const presets = [-90, -45, 0, 30, 45, 60, 90];
-      thetaQuickBtns.innerHTML = presets.map(d =>
-        `<button class="btn-mini" data-theta="${d}">${d > 0 ? "+" + d : d}°</button>`
-      ).join("");
-    }
-
-    thetaQuickBtns.querySelectorAll("[data-theta]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.theta = parseInt(btn.dataset.theta, 10);
-        sliderTheta.value = state.theta;
-        onParamChanged();
-      });
-    });
-  }
-
   // ====== 更新按鈕狀態 ======
   function updatePlayButtons() {
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
@@ -990,24 +953,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
 
   // ====== 事件綁定 ======
-  btnRangePos.addEventListener("click", () => {
-    state.minTheta = 0;
-    state.maxTheta = 90;
-    btnRangePos.classList.add("active");
-    btnRangeFull.classList.remove("active");
-    rebuildAngleControls();
-    onParamChanged();
-  });
-
-  btnRangeFull.addEventListener("click", () => {
-    state.minTheta = -90;
-    state.maxTheta = 90;
-    btnRangeFull.classList.add("active");
-    btnRangePos.classList.remove("active");
-    rebuildAngleControls();
-    onParamChanged();
-  });
-
   sliderTheta.addEventListener("input", (e) => {
     state.theta = parseInt(e.target.value, 10);
     onParamChanged();
@@ -1032,23 +977,19 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     updateUI();
   });
 
-  document.querySelectorAll("[data-y0]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.y0 = parseInt(btn.dataset.y0, 10);
-      sliderY0.value = state.y0;
-      onParamChanged();
+  for (const scale of document.querySelectorAll(".scale-ticks")) {
+    const slider = document.getElementById(scale.dataset.slider);
+    scale.addEventListener("click", event => {
+      const tick = event.target.closest("button");
+      if (!tick) return;
+      slider.value = tick.value;
+      slider.dispatchEvent(new Event("input", { bubbles: true }));
     });
-  });
-
-  function setG(val) {
-    state.g = val;
-    btnG98.classList.toggle("active", val === 9.8);
-    btnG10.classList.toggle("active", val === 10);
-    onParamChanged();
   }
-
-  btnG98.addEventListener("click", () => setG(9.8));
-  btnG10.addEventListener("click", () => setG(10));
+  document.getElementById("gravityValue").addEventListener("change", event => {
+    state.g = Number(event.target.value);
+    onParamChanged();
+  });
 
   btnLaunch.addEventListener("click", togglePauseResume);
 
@@ -1056,20 +997,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   btnSlow.addEventListener("click", () => {
     state.speedFactor = state.speedFactor === 1.0 ? 0.5 : 1.0;
     btnSlow.textContent = state.speedFactor === 1.0 ? "1×" : "½×";
-  });
-
-  btnResetDefaults.addEventListener("click", () => {
-    state.minTheta = 0;
-    state.maxTheta = 90;
-    state.theta = 45;
-    state.v0 = 20;
-    state.y0 = 0;
-    btnRangePos.classList.add("active");
-    btnRangeFull.classList.remove("active");
-    rebuildAngleControls();
-    sliderV0.value = 20;
-    sliderY0.value = 0;
-    setG(9.8);
   });
 
   chkStrobe.addEventListener("change", (e) => { state.showStrobe = e.target.checked; updateUI(); });
@@ -1210,6 +1137,5 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   ro.observe(rCanvas.parentElement);
   ro.observe(hrCanvas.parentElement);
 
-  rebuildAngleControls();
   updatePlayButtons();
   updateUI();

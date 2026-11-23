@@ -64,3 +64,10 @@ html[data-theme=tech] #outVx,html[data-theme=tech] #outVy {color:var(--trace)}
 
 #trajCanvas{touch-action:none;cursor:crosshair}
 main canvas:active{outline:2px solid var(--trace);outline-offset:-2px;cursor:grabbing}
+
+.setting:has(.scale-ticks){padding-inline:15px}
+.scale-ticks{position:relative;grid-column:1/-1;height:44px;margin-inline:8px}
+.scale-ticks button{position:absolute;top:0;transform:translateX(-50%);padding:9px 0 0;width:44px;font-size:13px;font-weight:500;color:var(--muted);border:0;background:transparent}
+.scale-ticks button::before{content:"";position:absolute;top:0;left:50%;height:6px;border-left:1px solid currentColor}
+.scale-ticks button:hover,.scale-ticks button:focus-visible{color:var(--ink);background:var(--toggle-bg)}
+.gravity select{font:inherit;min-height:44px;color:var(--ink);background:var(--btn);border:1px solid var(--line)}
