@@ -35,3 +35,18 @@ html[data-page="falling-with-air-resistance"] main > [data-author-credit] {
     margin-top: 16px;
   }
 }
+
+[data-author-credit]:has(.usage-notice) {
+  flex-direction: column;
+}
+[data-author-credit] .usage-notice {
+  display: block;
+  max-width: 78ch;
+  margin: 0.5rem auto 0;
+  padding-inline: 0.5rem;
+  font: normal 0.875rem/1.55 system-ui, sans-serif;
+  text-align: start;
+  white-space: normal;
+}
+.usage-notice > [lang] { display: block; }
+.usage-notice > [lang="zh-HK"] { margin-top: 0.25rem; }
