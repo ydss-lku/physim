@@ -160,27 +160,23 @@
     return target;
   }
   let button;
-  function addShareButton(nav) {
+  function addShareButton(heading) {
     const share = document.createElement('button');
     share.type = 'button';
-    const compact = nav.tagName === 'NAV';
+
     const icon = document.createElementNS('http://www.w3.org/2000/svg','svg');
     icon.setAttribute('viewBox','0 0 24 24');
     icon.setAttribute('width','20');
     icon.setAttribute('height','20');
     icon.setAttribute('aria-hidden','true');
     icon.innerHTML = '<path d="M12 14V3m-4 4 4-4 4 4M7 10H5v10h14V10h-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>';
-    const caption = document.createElement('span');
+
     share.append(icon);
-    if (!compact) share.append(caption);
-    share.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;box-sizing:border-box;cursor:pointer;padding:4px 8px;font:inherit';
+
+    share.style.cssText = 'display:inline-grid;place-items:center;align-self:center;flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;margin:0;padding:0;cursor:pointer;background:transparent;border:0;box-shadow:none';
     const paint = () => {
       const dark = [html.dataset.style,html.dataset.theme].includes('tech');
-      Object.assign(share.style,{
-        color:dark?'#a6eeef':'#294d40',background:dark?'linear-gradient(145deg,#20343c,#102027)':'#f4f4ec',
-        border:dark?'1px solid #54858b':'1px solid #abb9aa',borderRadius:dark?'0':'7px',
-        boxShadow:dark?'inset 0 0 0 2px #122128, 0 0 5px #50eeee26':'0 1px 2px #23432d18'
-      });
+      share.style.color = dark ? '#a6eeef' : '#315847';
     };
     paint();
     new MutationObserver(paint).observe(html,{attributes:true,attributeFilter:['data-theme','data-style']});
@@ -191,7 +187,7 @@
     document.body.append(status);
     const labelShare = () => {
       const name = pick('Share this page','分享此頁');
-      caption.textContent = pick('Share','分享');
+
       share.title = name;
       share.setAttribute('aria-label',name);
     };
@@ -218,7 +214,12 @@
         window.prompt(pick('Copy this link','請複製以下連結'),url);
       }
     });
-    nav.append(share);
+    const row = document.createElement('div');
+    row.className = 'lab-share-title';
+    row.style.cssText = 'display:flex;align-items:center;gap:4px;min-width:0;max-width:100%';
+    heading.before(row);
+    row.append(heading,share);
+    heading.style.minWidth = '0';
   }
   function updateButton(){
     button.lang=pick('zh-HK','en');
@@ -245,9 +246,9 @@
       const updateTitle=()=>{title.textContent=title.dataset.en ? pick(title.dataset.en,title.dataset.zh) : label(raw);};
       roots.push(updateTitle);updateTitle();
     }
-    addShareButton(nav);
-    const credit = document.querySelector('[data-author-credit]');
-    if (credit) addShareButton(credit);
+    const heading = document.querySelector('header .brand:not(:has(h1))') && location.pathname.endsWith('motion-graph-practice.html')
+      ? document.querySelector('header .brand') : document.querySelector('h1');
+    if (heading) addShareButton(heading);
     watch(document.body);if(shadow)watch(shadow);
     window.addEventListener('storage',e=>{if(e.key===key && (e.newValue==='en'||e.newValue==='zh-HK') && e.newValue!==language)set(e.newValue);});
   });
