@@ -57,7 +57,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const btnRangePos = document.getElementById("btnRangePos");
   const btnRangeFull = document.getElementById("btnRangeFull");
   const btnLaunch = document.getElementById("btnLaunch");
-  const btnResetTime = document.getElementById("btnResetTime");
   const btnSlow = document.getElementById("btnSlow");
   const btnResetDefaults = document.getElementById("btnResetDefaults");
   const btnG98 = document.getElementById("btnG98");
@@ -1043,7 +1042,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   btnLaunch.addEventListener("click", togglePauseResume);
 
-  btnResetTime.addEventListener("click", onParamChanged);
 
   btnSlow.addEventListener("click", () => {
     state.speedFactor = state.speedFactor === 1.0 ? 0.5 : 1.0;
