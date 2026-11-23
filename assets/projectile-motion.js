@@ -126,7 +126,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
     const ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return { ctx, w, h };
+    const strokeScale = Math.max(0.5, Math.min(1, w / 700));
+    return { ctx, w, h, strokeScale };
   }
 
   function fillRoundRect(ctx, x, y, w, h, r) {
@@ -180,7 +181,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.restore();
   }
 
-  function drawVectorLabel(ctx, text, x, y, color, canvasW, canvasH) {
+  function drawVectorLabel(ctx, text, x, y, color, canvasW, canvasH, strokeScale) {
     ctx.save();
     ctx.font = "bold 13px sans-serif";
     const tw = ctx.measureText(text).width + 10;
@@ -192,7 +193,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     ctx.fillStyle = chartInk.field;
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 1.8 * strokeScale;
     fillRoundRect(ctx, bx, by, tw, th, 5);
     ctx.stroke();
 
@@ -218,7 +219,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 1. 繪製即時拋射軌跡圖 ======
   let trajectoryView;
   function drawTrajectory() {
-    const { ctx, w, h } = setupCanvas(trajCanvas);
+    const { ctx, w, h, strokeScale } = setupCanvas(trajCanvas);
     ctx.clearRect(0, 0, w, h);
 
     const pad = { left: 62, right: 42, top: 32, bottom: 48 };
@@ -243,7 +244,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const yStep = niceStep(worldMaxY, 5);
 
     ctx.strokeStyle = chartInk.grid;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * strokeScale;
     ctx.font = "bold 13px sans-serif";
     ctx.fillStyle = chartInk.muted;
 
@@ -274,7 +275,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     // 主軸
     ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 * strokeScale;
     ctx.beginPath();
     ctx.moveTo(pad.left, pad.top);
     ctx.lineTo(pad.left, pad.top + plotH);
@@ -294,7 +295,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const platBot = toPxY(0);
       ctx.fillStyle = chartInk.grid;
       ctx.strokeStyle = chartInk.axis;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * strokeScale;
       ctx.fillRect(pad.left - 22, platTop, 22, platBot - platTop);
       ctx.strokeRect(pad.left - 22, platTop, 22, platBot - platTop);
     }
@@ -304,7 +305,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const p45 = calcPhysics(45, state.v0, state.y0, state.g);
       ctx.save();
       ctx.strokeStyle = chartInk.guide;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 3 * strokeScale;
       ctx.setLineDash([8, 6]);
       ctx.beginPath();
       for (let i = 0; i <= 80; i++) {
@@ -321,7 +322,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if (p.T > 0) {
       ctx.save();
       ctx.strokeStyle = state.mode === "velocity" ? chartInk.axis : chartInk.trace;
-      ctx.lineWidth = state.mode === "velocity" ? 1.5 : 4.5;
+      ctx.lineWidth = (state.mode === "velocity" ? 1.5 : 4.5) * strokeScale;
       ctx.lineCap = "round";
       ctx.beginPath();
       const steps = 120;
@@ -349,7 +350,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         if (i > 0 && p.vx > 0) {
           ctx.save();
           ctx.strokeStyle = chartInk.guide;
-          ctx.lineWidth = 1.8;
+          ctx.lineWidth = 1.8 * strokeScale;
           ctx.setLineDash([4, 4]);
           ctx.beginPath();
           ctx.moveTo(px, py);
@@ -359,10 +360,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         }
 
         ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.arc(px, py, 5 * strokeScale, 0, Math.PI * 2);
         ctx.fillStyle = chartInk.field;
         ctx.fill();
-        ctx.lineWidth = 2.8;
+        ctx.lineWidth = 2.8 * strokeScale;
         ctx.strokeStyle = chartInk.trace;
         ctx.stroke();
       }
@@ -377,7 +378,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
       ctx.save();
       ctx.strokeStyle = chartInk.measure;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.5 * strokeScale;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
       ctx.moveTo(pxPeak, pyPeak);
@@ -386,7 +387,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.restore();
 
       ctx.beginPath();
-      ctx.arc(pxPeak, pyPeak, 6, 0, Math.PI * 2);
+      ctx.arc(pxPeak, pyPeak, 6 * strokeScale, 0, Math.PI * 2);
       ctx.fillStyle = chartInk.measure;
       ctx.fill();
 
@@ -404,7 +405,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const pyGround = toPxY(0);
 
       ctx.beginPath();
-      ctx.arc(pxEnd, pyGround, 6.5, 0, Math.PI * 2);
+      ctx.arc(pxEnd, pyGround, 6.5 * strokeScale, 0, Math.PI * 2);
       ctx.fillStyle = chartInk.measure;
       ctx.fill();
 
@@ -428,7 +429,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     ctx.save();
     ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 1.8 * strokeScale;
     ctx.setLineDash([6, 4]);
     ctx.beginPath();
     ctx.moveTo(startX, startY);
@@ -466,7 +467,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       if (Math.abs(cur.vx) > 0.2 && Math.abs(cur.vy) > 0.2) {
         ctx.save();
         ctx.strokeStyle = chartInk.guide;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * strokeScale;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
         ctx.moveTo(tipX, ballPxY);
@@ -477,36 +478,36 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       }
 
       if (!horizontalOnly && Math.abs(cur.vx) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, tipX, ballPxY, chartInk.component, 2.5, 12, [9, 5]);
+        drawArrow(ctx, ballPxX, ballPxY, tipX, ballPxY, chartInk.component, 2.5 * strokeScale, 12 * strokeScale, [9, 5]);
         const lblY = cur.vy >= 0 ? ballPxY + 20 : ballPxY - 20;
-        drawVectorLabel(ctx, `vₓ=${cur.vx.toFixed(1)}`, (ballPxX + tipX) / 2, lblY, chartInk.component, w, h);
+        drawVectorLabel(ctx, `vₓ=${cur.vx.toFixed(1)}`, (ballPxX + tipX) / 2, lblY, chartInk.component, w, h, strokeScale);
       }
 
       if (!verticalOnly && Math.abs(cur.vy) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, ballPxX, tipY, chartInk.component, 2.5, 12, [2, 4]);
-        drawVectorLabel(ctx, `vᵧ=${cur.vy.toFixed(1)}`, ballPxX - 42, (ballPxY + tipY) / 2, chartInk.component, w, h);
+        drawArrow(ctx, ballPxX, ballPxY, ballPxX, tipY, chartInk.component, 2.5 * strokeScale, 12 * strokeScale, [2, 4]);
+        drawVectorLabel(ctx, `vᵧ=${cur.vy.toFixed(1)}`, ballPxX - 42, (ballPxY + tipY) / 2, chartInk.component, w, h, strokeScale);
       }
 
       const vTotal = Math.hypot(cur.vx, cur.vy);
       if (vTotal > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, tipX, tipY, chartInk.trace, 5.5, 17);
+        drawArrow(ctx, ballPxX, ballPxY, tipX, tipY, chartInk.trace, 5.5 * strokeScale, 17 * strokeScale);
         const offsetX = cur.vx >= 0 ? 18 : -18;
         const offsetY = cur.vy >= 0 ? -16 : 16;
         const name = horizontalOnly ? "v = vₓ" : verticalOnly ? (cur.vy < 0 ? "v = |vᵧ|" : "v = vᵧ") : "v";
-        drawVectorLabel(ctx, `${name}=${vTotal.toFixed(1)}`, tipX + offsetX, tipY + offsetY, chartInk.trace, w, h);
+        drawVectorLabel(ctx, `${name}=${vTotal.toFixed(1)}`, tipX + offsetX, tipY + offsetY, chartInk.trace, w, h, strokeScale);
       }
       if (horizontalOnly || verticalOnly) {
         const zero = horizontalOnly && verticalOnly ? "vₓ = vᵧ = 0" : horizontalOnly ? "vᵧ = 0" : "vₓ = 0";
-        drawVectorLabel(ctx, zero, ballPxX - 40, ballPxY + 19, chartInk.component, w, h);
+        drawVectorLabel(ctx, zero, ballPxX - 40, ballPxY + 19, chartInk.component, w, h, strokeScale);
       }
     }
 
     // 拋體球本體
     ctx.beginPath();
-    ctx.arc(ballPxX, ballPxY, 10.5, 0, Math.PI * 2);
+    ctx.arc(ballPxX, ballPxY, 10.5 * strokeScale, 0, Math.PI * 2);
     ctx.fillStyle = chartInk.ink;
     ctx.fill();
-    ctx.lineWidth = 3.2;
+    ctx.lineWidth = 3.2 * strokeScale;
     ctx.strokeStyle = chartInk.ink;
     ctx.stroke();
 
@@ -521,7 +522,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   // ====== 2. 繪製 H(θ) 與 R(θ) 圖表 ======
   function drawAngleChart(canvas, type) {
-    const { ctx, w, h } = setupCanvas(canvas);
+    const { ctx, w, h, strokeScale } = setupCanvas(canvas);
     ctx.clearRect(0, 0, w, h);
 
     const isH = type === "H";
@@ -543,7 +544,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const toPxY = (val) => pad.top + plotH - (val / maxY) * plotH;
 
     ctx.strokeStyle = chartInk.grid;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * strokeScale;
     ctx.font = "bold 11.5px sans-serif";
     ctx.fillStyle = chartInk.muted;
 
@@ -574,7 +575,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if (minDeg < 0) {
       ctx.save();
       ctx.strokeStyle = chartInk.guide;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * strokeScale;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
       ctx.moveTo(toPxX(0), pad.top);
@@ -584,7 +585,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
 
     ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 2.6;
+    ctx.lineWidth = 2.6 * strokeScale;
     ctx.beginPath();
     ctx.moveTo(pad.left, pad.top);
     ctx.lineTo(pad.left, pad.top + plotH);
@@ -619,7 +620,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       else ctx.lineTo(points[i].px, points[i].py);
     }
     ctx.strokeStyle = mainColor;
-    ctx.lineWidth = 4.5;
+    ctx.lineWidth = 4.5 * strokeScale;
     ctx.lineJoin = "round";
     ctx.stroke();
 
@@ -629,7 +630,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const oy = toPxY(optP.R);
       ctx.save();
       ctx.strokeStyle = chartInk.trace;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * strokeScale;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.moveTo(ox, oy);
@@ -651,7 +652,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     ctx.save();
     ctx.strokeStyle = chartInk.ink;
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 1.6 * strokeScale;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
     ctx.moveTo(cx, pad.top);
@@ -660,10 +661,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.restore();
 
     ctx.beginPath();
-    ctx.arc(cx, cy, 7.5, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 7.5 * strokeScale, 0, Math.PI * 2);
     ctx.fillStyle = chartInk.field;
     ctx.fill();
-    ctx.lineWidth = 3.8;
+    ctx.lineWidth = 3.8 * strokeScale;
     ctx.strokeStyle = chartInk.ink;
     ctx.stroke();
 
@@ -686,7 +687,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 3. 繪製 H 與 R 關係圖 (H vs R) ======
   let hrCurvePoints = [];
   function drawHRChart() {
-    const { ctx, w, h } = setupCanvas(hrCanvas);
+    const { ctx, w, h, strokeScale } = setupCanvas(hrCanvas);
     ctx.clearRect(0, 0, w, h);
 
     const pad = { left: 52, right: 22, top: 24, bottom: 42 };
@@ -701,7 +702,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const toPxY = (heightVal) => pad.top + plotH - (heightVal / maxH) * plotH;
 
     ctx.strokeStyle = chartInk.grid;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * strokeScale;
     ctx.font = "bold 11.5px sans-serif";
     ctx.fillStyle = chartInk.muted;
 
@@ -730,7 +731,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
 
     ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 2.6;
+    ctx.lineWidth = 2.6 * strokeScale;
     ctx.beginPath();
     ctx.moveTo(pad.left, pad.top);
     ctx.lineTo(pad.left, pad.top + plotH);
@@ -762,7 +763,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       else ctx.lineTo(hrCurvePoints[i].px, hrCurvePoints[i].py);
     }
     ctx.strokeStyle = chartInk.trace;
-    ctx.lineWidth = 4.5;
+    ctx.lineWidth = 4.5 * strokeScale;
     ctx.lineJoin = "round";
     ctx.stroke();
 
@@ -773,7 +774,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.font = "bold 11px sans-serif";
 
     ctx.beginPath();
-    ctx.arc(toPxX(pOpt.R), toPxY(pOpt.H), 4.5, 0, Math.PI * 2);
+    ctx.arc(toPxX(pOpt.R), toPxY(pOpt.H), 4.5 * strokeScale, 0, Math.PI * 2);
     ctx.fillStyle = chartInk.measure;
     ctx.fill();
     ctx.textAlign = "right";
@@ -781,7 +782,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.fillText(`θ*=${env.optDeg.toFixed(0)}° (Rₘₐₓ)`, toPxX(pOpt.R) - 6, toPxY(pOpt.H) - 4);
 
     ctx.beginPath();
-    ctx.arc(toPxX(p0.R), toPxY(p0.H), 4.5, 0, Math.PI * 2);
+    ctx.arc(toPxX(p0.R), toPxY(p0.H), 4.5 * strokeScale, 0, Math.PI * 2);
     ctx.fillStyle = chartInk.trace;
     ctx.fill();
     ctx.textAlign = "left";
@@ -789,7 +790,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.fillText("0°", toPxX(p0.R) + 6, toPxY(p0.H) - 3);
 
     ctx.beginPath();
-    ctx.arc(toPxX(p90.R), toPxY(p90.H), 4.5, 0, Math.PI * 2);
+    ctx.arc(toPxX(p90.R), toPxY(p90.H), 4.5 * strokeScale, 0, Math.PI * 2);
     ctx.fillStyle = chartInk.measure;
     ctx.fill();
     ctx.textAlign = "left";
@@ -803,7 +804,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if (state.y0 === 0 && curP.R > 0.2) {
       ctx.save();
       ctx.strokeStyle = chartInk.ink;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.5 * strokeScale;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
       ctx.moveTo(toPxX(0), toPxY(0));
@@ -813,10 +814,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
 
     ctx.beginPath();
-    ctx.arc(cx, cy, 7.5, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 7.5 * strokeScale, 0, Math.PI * 2);
     ctx.fillStyle = chartInk.field;
     ctx.fill();
-    ctx.lineWidth = 3.8;
+    ctx.lineWidth = 3.8 * strokeScale;
     ctx.strokeStyle = chartInk.ink;
     ctx.stroke();
 
