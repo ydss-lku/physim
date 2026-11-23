@@ -100,11 +100,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
 
   function getEnvelopeBounds(v0, y0, g) {
-    const maxH = Math.max(10, y0 + (v0 * v0) / (2 * g));
+    const maxH = y0 + (v0 * v0) / (2 * g);
     const optRad = Math.atan(v0 / Math.sqrt(v0 * v0 + 2 * g * y0));
     const optDeg = (optRad * 180) / Math.PI;
     const optP = calcPhysics(optDeg, v0, y0, g);
-    const maxR = Math.max(10, optP.R);
+    const maxR = optP.R;
     return { maxH, maxR, optDeg };
   }
 
@@ -200,6 +200,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.restore();
   }
 
+  function axisLabel(value, step) {
+    const precision = Math.max(0, -Math.floor(Math.log10(step)));
+    return Number(value.toFixed(precision)).toString();
+  }
+
   function niceStep(maxVal, targetTicks = 5) {
     const rough = maxVal / targetTicks;
     if (rough <= 0) return 1;
@@ -223,21 +228,25 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const plotH = h - pad.top - pad.bottom;
 
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    const env = getEnvelopeBounds(state.v0, state.y0, state.g);
-
-    const worldMaxX = env.maxR * 1.15;
-    const worldMaxY = env.maxH * 1.18;
-
-    const scaleX = plotW / worldMaxX;
+    const comparison = state.mode === "analysis" && state.showCompare && state.theta !== 45
+      ? calcPhysics(45, state.v0, state.y0, state.g) : null;
+    const range = Math.max(p.R, comparison?.R ?? 0);
+    const height = Math.max(p.H, comparison?.H ?? 0);
+    const worldMaxY = height > 0 ? height * 1.18 : 1;
+    const verticalFlight = range === 0 && height > 0;
+    const worldWidth = range > 0 ? range * 1.15 : worldMaxY * plotW / plotH;
+    const worldMinX = verticalFlight ? -worldWidth / 2 : 0;
+    const worldMaxX = worldMinX + worldWidth;
+    const scaleX = plotW / worldWidth;
     const scaleY = plotH / worldMaxY;
 
-    const toPxX = (x) => pad.left + x * scaleX;
-    const toPxY = (y) => pad.top + plotH - y * scaleY;
+    const toPxX = x => pad.left + (x - worldMinX) * scaleX;
+    const toPxY = y => pad.top + plotH - y * scaleY;
 
     trajectoryView = { p, toPxX, toPxY };
     // 格線
-    const xStep = niceStep(worldMaxX, 6);
-    const yStep = niceStep(worldMaxY, 5);
+    const xStep = niceStep(worldWidth, Math.max(2, Math.min(6, Math.floor(plotW / 72))));
+    const yStep = niceStep(worldMaxY, Math.max(2, Math.min(5, Math.floor(plotH / 38))));
 
     ctx.strokeStyle = chartInk.grid;
     ctx.lineWidth = 1.5 * strokeScale;
@@ -246,13 +255,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    for (let x = 0; x <= worldMaxX; x += xStep) {
+    for (let x = Math.ceil(worldMinX / xStep) * xStep; x <= worldMaxX; x += xStep) {
       const px = toPxX(x);
       ctx.beginPath();
       ctx.moveTo(px, pad.top);
       ctx.lineTo(px, pad.top + plotH);
       ctx.stroke();
-      ctx.fillText(x.toFixed(0), px, pad.top + plotH + 8);
+      ctx.fillText(axisLabel(x, xStep), px, pad.top + plotH + 8);
     }
 
     ctx.textAlign = "right";
@@ -263,7 +272,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.moveTo(pad.left, py);
       ctx.lineTo(pad.left + plotW, py);
       ctx.stroke();
-      ctx.fillText(y.toFixed(0), pad.left - 10, py);
+      ctx.fillText(axisLabel(y, yStep), pad.left - 10, py);
     }
 
     ctx.fillStyle = chartInk.grid;
@@ -273,8 +282,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.strokeStyle = chartInk.axis;
     ctx.lineWidth = 3 * strokeScale;
     ctx.beginPath();
-    ctx.moveTo(pad.left, pad.top);
-    ctx.lineTo(pad.left, pad.top + plotH);
+    ctx.moveTo(toPxX(0), pad.top);
+    ctx.lineTo(toPxX(0), pad.top + plotH);
+    ctx.moveTo(pad.left, pad.top + plotH);
     ctx.lineTo(pad.left + plotW, pad.top + plotH);
     ctx.stroke();
 
@@ -292,13 +302,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.fillStyle = chartInk.grid;
       ctx.strokeStyle = chartInk.axis;
       ctx.lineWidth = 2 * strokeScale;
-      ctx.fillRect(pad.left - 22, platTop, 22, platBot - platTop);
-      ctx.strokeRect(pad.left - 22, platTop, 22, platBot - platTop);
+      ctx.fillRect(toPxX(0) - 22, platTop, 22, platBot - platTop);
+      ctx.strokeRect(toPxX(0) - 22, platTop, 22, platBot - platTop);
     }
 
     // 對照線 (+45° 參考軌跡)
-    if (state.mode === "analysis" && state.showCompare && state.theta !== 45) {
-      const p45 = calcPhysics(45, state.v0, state.y0, state.g);
+    if (comparison) {
+      const p45 = comparison;
       ctx.save();
       ctx.strokeStyle = chartInk.guide;
       ctx.lineWidth = 3 * strokeScale;
@@ -450,14 +460,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const ballPxY = toPxY(cur.y);
 
     if (state.mode === "velocity") {
-      const vImpact = Math.sqrt(state.v0 * state.v0 + 2 * state.g * state.y0);
-      const vRef = Math.max(state.v0, vImpact * 0.78);
-      const targetLenPx = Math.min(plotW, plotH) * 0.36;
-      const vScale = targetLenPx / vRef;
-
-      const tipX = ballPxX + cur.vx * vScale;
-      const tipY = ballPxY - cur.vy * vScale;
-
+      // Express both velocity components with the same time multiplier, then
+      // project through the position axes so the resultant follows the tangent.
+      const impactVy = Math.sqrt(p.vy0 ** 2 + 2 * state.g * state.y0);
+      const longest = Math.hypot(p.vx * scaleX, impactVy * scaleY);
+      const arrowTime = Math.min(plotW, plotH) * 0.36 / (longest || 1);
+      const tipX = ballPxX + cur.vx * scaleX * arrowTime;
+      const tipY = ballPxY - cur.vy * scaleY * arrowTime;
       const horizontalOnly = Math.abs(cur.vy) < 1e-9;
       const verticalOnly = Math.abs(cur.vx) < 1e-9;
       if (Math.abs(cur.vx) > 0.2 && Math.abs(cur.vy) > 0.2) {
@@ -565,7 +574,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.moveTo(pad.left, py);
       ctx.lineTo(pad.left + plotW, py);
       ctx.stroke();
-      ctx.fillText(y.toFixed(0), pad.left - 7, py);
+      ctx.fillText(axisLabel(y, yStep), pad.left - 7, py);
     }
 
     if (minDeg < 0) {
@@ -711,7 +720,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.moveTo(px, pad.top);
       ctx.lineTo(px, pad.top + plotH);
       ctx.stroke();
-      ctx.fillText(x.toFixed(0), px, pad.top + plotH + 7);
+      ctx.fillText(axisLabel(x, xStep), px, pad.top + plotH + 7);
     }
 
     const yStep = niceStep(maxH, 4);
@@ -723,7 +732,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.moveTo(pad.left, py);
       ctx.lineTo(pad.left + plotW, py);
       ctx.stroke();
-      ctx.fillText(y.toFixed(0), pad.left - 7, py);
+      ctx.fillText(axisLabel(y, yStep), pad.left - 7, py);
     }
 
     ctx.strokeStyle = chartInk.axis;
