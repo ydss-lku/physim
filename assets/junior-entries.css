@@ -27,7 +27,7 @@
 #catalogue .flash-entry b { color: #294839; font: bold clamp(20px,3vw,35px)/1 Georgia,serif; letter-spacing: -.04em; }
 #catalogue .junior-links .box.laser-entry figure,
 #catalogue .laser-entry figure::before {
-  background: #0d4648 url("yd-lab-laser-entry.webp") center / 100% 100% no-repeat;
+  background: #0d4648 url("yd-lab-laser-entry.webp?v=bee-ker") center / 100% 100% no-repeat;
 }
 #catalogue .laser-entry figure::before {
   content: "";
