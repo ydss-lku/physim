@@ -71,3 +71,4 @@ main canvas:active{outline:2px solid var(--trace);outline-offset:-2px;cursor:gra
 .scale-ticks button::before{content:"";position:absolute;top:0;left:50%;height:6px;border-left:1px solid currentColor}
 .scale-ticks button:hover,.scale-ticks button:focus-visible{color:var(--ink);background:var(--toggle-bg)}
 .gravity select{font:inherit;min-height:44px;color:var(--ink);background:var(--btn);border:1px solid var(--line)}
+.scale-ticks button[hidden]{display:none}

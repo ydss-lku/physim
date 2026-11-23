@@ -11,7 +11,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 物理與介面狀態 (預設：θ = +45°, y0 = 0 m, 角度範圍 0° ~ +90°) ======
   const state = {
     theta: 45,
-    minTheta: -90,
+    minTheta: 0,
     maxTheta: 90,
     v0: 20,
     y0: 0,
@@ -944,6 +944,19 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     updatePlayButtons();
   }
 
+  function syncAngleRange() {
+    state.minTheta = state.y0 > 0 ? -90 : 0;
+    sliderTheta.min = state.minTheta;
+    state.theta = Math.max(state.theta, state.minTheta);
+    sliderTheta.value = state.theta;
+    for (const tick of document.querySelectorAll('[data-slider="sliderTheta"] button')) {
+      const angle = Number(tick.value);
+      tick.hidden = angle < state.minTheta;
+      tick.disabled = tick.hidden;
+      tick.style.left = (100 * (angle - state.minTheta) / (state.maxTheta - state.minTheta)) + "%";
+    }
+  }
+
   function onParamChanged() {
     state.playing = false;
     stopAnimationLoop();
@@ -965,6 +978,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   sliderY0.addEventListener("input", (e) => {
     state.y0 = parseInt(e.target.value, 10);
+    syncAngleRange();
     onParamChanged();
   });
 
@@ -1130,6 +1144,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       updateUI();
     });
   }
+  syncAngleRange();
   selectChart(state.chart);
   const ro = new ResizeObserver(() => updateUI());
   ro.observe(trajCanvas.parentElement);
