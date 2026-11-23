@@ -74,3 +74,27 @@ main canvas:active{outline:2px solid var(--trace);outline-offset:-2px;cursor:gra
 .scale-ticks button[hidden]{display:none}
 
 main[data-mode=velocity] .flight-formula{display:none}
+
+/* Separate the author credit from the final formula panel. */
+main > footer[data-author-credit] {
+  margin-block-start: 22px;
+}
+@media (max-width: 520px) {
+  main > footer[data-author-credit] {
+    margin-block-start: 16px;
+  }
+}
+
+main > details {
+  margin-block-start: clamp(16px, 2vw, 22px);
+}
+html[data-theme=tech] main > details {
+  --aug-tl: 12px;
+  --aug-tr: 8px;
+  --aug-br: 14px;
+  --aug-bl: 8px;
+  --aug-border-all: 1px;
+  --aug-border-bg: #547880;
+  border: 0;
+  padding-inline: 18px;
+}

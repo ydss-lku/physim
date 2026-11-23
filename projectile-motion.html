@@ -15,7 +15,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title data-en="Projectile motion · YD Physics" data-zh="斜拋運動 · YD Physics">Projectile motion · YD Physics</title>
 <script src="assets/night-theme.js"></script><script src="assets/language-copy.js"></script><script src="assets/language.js"></script>
-<link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/author-credit.css"><link rel="stylesheet" href="assets/projectile-motion.css?v=release12"></head><body>
+<link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/author-credit.css"><link rel="stylesheet" href="assets/projectile-motion.css?v=frame13"></head><body>
 <main data-mode="trajectory"><h1><span lang="en">Projectile motion</span><span lang="zh-HK">斜拋運動</span></h1><div class="modebar" role="group" aria-label="Mode / 模式"><button data-mode="trajectory" aria-pressed="true"><span lang="en">Trajectory</span><span lang="zh-HK">軌跡</span></button><button data-mode="velocity" aria-pressed="false"><span lang="en">Velocity</span><span lang="zh-HK">速度分解</span></button><button data-mode="analysis" aria-pressed="false"><span lang="en">Angles</span><span lang="zh-HK">角度分析</span></button></div><div class="shell"><div class="bench">
 <section class="instrument"><div class="analysis-only"><div class="chartbar"><button data-chart="r" data-en="R – θ" data-zh="R – θ" aria-pressed="true">R – θ</button><button data-chart="h" data-en="H – θ" data-zh="H – θ" aria-pressed="false">H – θ</button></div><div class="plots"><section data-plot="h"><div class="plot"><canvas id="hCanvas" aria-label="H – θ"></canvas></div></section><section data-plot="r"><div class="plot"><canvas id="rCanvas" aria-label="R – θ"></canvas></div></section></div></div><div id="livePosTag"></div><div class="viewport"><canvas id="trajCanvas" aria-label="Trajectory / 拋射軌跡"></canvas></div>
 <div class="analysis-only compare"><label class="switch" title="45° reference / 45° 參考軌跡"><input id="chkCompare" aria-label="45° reference / 45° 參考軌跡" type="checkbox" ><span>45°</span></label></div><div class="timeline"><label for="sliderTime">t</label><input type="range" id="sliderTime" min="0" max="1" step=".002" value="0"><output id="timeLabel"></output></div>
@@ -37,9 +37,10 @@
 <!-- /shared-navigation -->
 <script>
 function frameTheme() {
-  const shell = document.querySelector('.shell');
-  if (document.documentElement.dataset.theme === 'tech') shell.setAttribute('data-augmented-ui','tl-clip tr-clip br-clip bl-clip border');
-  else shell.removeAttribute('data-augmented-ui');
+  for (const frame of document.querySelectorAll('.shell, main > details')) {
+    if (document.documentElement.dataset.theme === 'tech') frame.setAttribute('data-augmented-ui','tl-clip tr-clip br-clip bl-clip border');
+    else frame.removeAttribute('data-augmented-ui');
+  }
 }
 frameTheme();
 </script><script src="assets/projectile-motion.js?v=release12"></script><script>
