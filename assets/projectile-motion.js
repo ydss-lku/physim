@@ -415,30 +415,37 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.fillText(`R = ${p.R.toFixed(1)} m`, Math.min(pxEnd, pad.left + plotW - 48), pyGround - 10);
     }
 
-    // 發射角度參考弧線
+    // Project the initial velocity through the same axes as the trajectory.
     const startX = toPxX(0);
     const startY = toPxY(state.y0);
+    const tangentAngle = Math.atan2(-p.vy0 * scaleY, p.vx * scaleX);
+    const dx = Math.cos(tangentAngle);
+    const dy = Math.sin(tangentAngle);
+    const reach = Math.min(125, plotW * 0.42);
+    const verticalRoom = dy < 0 ? startY - 4 : h - 4 - startY;
+    const tangentLength = Math.min(reach, verticalRoom / Math.max(Math.abs(dy), 1e-9));
+    const radius = Math.min(30, tangentLength * 0.35);
+
     ctx.save();
     ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.8;
+    ctx.setLineDash([6, 4]);
     ctx.beginPath();
     ctx.moveTo(startX, startY);
-    ctx.lineTo(startX + 60, startY);
-    ctx.stroke();
-    ctx.restore();
-
+    ctx.lineTo(startX + (state.theta === 0 ? reach : radius + 20), startY);
     if (state.theta !== 0) {
-      const rad = (state.theta * Math.PI) / 180;
-      ctx.save();
-      ctx.strokeStyle = chartInk.trace;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(startX, startY, 36, 0, -rad, state.theta > 0);
-      ctx.stroke();
-      ctx.restore();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(startX + tangentLength * dx, startY + tangentLength * dy);
     }
-
+    ctx.stroke();
+    if (state.theta !== 0) {
+      ctx.setLineDash([]);
+      ctx.strokeStyle = chartInk.component;
+      ctx.beginPath();
+      ctx.arc(startX, startY, radius, 0, tangentAngle, tangentAngle < 0);
+      ctx.stroke();
+    }
+    ctx.restore();
     // 目前球體位置與加長速度向量
     const curT = Math.min(state.t, p.T);
     const cur = posAtTime(curT, p);
