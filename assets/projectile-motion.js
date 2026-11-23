@@ -1,4 +1,12 @@
-function ink(light, dark) { return document.documentElement.dataset.theme === "tech" ? dark : light; }
+const chartInk = {};
+function refreshChartInk() {
+  const styles = getComputedStyle(document.documentElement);
+  for (const role of ["field", "grid", "muted", "axis", "ink", "trace", "measure", "component", "guide", "wash"]) {
+    chartInk[role] = styles.getPropertyValue("--" + role).trim();
+  }
+}
+refreshChartInk();
+window.addEventListener("lab-theme-change", refreshChartInk);
 
   // ====== 物理與介面狀態 (預設：θ = +45°, y0 = 0 m, 角度範圍 0° ~ +90°) ======
   const state = {
@@ -181,7 +189,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     bx = Math.max(6, Math.min(canvasW - tw - 6, bx));
     by = Math.max(6, Math.min(canvasH - th - 6, by));
 
-    ctx.fillStyle = ink("rgba(255, 255, 255, 0.94)", "#142831");
+    ctx.fillStyle = chartInk.field;
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.8;
     fillRoundRect(ctx, bx, by, tw, th, 5);
@@ -231,10 +239,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     const xStep = niceStep(worldMaxX, 6);
     const yStep = niceStep(worldMaxY, 5);
 
-    ctx.strokeStyle = ink("#e2e8f0", "#30454d");
+    ctx.strokeStyle = chartInk.grid;
     ctx.lineWidth = 1.5;
     ctx.font = "bold 13px sans-serif";
-    ctx.fillStyle = ink("#475569", "#bdd0d3");
+    ctx.fillStyle = chartInk.muted;
 
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
@@ -258,11 +266,11 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       ctx.fillText(y.toFixed(0), pad.left - 10, py);
     }
 
-    ctx.fillStyle = ink("#e2e8f0", "#30454d");
+    ctx.fillStyle = chartInk.grid;
     ctx.fillRect(pad.left, toPxY(0), plotW, 8);
 
     // 主軸
-    ctx.strokeStyle = ink("#334155", "#a8c0c4");
+    ctx.strokeStyle = chartInk.axis;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(pad.left, pad.top);
@@ -270,7 +278,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     ctx.lineTo(pad.left + plotW, pad.top + plotH);
     ctx.stroke();
 
-    ctx.fillStyle = ink("#0f172a", "#e6f2f3");
+    ctx.fillStyle = chartInk.ink;
     ctx.font = "bold 14px sans-serif";
     ctx.textAlign = "right";
     ctx.fillText("x (m)", pad.left + plotW, pad.top + plotH + 30);
@@ -281,8 +289,8 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     if (state.y0 > 0) {
       const platTop = toPxY(state.y0);
       const platBot = toPxY(0);
-      ctx.fillStyle = ink("#cbd5e1", "#36505a");
-      ctx.strokeStyle = "#64748b";
+      ctx.fillStyle = chartInk.grid;
+      ctx.strokeStyle = chartInk.axis;
       ctx.lineWidth = 2;
       ctx.fillRect(pad.left - 22, platTop, 22, platBot - platTop);
       ctx.strokeRect(pad.left - 22, platTop, 22, platBot - platTop);
@@ -292,7 +300,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     if (state.mode === "analysis" && state.showCompare && state.theta !== 45) {
       const p45 = calcPhysics(45, state.v0, state.y0, state.g);
       ctx.save();
-      ctx.strokeStyle = "#94a3b8";
+      ctx.strokeStyle = chartInk.guide;
       ctx.lineWidth = 3;
       ctx.setLineDash([8, 6]);
       ctx.beginPath();
@@ -309,7 +317,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     // 拋射軌跡線
     if (p.T > 0) {
       ctx.save();
-      ctx.strokeStyle = ink("#2563eb", "#79acff");
+      ctx.strokeStyle = chartInk.trace;
       ctx.lineWidth = 4.5;
       ctx.lineCap = "round";
       ctx.beginPath();
@@ -337,7 +345,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
         if (i > 0 && p.vx > 0) {
           ctx.save();
-          ctx.strokeStyle = "rgba(2, 132, 199, 0.30)";
+          ctx.strokeStyle = chartInk.guide;
           ctx.lineWidth = 1.8;
           ctx.setLineDash([4, 4]);
           ctx.beginPath();
@@ -349,10 +357,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
         ctx.beginPath();
         ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fillStyle = ink("#ffffff", "#152a33");
+        ctx.fillStyle = chartInk.field;
         ctx.fill();
         ctx.lineWidth = 2.8;
-        ctx.strokeStyle = ink("#1d4ed8", "#79acff");
+        ctx.strokeStyle = chartInk.trace;
         ctx.stroke();
       }
     }
@@ -365,7 +373,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       const pyGround = toPxY(0);
 
       ctx.save();
-      ctx.strokeStyle = ink("#dc2626", "#ff9299");
+      ctx.strokeStyle = chartInk.measure;
       ctx.lineWidth = 2.5;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
@@ -376,10 +384,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
       ctx.beginPath();
       ctx.arc(pxPeak, pyPeak, 6, 0, Math.PI * 2);
-      ctx.fillStyle = ink("#dc2626", "#ff9299");
+      ctx.fillStyle = chartInk.measure;
       ctx.fill();
 
-      ctx.fillStyle = ink("#dc2626", "#ff9299");
+      ctx.fillStyle = chartInk.measure;
       ctx.font = "bold 14px sans-serif";
       ctx.textAlign = "left";
       ctx.textBaseline = "bottom";
@@ -394,10 +402,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
       ctx.beginPath();
       ctx.arc(pxEnd, pyGround, 6.5, 0, Math.PI * 2);
-      ctx.fillStyle = ink("#059669", "#65dbc0");
+      ctx.fillStyle = chartInk.measure;
       ctx.fill();
 
-      ctx.fillStyle = ink("#059669", "#65dbc0");
+      ctx.fillStyle = chartInk.measure;
       ctx.font = "bold 14px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
@@ -408,7 +416,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     const startX = toPxX(0);
     const startY = toPxY(state.y0);
     ctx.save();
-    ctx.strokeStyle = "#64748b";
+    ctx.strokeStyle = chartInk.axis;
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -420,7 +428,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     if (state.theta !== 0) {
       const rad = (state.theta * Math.PI) / 180;
       ctx.save();
-      ctx.strokeStyle = ink("#7c3aed", "#c5a4ff");
+      ctx.strokeStyle = chartInk.trace;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(startX, startY, 36, 0, -rad, state.theta > 0);
@@ -445,7 +453,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
       if (Math.abs(cur.vx) > 0.2 && Math.abs(cur.vy) > 0.2) {
         ctx.save();
-        ctx.strokeStyle = "#94a3b8";
+        ctx.strokeStyle = chartInk.guide;
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
@@ -457,43 +465,43 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       }
 
       if (Math.abs(cur.vx) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, tipX, ballPxY, ink("#0284c7", "#68cbff"), 5, 15);
+        drawArrow(ctx, ballPxX, ballPxY, tipX, ballPxY, chartInk.component, 5, 15);
         const lblY = cur.vy >= 0 ? ballPxY + 20 : ballPxY - 20;
-        drawVectorLabel(ctx, `vₓ=${cur.vx.toFixed(1)}`, (ballPxX + tipX) / 2, lblY, ink("#0284c7", "#68cbff"), w, h);
+        drawVectorLabel(ctx, `vₓ=${cur.vx.toFixed(1)}`, (ballPxX + tipX) / 2, lblY, chartInk.component, w, h);
       }
 
       if (Math.abs(cur.vy) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, ballPxX, tipY, ink("#ea580c", "#ffab73"), 5, 15);
-        drawVectorLabel(ctx, `vᵧ=${cur.vy.toFixed(1)}`, ballPxX - 42, (ballPxY + tipY) / 2, ink("#ea580c", "#ffab73"), w, h);
+        drawArrow(ctx, ballPxX, ballPxY, ballPxX, tipY, chartInk.component, 5, 15);
+        drawVectorLabel(ctx, `vᵧ=${cur.vy.toFixed(1)}`, ballPxX - 42, (ballPxY + tipY) / 2, chartInk.component, w, h);
       }
 
       const vTotal = Math.hypot(cur.vx, cur.vy);
       if (vTotal > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, tipX, tipY, ink("#7c3aed", "#c5a4ff"), 5.5, 17);
+        drawArrow(ctx, ballPxX, ballPxY, tipX, tipY, chartInk.trace, 5.5, 17);
         const offsetX = cur.vx >= 0 ? 18 : -18;
         const offsetY = cur.vy >= 0 ? -16 : 16;
-        drawVectorLabel(ctx, `v=${vTotal.toFixed(1)}`, tipX + offsetX, tipY + offsetY, ink("#7c3aed", "#c5a4ff"), w, h);
+        drawVectorLabel(ctx, `v=${vTotal.toFixed(1)}`, tipX + offsetX, tipY + offsetY, chartInk.trace, w, h);
       }
     }
 
     // 拋體球本體
     ctx.beginPath();
     ctx.arc(ballPxX, ballPxY, 10.5, 0, Math.PI * 2);
-    ctx.fillStyle = "#f59e0b";
+    ctx.fillStyle = chartInk.ink;
     ctx.fill();
     ctx.lineWidth = 3.2;
-    ctx.strokeStyle = ink("#0f172a", "#e6f2f3");
+    ctx.strokeStyle = chartInk.ink;
     ctx.stroke();
 
     if (state.mode === "velocity") {
       ctx.font = "bold 13px sans-serif";
       ctx.textAlign = "right";
       ctx.textBaseline = "top";
-      ctx.fillStyle = ink("#7c3aed", "#c5a4ff");
+      ctx.fillStyle = chartInk.trace;
       ctx.fillText("━ v (m/s)", w - 16, 10);
-      ctx.fillStyle = ink("#0284c7", "#68cbff");
+      ctx.fillStyle = chartInk.component;
       ctx.fillText("━ vₓ (m/s)", w - 16, 29);
-      ctx.fillStyle = ink("#ea580c", "#ffab73");
+      ctx.fillStyle = chartInk.component;
       ctx.fillText("━ vᵧ (m/s)", w - 16, 48);
     }
   }
@@ -504,8 +512,8 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     ctx.clearRect(0, 0, w, h);
 
     const isH = type === "H";
-    const mainColor = isH ? ink("#dc2626", "#ff9299") : ink("#059669", "#65dbc0");
-    const fillColor = isH ? "rgba(220, 38, 38, 0.11)" : "rgba(5, 150, 105, 0.11)";
+    const mainColor = chartInk.trace;
+    const fillColor = chartInk.wash;
 
     const pad = { left: 52, right: 20, top: 24, bottom: 42 };
     const plotW = w - pad.left - pad.right;
@@ -521,10 +529,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     const toPxX = (deg) => pad.left + ((deg - minDeg) / spanDeg) * plotW;
     const toPxY = (val) => pad.top + plotH - (val / maxY) * plotH;
 
-    ctx.strokeStyle = ink("#e2e8f0", "#30454d");
+    ctx.strokeStyle = chartInk.grid;
     ctx.lineWidth = 1.5;
     ctx.font = "bold 11.5px sans-serif";
-    ctx.fillStyle = ink("#475569", "#bdd0d3");
+    ctx.fillStyle = chartInk.muted;
 
     const tickStep = spanDeg <= 90 ? 15 : 30;
     ctx.textAlign = "center";
@@ -552,7 +560,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
     if (minDeg < 0) {
       ctx.save();
-      ctx.strokeStyle = "#94a3b8";
+      ctx.strokeStyle = chartInk.guide;
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
@@ -562,7 +570,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       ctx.restore();
     }
 
-    ctx.strokeStyle = ink("#334155", "#a8c0c4");
+    ctx.strokeStyle = chartInk.axis;
     ctx.lineWidth = 2.6;
     ctx.beginPath();
     ctx.moveTo(pad.left, pad.top);
@@ -570,7 +578,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     ctx.lineTo(pad.left + plotW, pad.top + plotH);
     ctx.stroke();
 
-    ctx.fillStyle = ink("#0f172a", "#e6f2f3");
+    ctx.fillStyle = chartInk.ink;
     ctx.font = "bold 12.5px sans-serif";
     ctx.textAlign = "right";
     ctx.fillText("θ (°)", pad.left + plotW, pad.top + plotH + 24);
@@ -607,7 +615,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       const ox = toPxX(env.optDeg);
       const oy = toPxY(optP.R);
       ctx.save();
-      ctx.strokeStyle = ink("#7c3aed", "#c5a4ff");
+      ctx.strokeStyle = chartInk.trace;
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -616,7 +624,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       ctx.stroke();
       ctx.restore();
 
-      ctx.fillStyle = ink("#7c3aed", "#c5a4ff");
+      ctx.fillStyle = chartInk.trace;
       ctx.font = "bold 11.5px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
@@ -629,7 +637,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     const cy = toPxY(curVal);
 
     ctx.save();
-    ctx.strokeStyle = ink("#0f172a", "#e6f2f3");
+    ctx.strokeStyle = chartInk.ink;
     ctx.lineWidth = 1.6;
     ctx.setLineDash([3, 3]);
     ctx.beginPath();
@@ -640,10 +648,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
     ctx.beginPath();
     ctx.arc(cx, cy, 7.5, 0, Math.PI * 2);
-    ctx.fillStyle = ink("#ffffff", "#152a33");
+    ctx.fillStyle = chartInk.field;
     ctx.fill();
     ctx.lineWidth = 3.8;
-    ctx.strokeStyle = ink("#0f172a", "#e6f2f3");
+    ctx.strokeStyle = chartInk.ink;
     ctx.stroke();
 
     const tagText = `${state.theta > 0 ? "+" : ""}${state.theta}°, ${curVal.toFixed(1)}m`;
@@ -654,9 +662,9 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     let boxY = cy - 26;
     if (boxY < 4) boxY = cy + 10;
 
-    ctx.fillStyle = ink("#0f172a", "#e6f2f3");
+    ctx.fillStyle = chartInk.ink;
     fillRoundRect(ctx, boxX, boxY, textW, 22, 5);
-    ctx.fillStyle = ink("#ffffff", "#152a33");
+    ctx.fillStyle = chartInk.field;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(tagText, boxX + 6, boxY + 11);
@@ -679,10 +687,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     const toPxX = (r) => pad.left + (r / maxR) * plotW;
     const toPxY = (heightVal) => pad.top + plotH - (heightVal / maxH) * plotH;
 
-    ctx.strokeStyle = ink("#e2e8f0", "#30454d");
+    ctx.strokeStyle = chartInk.grid;
     ctx.lineWidth = 1.5;
     ctx.font = "bold 11.5px sans-serif";
-    ctx.fillStyle = ink("#475569", "#bdd0d3");
+    ctx.fillStyle = chartInk.muted;
 
     const xStep = niceStep(maxR, 4);
     ctx.textAlign = "center";
@@ -708,7 +716,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       ctx.fillText(y.toFixed(0), pad.left - 7, py);
     }
 
-    ctx.strokeStyle = ink("#334155", "#a8c0c4");
+    ctx.strokeStyle = chartInk.axis;
     ctx.lineWidth = 2.6;
     ctx.beginPath();
     ctx.moveTo(pad.left, pad.top);
@@ -716,7 +724,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     ctx.lineTo(pad.left + plotW, pad.top + plotH);
     ctx.stroke();
 
-    ctx.fillStyle = ink("#0f172a", "#e6f2f3");
+    ctx.fillStyle = chartInk.ink;
     ctx.font = "bold 12.5px sans-serif";
     ctx.textAlign = "right";
     ctx.fillText("R (m)", pad.left + plotW, pad.top + plotH + 24);
@@ -740,7 +748,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
       if (i === 0) ctx.moveTo(hrCurvePoints[i].px, hrCurvePoints[i].py);
       else ctx.lineTo(hrCurvePoints[i].px, hrCurvePoints[i].py);
     }
-    ctx.strokeStyle = ink("#7c3aed", "#c5a4ff");
+    ctx.strokeStyle = chartInk.trace;
     ctx.lineWidth = 4.5;
     ctx.lineJoin = "round";
     ctx.stroke();
@@ -753,7 +761,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
     ctx.beginPath();
     ctx.arc(toPxX(pOpt.R), toPxY(pOpt.H), 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = ink("#059669", "#65dbc0");
+    ctx.fillStyle = chartInk.measure;
     ctx.fill();
     ctx.textAlign = "right";
     ctx.textBaseline = "bottom";
@@ -761,7 +769,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
     ctx.beginPath();
     ctx.arc(toPxX(p0.R), toPxY(p0.H), 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = ink("#2563eb", "#79acff");
+    ctx.fillStyle = chartInk.trace;
     ctx.fill();
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
@@ -769,7 +777,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
     ctx.beginPath();
     ctx.arc(toPxX(p90.R), toPxY(p90.H), 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = ink("#dc2626", "#ff9299");
+    ctx.fillStyle = chartInk.measure;
     ctx.fill();
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
@@ -781,7 +789,7 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
     if (state.y0 === 0 && curP.R > 0.2) {
       ctx.save();
-      ctx.strokeStyle = "#f59e0b";
+      ctx.strokeStyle = chartInk.ink;
       ctx.lineWidth = 2.5;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
@@ -793,10 +801,10 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
 
     ctx.beginPath();
     ctx.arc(cx, cy, 7.5, 0, Math.PI * 2);
-    ctx.fillStyle = ink("#ffffff", "#152a33");
+    ctx.fillStyle = chartInk.field;
     ctx.fill();
     ctx.lineWidth = 3.8;
-    ctx.strokeStyle = ink("#0f172a", "#e6f2f3");
+    ctx.strokeStyle = chartInk.ink;
     ctx.stroke();
 
     const tagText = `R=${curP.R.toFixed(1)}, H=${curP.H.toFixed(1)}`;
@@ -807,9 +815,9 @@ function ink(light, dark) { return document.documentElement.dataset.theme === "t
     let boxY = cy - 26;
     if (boxY < 4) boxY = cy + 10;
 
-    ctx.fillStyle = ink("#0f172a", "#e6f2f3");
+    ctx.fillStyle = chartInk.ink;
     fillRoundRect(ctx, boxX, boxY, textW, 22, 5);
-    ctx.fillStyle = ink("#ffffff", "#152a33");
+    ctx.fillStyle = chartInk.field;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(tagText, boxX + 6, boxY + 11);

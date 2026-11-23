@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><base href="../"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title data-en="Projectile motion · YD Physics" data-zh="斜拋運動 · YD Physics">Projectile motion · YD Physics</title>
 <script src="assets/night-theme.js"></script><script src="assets/language-copy.js"></script><script src="assets/language.js"></script>
-<link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/author-credit.css"><link rel="stylesheet" href="assets/projectile-motion.css?v=3m1"></head><body>
+<link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/author-credit.css"><link rel="stylesheet" href="assets/projectile-motion.css?v=palette2"></head><body>
 <main data-mode="trajectory"><h1 data-en="Projectile motion" data-zh="斜拋運動">Projectile motion</h1><div class="modebar" role="group" aria-label="Mode / 模式"><button data-mode="trajectory" data-en="Trajectory" data-zh="軌跡" aria-pressed="true">Trajectory</button><button data-mode="velocity" data-en="Velocity" data-zh="速度分解" aria-pressed="false">Velocity</button><button data-mode="analysis" data-en="Angles" data-zh="角度分析" aria-pressed="false">Angles</button></div><div class="shell"><div class="bench">
 <section class="instrument"><div class="analysis-only"><div class="chartbar"><button data-chart="r" data-en="R – θ" data-zh="R – θ" aria-pressed="true">R – θ</button><button data-chart="h" data-en="H – θ" data-zh="H – θ" aria-pressed="false">H – θ</button><button data-chart="hr" data-en="H – R" data-zh="H – R" aria-pressed="false">H – R</button></div><div class="plots"><section data-plot="h"><div class="plot"><canvas id="hCanvas" aria-label="H – θ"></canvas></div></section><section data-plot="r"><div class="plot"><canvas id="rCanvas" aria-label="R – θ"></canvas></div></section><section data-plot="hr"><div class="plot"><canvas id="hrCanvas" aria-label="H – R"></canvas></div></section></div></div><div id="livePosTag"></div><div class="viewport"><canvas id="trajCanvas" aria-label="Trajectory / 拋射軌跡"></canvas></div>
 <div class="analysis-only compare"><label class="switch" title="45° reference / 45° 參考軌跡"><input id="chkCompare" aria-label="45° reference / 45° 參考軌跡" type="checkbox" ><span>45°</span></label></div><div class="timeline"><label for="sliderTime">t</label><input type="range" id="sliderTime" min="0" max="1" step=".002" value="0"><output id="timeLabel"></output></div>
@@ -29,7 +29,7 @@ function frameTheme() {
   else shell.removeAttribute('data-augmented-ui');
 }
 frameTheme();
-</script><script src="assets/projectile-motion.js?v=3m1"></script><script>
+</script><script src="assets/projectile-motion.js?v=palette2"></script><script>
 window.addEventListener('lab-theme-change',()=>{frameTheme();updateUI()});
 window.addEventListener('lab-language-change',updateUI);
 </script></body></html>

@@ -9,10 +9,10 @@ html[data-theme=tech] h1{color:#fcee0a}
 .shell,.plots>section,details{position:relative;background:var(--sheet),var(--panel);border:1px solid var(--line)}
 .shell{padding:15px;box-shadow:3px 4px 0 #d6d6c7,4px 5px 0 #abb2a3,0 9px 16px #35433724}
 html[data-theme=paper] .shell:after{content:'';position:absolute;right:-1px;top:-1px;width:20px;height:20px;background:linear-gradient(45deg,#e4e4d4 46%,#aab29f 49%,var(--ground) 52%);pointer-events:none}
-html[data-theme=tech] .shell{--aug-tl:25px;--aug-tr:8px;--aug-br:28px;--aug-bl:8px;--aug-border-all:1px;--aug-border-bg:#547880;border:0;filter:drop-shadow(0 12px 22px #0009)}
+html[data-theme=tech] .shell{--aug-tl:25px;--aug-tr:8px;--aug-br:28px;--aug-bl:8px;--aug-border-all:1px;--aug-border-bg:#547880;border:0;box-shadow:none;filter:drop-shadow(0 12px 22px #0009)}
 .bench{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,27%);gap:20px}
 .instrument{min-width:0;background:var(--field);border:1px solid var(--line);padding:12px}
-html[data-theme=tech] .instrument{border-color:#77f5ef;box-shadow:0 0 10px #2fe9ef60,inset 0 0 12px #2fe9ef19}
+html[data-theme=tech] .instrument{border-image:url("night-view-edge.svg") 64 / 64px / 15px stretch}
 #livePosTag,.timeline output,.metrics output,.setting output{font-variant-numeric:tabular-nums}
 #livePosTag{font-size:14px;color:var(--muted)}
 .viewport{height:clamp(265px,29vw,355px)}canvas{width:100%;height:100%;display:block}
@@ -23,7 +23,7 @@ main button,.switch{display:inline-grid;place-items:center;min-height:44px;min-w
 button svg,.switch svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
 #btnLaunch,.active,.switch:has(:checked){background:var(--selected);color:var(--on)}#btnLaunch{min-width:58px}button:disabled{opacity:.45;cursor:default}
 .switch{position:relative}.switch input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;margin:0}
-:focus-visible,.switch:focus-within{outline:3px solid #db8434;outline-offset:2px}
+:focus-visible,.switch:focus-within{outline:3px solid var(--focus);outline-offset:2px}
 aside{padding:0 4px}.setting{display:grid;grid-template-columns:1fr auto;align-items:center;margin-top:10px}.setting label,.gravity b{font-weight:700}.setting input{grid-column:1/-1;width:100%}input[type=range]{accent-color:var(--selected);height:28px;margin:0}
 .choices{gap:3px;margin-top:3px}.choices button{font-size:14px;padding:2px 6px}.gravity{margin-top:12px}.gravity b{margin-right:auto}
 .metrics{display:grid;grid-template-columns:repeat(6,1fr);margin-top:16px}.metrics>div{padding:4px 10px;border-left:1px solid var(--line)}.metrics span,.metrics output{display:block}.metrics span{color:var(--muted);font-size:14px}.metrics output{font-size:clamp(15px,1.8vw,22px);font-weight:650}
@@ -45,3 +45,19 @@ main[data-mode=analysis] .viewport{height:165px;max-width:360px}
 main[data-mode=analysis] .compare{margin-top:4px}
 .metrics{grid-template-columns:repeat(auto-fit,minmax(75px,1fr))}
 .settings{margin-top:12px}.settings summary{width:fit-content;min-width:44px;text-align:center;font-size:21px}.settings .choices,.settings .gravity{margin:8px 0}
+
+/* Scientific ink shares the page palette. Direction and labels distinguish components. */
+:root {
+  --trace:#284b43; --component:#476455; --measure:#476455; --axis:#64766b;
+  --grid:#dce1d4; --guide:#a8b5a5; --wash:#31574712; --focus:#ad4937;
+  --toggle-bg:#dce7d0; --toggle-ink:#284b43;
+}
+html[data-theme=tech] {
+  --trace:#67e5f2; --component:#c4dce3; --measure:#c4dce3; --axis:#829da4;
+  --grid:#293c42; --guide:#547078; --wash:#67e5f211; --focus:#77f5ef;
+  --toggle-bg:#233b42; --toggle-ink:#96e9f1;
+}
+.chartbar [aria-pressed=true],.choices .active,.gravity .active,.switch:has(:checked) {
+  background:var(--toggle-bg); color:var(--toggle-ink); border-color:var(--trace);
+}
+html[data-theme=tech] #outVx,html[data-theme=tech] #outVy {color:var(--trace)}
