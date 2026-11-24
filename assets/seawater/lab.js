@@ -396,13 +396,30 @@ const names={free:'鬆開',tap:'T1 水龍頭',tap2:'T2 水龍頭',high:'C1 燒�
 const connections=Array(4).fill('free'),hoses=[],endButtons=[];
 let slippedEnd=-1,slippedPosition;
 function point(i){return ports[connections[i]]||(i===slippedEnd?slippedPosition:loose[i])}
-const hoseWater=[],hoseBands=[];
+const hoseWater=[],hoseBands=[],socketSleeves=[];
 function hose(i){
  const a=point(2*i),b=point(2*i+1),mid=a.clone().lerp(b,.5);mid.y=.21;mid.z=1.1+i*.48;
  const resting=connections[2*i]==='free'&&connections[2*i+1]==='free';
  const positions=resting
   ? [a,a.clone().lerp(b,.27).add(vec(0,0,.54)),a.clone().lerp(b,.70).add(vec(0,0,-.33)),b]
   : [a,a.clone().lerp(mid,.35).add(vec(0,.08,.32)),mid.clone().add(vec(0,0,.38)),b.clone().lerp(mid,.35).add(vec(0,.08,.32)),b];
+ // Slide the rubber end over the glass and leave along the nozzle axis before bending.
+ for(const end of [2*i,2*i+1]){
+  const key=connections[end],attached=key==='high'||key==='low';
+  let sleeve=socketSleeves[end];
+  if(sleeve)sleeve.visible=attached;
+  if(!attached)continue;
+  const normal=socketNormal.clone().multiplyScalar(key==='high'?1:-1);
+  const tip=ports[key],exit=tip.clone().addScaledVector(normal,.12);
+  const guide=tip.clone().addScaledVector(normal,.31);
+  if(end%2===0)positions.splice(0,1,exit,guide);
+  else positions.splice(positions.length-1,1,guide,exit);
+  if(!sleeve){
+   sleeve=socketSleeves[end]=solid(new T.CylinderGeometry(.075,.103,.32,32),i?0xbb833b:0x387c83,vec(0,0,0));
+  }
+  sleeve.position.copy(tip).addScaledVector(normal,-.02);
+  sleeve.quaternion.setFromUnitVectors(vec(0,1,0),normal);
+ }
  const curve=new T.CatmullRomCurve3(positions);
  const geometry=new T.TubeGeometry(curve,48,.074,12,false);
  // A translucent cutaway overlay lets students follow water through an opaque rubber hose.
@@ -539,6 +556,32 @@ const spray=taps.map(()=>Array.from({length:20},()=>ball(vec(0,0,0),.039,water,.
 function sprayOffset(i,f){return vec((i%2?1:-1)*.55*f,.55*f,1.13*f)}
 const droplet=ball(outlet.clone(),.07,0x378ca5,.95);
 const dropVolume=.05;
+// Form liquid on the lower inner wall, then carry that same volume to the delivery tip.
+const filmBeads=Array.from({length:16},(_,i)=>({
+ mesh:ball(high.clone(),.058,0x3986a8,.94),start:.08+.15*(i%4),volume:0,travel:0
+}));
+let beadIndex=0,escapingFraction=0;
+function advanceFilm(amount,dt){
+ const forming=amount>0;
+ while(amount>1e-10){
+  const bead=filmBeads[beadIndex],take=Math.min(amount,dropVolume/2-bead.volume);
+  bead.volume+=take;amount-=take;
+  if(bead.volume>=dropVolume/2-1e-10){bead.travel=.001;beadIndex=(beadIndex+1)%filmBeads.length}
+ }
+ for(const bead of filmBeads){
+  if(bead.volume>0&&(bead.travel>0||!forming)){
+   if(!bead.travel&&bead===filmBeads[beadIndex])beadIndex=(beadIndex+1)%filmBeads.length;
+   bead.travel+=dt/.95;
+  }
+  if(bead.travel>=1){dripPhase+=bead.volume/dropVolume;bead.travel=bead.volume=0}
+  bead.mesh.visible=bead.volume>0;
+  if(!bead.mesh.visible)continue;
+  const u=bead.start+(1-bead.start)*bead.travel;
+  deliveryPath.getPointAt(u,bead.mesh.position);
+  bead.mesh.position.y-=.052*(1-u);
+  bead.mesh.scale.setScalar(Math.cbrt(bead.volume/(dropVolume/2)));
+ }
+}
 const fallingDrop=ball(outlet.clone(),.07,0x378ca5,.95);
 const fallDuration=.18;
 let fallAge=null;
@@ -550,7 +593,7 @@ const bubbles=Array.from({length:6},()=>ball(flask.clone(),.034,0xe1f8fb,.75));
 const mist=Array.from({length:10},()=>ball(vec(0,0,0),.09,0xf2f6f4,.35));
 // A classroom model: the damage threshold varies by flask and is not a material rating.
 const damageDose=Math.random()<.55?15+20*Math.random():Infinity;
-let dryDose=0,baseTemperature=22,broken=false,wallHeat=0,inFlight=null;
+let dryDose=0,baseTemperature=22,broken=false,inFlight=null;
 let flaskSaltMg=0,sampleSaltMg=0;
 const sampleKey='seawater.receiver.v1';
 function saveReceiver(){
@@ -764,6 +807,21 @@ function mixReceiver(volume,incoming){
  sampleTemperature=(dist*sampleTemperature+volume*incoming)/(dist+volume);
 }
 const boreTemperatures=Array(18).fill(22);
+const coolantWarmth=Array(18).fill(0);
+function advanceCooling(dt,flow,boiling){
+ // Move coolant one jacket section at a time; use the previous upstream value.
+ const steps=Math.max(1,Math.ceil(dt/.12)),step=dt/steps;
+ for(let k=0;k<steps;k++){
+  for(let j=0;j<18;j++){
+   const i=flow==='high'?17-j:j;
+   const upstream=flow==='high'?i-1:i+1;
+   const upstreamWarmth=coolantWarmth[upstream]??0;
+   if(flow)coolantWarmth[i]+=(upstreamWarmth-coolantWarmth[i])*Math.min(1,4*step);
+   const wet=high.y+(low.y-high.y)*(i+.5)/18<jacketClip.constant;
+   coolantWarmth[i]=approach(coolantWarmth[i],boiling&&wet?1:0,boiling ? .035 : .022,step);
+  }
+ }
+}
 function approach(current,target,rate,dt){return target+(current-target)*Math.exp(-rate*dt)}
 function updateEquipmentHeat(dt,boiling,efficiency){
  const t=equipmentHeat;
@@ -777,9 +835,9 @@ function updateEquipmentHeat(dt,boiling,efficiency){
  follow('flaskClamp',22+.43*(t.neck-22),.05);
  for(let i=0;i<18;i++){
   const f=(i+.5)/18, covered=high.y+(low.y-high.y)*f<jacketClip.constant;
-  const cooling=covered?(1-wallHeat)*.80+.08:.10;
+  const cooling=covered?(1-coolantWarmth[i])*.80+.08:.10;
   boreTemperatures[i]=approach(boreTemperatures[i],22+(t.branch-22)*(1-cooling*f),.35,dt);
-  section[i]=approach(section[i],22+(boreTemperatures[i]-22)*(covered ? .14+.70*wallHeat : .78),.12,dt);
+  section[i]=approach(section[i],22+(boreTemperatures[i]-22)*(covered ? .14+.70*coolantWarmth[i] : .78),.12,dt);
  }
  follow('jacketClamp',22+.48*(section[10]-22),.04);
  follow('tip',22+.82*(boreTemperatures[17]-22),.15);
@@ -985,7 +1043,9 @@ function frame(now){
  advanceBlockedCircuit(dt);
  const feeds=taps.filter((k,i)=>supplies[i].ready).map(trace);
  const flow=feeds.find(p=>p.inlet)?.inlet;
- const targetFill=feeds.some(p=>p.blocked)||flow==='low'?1:flow ? .42 : retainedJacketLevel();
+ // For downward flow the lower outlet drains the jacket while a film also wets its wall.
+ const lowerPool=(lowerSocket.y+outerR-jacketBottom)/(jacketTop-jacketBottom);
+ const targetFill=feeds.some(p=>p.blocked)||flow==='low'?1:flow?lowerPool:retainedJacketLevel();
  if(openTaps.size||connections.includes('low'))fill+=(targetFill-fill)*(1-Math.exp(-dt*1.5));
  drainLowerSocket(dt);
  updateCoolant(fill);
@@ -1011,9 +1071,18 @@ function frame(now){
  $('fast').disabled=!canAdvance;$('fast').setAttribute('aria-pressed',String(fast));
  iconButton($('fast'),'fast',fast?'回復正常速度':'快轉八倍',fast?'1×':'8×');
  liveText('thermo',labText('溫度 ')+Math.round(headTemp)+' °C');
- wallHeat+=((flow?0:boiling?1:0)-wallHeat)*(1-Math.exp(-elapsed*(flow ? .18 : .035)));
- const efficiency=.18+.81*fill*(1-wallHeat);
- const evaporated=boiling?Math.min(charge,.025*elapsed):0;
+ advanceCooling(elapsed,flow,boiling);
+ // Compare incoming vapour with the heat-removal capacity of the wetted glass.
+ // Capacities are illustrative mL/s equivalents for this classroom burner.
+ const vapourRate=.025;
+ const wallFilm=flow==='high' ? .14 : 0;
+ const wetted=fill+(1-fill)*wallFilm;
+ const meanWarmth=coolantWarmth.reduce((sum,w)=>sum+w,0)/coolantWarmth.length;
+ const capacity=.0045+.065*wetted*(1-meanWarmth);
+ const efficiency=Math.min(1,capacity/vapourRate);
+ const uncondensed=collecting?Math.max(0,vapourRate-capacity)/vapourRate:0;
+ escapingFraction=approach(escapingFraction,uncondensed,1.2,elapsed);
+ const evaporated=boiling?Math.min(charge,vapourRate*elapsed):0;
  charge-=evaporated;
  if(fallAge!==null){
   fallAge+=dt;
@@ -1160,7 +1229,7 @@ function frame(now){
   if(thermal)tint(band.material,temp+(baseTemperature-temp)*Math.exp(-i*.42));
  });
  if(thermal){tint(bulb.material,Math.max(temp,22+.19*(baseTemperature-22)));tint(brine.material,temp);tint(waterSurface.material,temp);tint(flame.material,110)}
- droplet.visible=collecting&&dripPhase>.005;
+ droplet.visible=dripPhase>.005;
  if(droplet.visible){
   const size=Math.cbrt(dripPhase);
   droplet.scale.set(size,size*1.2,size);
@@ -1173,7 +1242,7 @@ function frame(now){
   fallingDrop.position.copy(outlet);
   fallingDrop.position.y-=.084+(outlet.y-.084-surface)*progress*progress;
  }
- mist.forEach((m,i)=>{const f=(clock*.75+i/10)%1;m.visible=boiling&&efficiency<.82;m.position.set(2.35+f*.57,outlet.y+f*.86,.05+f*.1);m.scale.setScalar(.5+f);m.material.opacity=.33*(1-f)});
+ mist.forEach((m,i)=>{const f=(clock*.75+i/10)%1;m.visible=escapingFraction>.035;m.position.set(2.35+f*.57,outlet.y+f*.86,.05+f*.1);m.scale.setScalar(.5+f);m.material.opacity=.33*escapingFraction*(1-f)});
  const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.floor(w*renderer.getPixelRatio())||canvas.height!==Math.floor(h*renderer.getPixelRatio()))renderer.setSize(w,h,false);
  camera.setViewOffset(w,h,-panX*w,-panY*h,w,h);
  const distance=Math.max(thermal?7.6:11.8,(thermal?6.3:10.8)/(.57*camera.aspect))/zoom;
