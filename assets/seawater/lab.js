@@ -645,28 +645,28 @@ function frame(now){
  const loop=runningWith(p=>p.tapLoop);
  let instruction='';
  if(recovery==='stop'){
-  instruction=leaking?'閂番'+label(leaking)+'! 漏水喇!':'閂埋'+label(running[0])+'!';
- }else if(blockedTime>0)instruction='閂 '+label(runningWith(p=>p.blocked))+'!';
- else if(recovery==='wipe')instruction=heat?'先熄火!':'抹番乾張枱!';
- else if(heat&&!charge)instruction='空燒喇，熄火!';
- else if(heat&&charge<=2.001)instruction='就快蒸乾，熄火!';
- else if(heat&&!flow)instruction='冇冷卻水，熄火!';
- else if(heat&&bumped)instruction='暴沸喇，熄火!';
- else if(!heat&&temp>52&&!flow&&supply)instruction='開番'+label(supply)+'冷卻水!';
- else if(granuleAttempt)instruction=heat?'先熄火!':'等燒瓶冷卻先加防暴沸粒!';
- else if(loop)instruction='閂'+label(loop)+'，供水喉冇出水口!';
+  instruction=leaking?teacherLine('leak'):teacherLine('otherTap');
+ }else if(blockedTime>0)instruction=teacherLine('blocked');
+ else if(recovery==='wipe')instruction=heat?teacherLine('flame'):teacherLine('wipe');
+ else if(heat&&!charge)instruction=teacherLine('empty');
+ else if(heat&&charge<=2.001)instruction=teacherLine('almostDry');
+ else if(heat&&!flow)instruction=teacherLine('noWater');
+ else if(heat&&bumped)instruction=teacherLine('bumping');
+ else if(!heat&&temp>52&&!flow&&supply)instruction=teacherLine('hot', label(supply));
+ else if(granuleAttempt&&heat)instruction=teacherLine('flame');
+ else if(loop)instruction=teacherLine('loop');
 
- else if(reverse && openTaps.has(reverse) && heat)instruction='先熄火再改駁!';
- else if(runningWith(p=>p.out&&p.drain&&!p.inlet))instruction='唔好浪費食水!';
+ else if(reverse && openTaps.has(reverse) && heat)instruction=teacherLine('hotReverse');
+ else if(runningWith(p=>p.out&&p.drain&&!p.inlet))instruction=teacherLine('waste');
  else if(reverse){
-  if(openTaps.has(reverse))instruction='入水位太高，先閂'+label(reverse)+'!';
-  else instruction='將供水喉駁去低位 C2!';
+  if(openTaps.has(reverse))instruction=teacherLine('reverseOn');
+  else instruction=teacherLine('reverseOff');
  }
  taps.forEach((k,i)=>{
  const on=openTaps.has(k),btn=$(k);btn.disabled=Boolean(recovery&&!on);iconButton(btn,'tap',(on?'閂 ':'開 ')+'T'+(i+1),'T'+(i+1));
  btn.setAttribute('aria-pressed',on);waterHandles[i].rotation.y=on?Math.PI/2:0;
  });
- const speech=instruction?'⚠ '+labText(instruction):'';
+ const speech=instruction?'⚠ '+instruction:'';
  if($('warn').textContent!==speech){$('warn').hidden=!speech;$('warn').textContent=speech}
 
  liveText('read',labText('收集到嘅蒸餾水　')+dist.toFixed(2)+' mL');
