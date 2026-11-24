@@ -41,3 +41,9 @@ footer[data-author-credit]{max-width:1150px;margin:12px auto;padding:16px;displa
 #console button:focus-visible,#console summary:focus-visible{outline:3px solid #d69419;outline-offset:2px}
 @media(max-width:640px){header.lab-mast,main{padding-inline:8px}.lab-mast h1{font-size:27px}#view{padding:7px;height:max(535px,78dvh)}#console{gap:2px}#console>.controls{gap:3px}#teacher{padding:3px 2px}.hoseTools{max-height:43dvh}}
 @media(max-height:550px) and (orientation:landscape){header.lab-mast{padding-block:4px}.lab-mast small{display:none}#view{display:grid;grid-template-columns:minmax(0,1fr) 182px;grid-template-rows:auto minmax(0,1fr);height:max(280px,74dvh);min-height:0}#teacher{grid-column:1/-1}#stage{height:100%}#console{display:block;padding:0 0 0 7px}#console>.controls{gap:2px}.hoseTools{left:auto;right:100%;bottom:0;width:240px}#read{white-space:normal;font-size:12px}}
+
+#fullscreenLab{display:none}
+@media(pointer:coarse) and (orientation:landscape) and (max-height:600px){#fullscreenLab{display:inline-flex}}
+#view.lab-expanded{position:fixed;inset:0;z-index:10000;box-sizing:border-box;width:100%;max-width:none;height:100vh;height:100dvh;min-height:0;margin:0;padding:max(4px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
+#view.lab-expanded #fullscreenLab{display:inline-flex}
+html:has(#view.lab-expanded){overflow:hidden}

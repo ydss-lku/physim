@@ -1,4 +1,5 @@
 const pairs=[
+['全螢幕','Full screen'],['退出全螢幕','Exit full screen'],
 ['建議打橫手機，睇清楚成套蒸餾裝置。','Turn your phone sideways to see the whole setup.'],['收起橫屏提示','Dismiss landscape tip'],
 ['放大','Zoom in'],['縮細','Zoom out'],
 ['海水蒸餾實驗','Seawater distillation'],['中一科學 · 分離混合物','S1 Science · Separating mixtures'],['科學老師','Science teacher'],['枱面俯視','Bench surface'],['拖動抹布，或用方向鍵移動','Drag the cloth or use the arrow keys'],['三維蒸餾裝置，可拖動改變視角','Distillation apparatus. Drag to rotate.'],

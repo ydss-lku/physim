@@ -10,6 +10,26 @@ function iconButton(el,icon,label,badge=''){
  if(badge){const tag=document.createElement('small');tag.textContent=badge;el.append(tag)}
 }
 const $=id=>document.getElementById(id), T=THREE, vec=(x,y,z)=>new T.Vector3(x,y,z);
+const labView=$('view'),fullscreenButton=$('fullscreenLab');
+function setLabExpanded(active){
+ labView.classList.toggle('lab-expanded',active);
+ fullscreenButton.setAttribute('aria-pressed',String(active));
+ iconButton(fullscreenButton,active?'collapse':'expand',active?'退出全螢幕':'全螢幕');
+}
+setLabExpanded(false);
+fullscreenButton.onclick=async()=>{
+ if(labView.classList.contains('lab-expanded')){
+  if(document.fullscreenElement===labView)await document.exitFullscreen();
+  setLabExpanded(false);
+ }else{
+  setLabExpanded(true);
+  if(labView.requestFullscreen){
+   try{await labView.requestFullscreen()}catch{/* Keep the viewport-filling layout. */}
+  }
+ }
+};
+document.addEventListener('fullscreenchange',()=>setLabExpanded(document.fullscreenElement===labView));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.fullscreenElement)setLabExpanded(false)});
 const rotateHint=$('rotateHint');
 try{rotateHint.hidden=sessionStorage.getItem('seawater.rotateHintDismissed')==='1'}catch{}
 $('dismissRotate').onclick=()=>{
