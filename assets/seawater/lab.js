@@ -425,6 +425,33 @@ function trace(key){
  if(dest==='low'&&jacketClip.constant<c1IntakeHeight)return {inlet:dest,drain:exit>=0&&ends[exit^1]==='sink'};
  return {inlet:dest,hoseStart:exit>=0?exit:undefined,openPort:exit<0?other:null,out:exit<0?ports[other]:point(exit^1),drain:exit>=0&&ends[exit^1]==='sink'};
 }
+function drawHoseFlow(start,age){
+ const n=Math.floor(start/2);
+   const transit=hoses[n].geometry.parameters.path.getLength()/3.8;
+   const front=Math.min(48,Math.floor(48*age/transit));
+   const reversed=start%2===1;
+   const draw=(mesh,first,count)=>{
+    mesh.visible=count>0;
+    mesh.geometry.setDrawRange((reversed?48-first-count:first)*72,count*72);
+   };
+   draw(hoseWater[n],0,front);
+   const band=Math.floor(48*((age/transit)%1));
+   draw(hoseBands[n],Math.max(0,band-3),Math.min(3,band,front));
+ return transit;
+}
+const supplies=taps.map(()=>({route:null,age:0,ready:false}));
+function updateSupply(key,i,dt){
+ const state=supplies[i],start=connections.indexOf(key);
+ const dest=start<0?null:connections[start^1];
+ const active=openTaps.has(key)&&(dest==='low'||dest==='high');
+ const route=active?start+':'+dest:null;
+ if(route!==state.route){state.route=route;state.age=0}
+ state.ready=false;
+ if(active){
+  state.age+=dt;
+  state.ready=state.age>=drawHoseFlow(start,state.age);
+ }
+}
 const streams=taps.map(()=>({jet:rod(vec(0,0,0),vec(0,1,0),.044,water,.82),puddle:ball(vec(0,.012,1.7),1,water,.56),size:0,route:null,age:0}));
 const plumes=taps.map(()=>solid(new T.BufferGeometry(),water,vec(0,0,0),.68));
 const spray=taps.map(()=>Array.from({length:20},()=>ball(vec(0,0,0),.039,water,.84)));
@@ -458,7 +485,7 @@ function beginLeakRecovery(){
 }
 function toggleWater(key){
  if(recovery&&!openTaps.has(key))return;
- if(openTaps.has(key))openTaps.delete(key);else openTaps.add(key);
+ if(openTaps.has(key)){openTaps.delete(key);supplies[taps.indexOf(key)].route=null}else openTaps.add(key);
  if(recovery==='stop'&&!openTaps.size){recovery='wipe';startWiping()}
 
 }
@@ -732,8 +759,10 @@ function placeMarkers(w,h){
 let last=performance.now(),clock=0,oldMode=null;
 function frame(now){
  const dt=Math.min(.12,(now-last)/1000);last=now;clock+=dt;
+ for(const mesh of [...hoseWater,...hoseBands])mesh.visible=false;
+ taps.forEach((key,i)=>updateSupply(key,i,dt));
  advanceBlockedCircuit(dt);
- const feeds=[...openTaps].map(trace);
+ const feeds=taps.filter((k,i)=>supplies[i].ready).map(trace);
  const flow=feeds.find(p=>p.inlet)?.inlet;
  const targetFill=feeds.some(p=>p.blocked)||flow==='low'?1:flow ? .42 : 0;
  fill+=(targetFill-fill)*(1-Math.exp(-dt*1.5));
@@ -801,7 +830,7 @@ function frame(now){
  else if(recovery==='wipe')instruction=heat?teacherLine('flame'):teacherLine('wipe');
  else if(heat&&!charge)instruction=teacherLine('empty');
  else if(heat&&charge<=2.001)instruction=teacherLine('almostDry');
- else if(heat&&!flow)instruction=teacherLine('noWater');
+ else if(heat&&!flow&&!taps.some((k,i)=>openTaps.has(k)&&paths[i].inlet))instruction=teacherLine('noWater');
  else if(heat&&bumped)instruction=teacherLine('bumping');
  else if(hotDisconnectAttempt)instruction=teacherLine('hotReverse');
  else if(granuleAttempt&&heat)instruction=teacherLine('flame');
@@ -830,10 +859,10 @@ function frame(now){
  handle.rotation.y+=Math.sign(targetAngle-handle.rotation.y)*Math.min(Math.abs(targetAngle-handle.rotation.y),dt*Math.PI*2);
  flame.visible=heat;updateBrine(charge,surge);
  collected.visible=dist>.01;collected.scale.y=dist/50;collected.position.y=.035+.2625*dist/50;
- for(const mesh of [...hoseWater,...hoseBands])mesh.visible=false;
+
  streams.forEach((stream,i)=>{
   const {jet,puddle}=stream,p=paths[i];
-  const active=openTaps.has(taps[i])&&p.out;
+  const active=openTaps.has(taps[i])&&(!p.inlet||supplies[i].ready)&&p.out;
   const start=p.hoseStart, n=start===undefined?-1:Math.floor(start/2);
   const route=active?[p.inlet,start,p.openPort,p.looseEnd,p.out.x,p.out.y,p.out.z,failedJoint].join('|'):null;
   const newRoute=route!==stream.route;
@@ -841,16 +870,7 @@ function frame(now){
   if(active)stream.age+=dt;
   let transit=0;
   if(active&&n>=0){
-   transit=hoses[n].geometry.parameters.path.getLength()/3.8;
-   const front=Math.min(48,Math.floor(48*stream.age/transit));
-   const reversed=start%2===1;
-   const draw=(mesh,first,count)=>{
-    mesh.visible=count>0;
-    mesh.geometry.setDrawRange((reversed?48-first-count:first)*72,count*72);
-   };
-   draw(hoseWater[n],0,front);
-   const band=Math.floor(48*((stream.age/transit)%1));
-   draw(hoseBands[n],Math.max(0,band-3),Math.min(3,band,front));
+   transit=drawHoseFlow(start,stream.age);
   }
   const age=active?Math.max(0,stream.age-transit):0;
   const spurting=active&&!p.drain&&failedJoint&&(p.openPort===failedJoint||p.looseEnd===slippedEnd);
