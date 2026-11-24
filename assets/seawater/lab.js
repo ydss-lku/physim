@@ -600,20 +600,23 @@ function placeMarkers(w,h){
   }
   tapLabels[k]={x,y};
  }
- const ordered=[...markers.filter(m=>m.isTap),...markers.filter(m=>!m.isTap)];
+ const isCondenser=m=>m.key==='high'||m.key==='low';
+ const ordered=[...markers.filter(m=>m.isTap),...markers.filter(isCondenser),...markers.filter(m=>!m.isTap&&!isCondenser(m))];
  for(const m of ordered){
- m.dot.hidden=m.btn.hidden;m.line.style.display=m.btn.hidden?'none':'';if(m.btn.hidden)continue;
+ m.dot.hidden=m.btn.hidden;m.line.style.display=m.btn.hidden||isCondenser(m)?'none':'';if(m.btn.hidden)continue;
  const v=m.getPoint().clone().project(camera),px=(1+v.x)*w/2,py=(1-v.y)*h/2;
  m.dot.style.left=px+'px';m.dot.style.top=py+'px';
  m.dot.style.zIndex=m.end===undefined?'1':'2';
  let best=tapLabels[m.key],score=Infinity;
- if(!m.isTap){
+ if(isCondenser(m)){
+  const half=m.btn.offsetWidth/2;
+  const x=px-half-12;
+  best={x:x<half+3?Math.min(w-half-3,px+half+12):x,y:Math.max(22,Math.min(h-22,py))};
+ }else if(!m.isTap){
  for(let dy=-125;dy<=125;dy+=25)for(let dx=-126;dx<=126;dx+=21){
  const x=Math.max(23,Math.min(w-23,px+dx)),y=Math.max(57,Math.min(h-25,py+dy));
  const overlap=placed.some(p=>Math.abs(p.x-x)<(p.wide?54:46)&&Math.abs(p.y-y)<45);
- const left=m.key==='low';
- const lift=left?0:25;
- const cost=(overlap?100000:0)+(left&&x>px-28?10000:0)+(x-px+(left?63:0))**2+(y-py+lift)**2;
+ const cost=(overlap?100000:0)+(x-px)**2+(y-py+25)**2;
  if(cost<score){score=cost;best={x,y}}
  }
  }
