@@ -19,8 +19,13 @@ function foldControls(folded){
  if(folded)$('hosePanel').open=false;
 }
 drawerToggle.onclick=()=>foldControls(!labView.classList.contains('controls-folded'));
+const fullscreenHome=fullscreenButton.nextElementSibling;
 function setLabExpanded(active){
- if(active!==labView.classList.contains('lab-expanded'))foldControls(active);
+ if(active!==labView.classList.contains('lab-expanded')){
+  if(active)drawerToggle.after(fullscreenButton);
+  else fullscreenHome.before(fullscreenButton);
+  foldControls(active);
+ }
  labView.classList.toggle('lab-expanded',active);
  fullscreenButton.setAttribute('aria-pressed',String(active));
  iconButton(fullscreenButton,active?'collapse':'expand',active?'退出全螢幕':'全螢幕');
