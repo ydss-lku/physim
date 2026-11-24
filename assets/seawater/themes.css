@@ -51,8 +51,8 @@ html:has(#view.lab-expanded){overflow:hidden}
 #drawerToggle{display:none}
 @media(orientation:landscape){
  #view.lab-expanded #drawerToggle{margin-inline-start:auto}
- #view.lab-expanded :is(#drawerToggle,#fullscreenLab,#zoomIn,#zoomOut){display:inline-grid;place-items:center;flex:none;width:44px;height:44px;color:var(--ink);background:var(--button);border:1px solid var(--line);border-radius:4px}
- #view.lab-expanded :is(#drawerToggle,#fullscreenLab,#zoomIn,#zoomOut) svg{width:22px;height:22px}
+ #view.lab-expanded :is(#drawerToggle,#fullscreenLab,#zoomIn,#zoomOut,#restoreView){display:inline-grid;place-items:center;flex:none;width:44px;height:44px;color:var(--ink);background:var(--button);border:1px solid var(--line);border-radius:4px}
+ #view.lab-expanded :is(#drawerToggle,#fullscreenLab,#zoomIn,#zoomOut,#restoreView) svg{width:22px;height:22px}
  #view.lab-expanded.controls-folded{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
  #view.lab-expanded.controls-folded #console{display:none}
 }

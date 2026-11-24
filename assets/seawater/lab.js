@@ -19,8 +19,8 @@ function foldControls(folded){
  if(folded)$('hosePanel').open=false;
 }
 drawerToggle.onclick=()=>foldControls(!labView.classList.contains('controls-folded'));
-const zoomButtons=[$('zoomIn'),$('zoomOut')];
-const controlsHome=zoomButtons[1].nextElementSibling;
+const zoomButtons=[$('zoomIn'),$('zoomOut'),$('restoreView')];
+const controlsHome=zoomButtons[2].nextElementSibling;
 function setLabExpanded(active){
  if(active!==labView.classList.contains('lab-expanded')){
   if(active)drawerToggle.after(fullscreenButton,...zoomButtons);
@@ -403,6 +403,8 @@ function connect(key){
  connections[selected]=key;hose(0);hose(1);choose(-1);detectLeak();return true;
 }
 hose(0);hose(1);
+// Use the same horizontal surface that is drawn inside the jacket.
+const c1IntakeHeight=upperSocket.y+socketNormal.y*outerR;
 function trace(key){
  const ends=connections,idx=ends.indexOf(key);
  if(idx<0)return {out:ports[key],drain:true};
@@ -410,7 +412,8 @@ function trace(key){
  if(dest==='free')return {out:point(idx^1),looseEnd:idx^1};
  if(taps.includes(dest))return {tapLoop:true};
  const other=dest==='low'?'high':'low',exit=ends.indexOf(other);
- if(exit>=0&&taps.includes(ends[exit^1]))return {blocked:true};
+ if(exit>=0&&taps.includes(ends[exit^1]))return {blocked:true,feed:dest};
+ if(dest==='low'&&jacketClip.constant<c1IntakeHeight)return {inlet:dest,drain:exit>=0&&ends[exit^1]==='sink'};
  return {inlet:dest,openPort:exit<0?other:null,out:exit<0?ports[other]:point(exit^1),drain:exit>=0&&ends[exit^1]==='sink'};
 }
 const streams=taps.map(()=>({jet:rod(vec(0,0,0),vec(0,1,0),.044,water,.82),puddle:ball(vec(0,.012,1.7),1,water,.56),size:0}));
@@ -430,7 +433,7 @@ const mist=Array.from({length:10},()=>ball(vec(0,0,0),.09,0xf2f6f4,.35));
 $('add').onclick=()=>{if(!charge&&!heat&&temp<40)charge=50};
 // Select the loose joint once, when the blocked circuit fails.
 function advanceBlockedCircuit(dt){
- if(recovery||![...openTaps].some(k=>trace(k).blocked)){blockedTime=0;return}
+ if(recovery||jacketClip.constant<c1IntakeHeight||![...openTaps].some(k=>trace(k).blocked)){blockedTime=0;return}
  blockedTime+=dt;
  if(blockedTime<2)return;
  failedJoint=Math.random()<.5?'high':'low';
@@ -505,6 +508,12 @@ for(const [id,factor,label] of [['zoomIn',1.25,'放大'],['zoomOut',.8,'縮細']
  iconButton($(id),id,label);
  $(id).onclick=()=>changeZoom(factor);
 }
+iconButton($('restoreView'),'restoreView','回復視角');
+$('restoreView').onclick=()=>{
+ yaw=.12;pitch=.47;panX=0;panY=0;
+ changeZoom(1/zoom);
+ beginPinch();
+};
 canvas.style.touchAction='none';
 canvas.addEventListener('wheel',e=>{
  e.preventDefault();
@@ -716,9 +725,13 @@ let last=performance.now(),clock=0,oldMode=null;
 function frame(now){
  const dt=Math.min(.12,(now-last)/1000);last=now;clock+=dt;
  advanceBlockedCircuit(dt);
- const paths=taps.map(trace),path=paths.find((p,i)=>openTaps.has(taps[i])&&p.inlet)||{},flow=path.inlet;
- fill+=((flow?(path.inlet==='low'?1:.42):0)-fill)*(1-Math.exp(-dt*1.5));
+ const feeds=[...openTaps].map(trace);
+ const flow=feeds.find(p=>p.inlet)?.inlet;
+ const targetFill=feeds.some(p=>p.blocked)||flow==='low'?1:flow ? .42 : 0;
+ fill+=(targetFill-fill)*(1-Math.exp(-dt*1.5));
  updateCoolant(fill);
+ const paths=taps.map(trace);
+ detectLeak();
  const canAdvance=heat&&charge>2&&steamAge<4;
  if(!canAdvance)fast=false;
  const elapsed=dt*(fast?8:1);
