@@ -658,7 +658,7 @@ function frame(now){
  else if(runningWith(p=>p.out&&p.drain&&!p.inlet))instruction='唔好浪費食水!';
  else if(reverse){
   if(heat)instruction='先熄火再改駁!';
-  else if(openTaps.has(reverse))instruction='先閂'+label(reverse)+'再改駁!';
+  else if(openTaps.has(reverse))instruction='入水位太高，先閂'+label(reverse)+'!';
   else instruction='將供水喉駁去低位 C2!';
  }
  taps.forEach((k,i)=>{
@@ -677,7 +677,7 @@ function frame(now){
  collected.visible=dist>.01;collected.scale.y=dist/50;collected.position.y=.035+.2625*dist/50;
  streams.forEach((stream,i)=>{
  const {jet,puddle}=stream,p=paths[i];jet.visible=Boolean(openTaps.has(taps[i])&&p.out);
- const spurting=jet.visible&&failedJoint&&(p.openPort===failedJoint||p.looseEnd===slippedEnd);
+ const spurting=Boolean(jet.visible && failedJoint && (p.openPort===failedJoint || p.looseEnd===slippedEnd));
  spray[i].forEach((drop,j)=>{
   drop.visible=spurting;if(!spurting)return;
   const f=(clock*1.8+j/20)%1;

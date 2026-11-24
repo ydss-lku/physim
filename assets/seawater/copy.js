@@ -5,7 +5,7 @@ const pairs=[
 ['防暴沸粒：有','Boiling chips: on'],['防暴沸粒：冇','Boiling chips: off'],['加入海水','Add seawater'],['重新開始','Restart'],['接駁膠喉','Connect hoses'],['隱藏標籤','Hide port labels'],['顯示標籤','Show port labels'],['隱藏器材英文全名','Hide apparatus names'],['顯示器材英文全名','Show apparatus names'],['器材英文全名','English apparatus names'],['除低熱像眼鏡','Remove thermal goggles'],['戴上熱像眼鏡','Wear thermal goggles'],['第一身 · 熱像眼鏡','Thermal goggles'],['實驗枱','Lab bench'],['回復正常速度','Normal speed'],['快轉八倍','Fast forward 8×'],['熄火','Turn off burner'],['開火','Light burner'],['收集到嘅蒸餾水　','Distillate　'],['溫度計　','Thermometer　'],['較冷','Cool'],['較熱','Hot'],['模擬熱像','Thermal view']];
 function labText(raw){
  if(document.documentElement.dataset.language!=='en'||!/[\u3400-\u9fff]/.test(raw))return raw;
- let value=raw.replace(/閂番(T[12])! 漏水喇!/g,'Leak! Close $1!').replace(/閂埋(T[12])!/g,'Close $1 too!').replace(/開番(T[12])冷卻水!/g,'Restore cooling water at $1!').replace(/先閂(T[12])再改駁!/g,'Close $1 before reconnecting!').replace(/閂(T[12])，供水喉冇出水口!/g,'Close $1! The hose has no outlet!').replace(/閂 (T[12])/g,'Close $1').replace(/開 (T[12])/g,'Open $1');
+ let value=raw.replace(/閂番(T[12])! 漏水喇!/g,'Leak! Close $1!').replace(/閂埋(T[12])!/g,'Close $1 too!').replace(/開番(T[12])冷卻水!/g,'Restore cooling water at $1!').replace(/入水位太高，先閂(T[12])!/g,'Inlet too high! Close $1!').replace(/閂(T[12])，供水喉冇出水口!/g,'Close $1! The hose has no outlet!').replace(/閂 (T[12])/g,'Close $1').replace(/開 (T[12])/g,'Open $1');
  for(const [zh,en] of pairs)if(value.includes(zh))value=value.replaceAll(zh,en);
  return value;
 }
