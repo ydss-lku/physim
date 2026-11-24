@@ -1,4 +1,5 @@
 const pairs=[
+['儀器損壞，同學被科學老師帶走訓話，實驗結束了‧‧‧‧‧‧','The apparatus is damaged. Your science teacher takes you aside for a serious talk. Experiment over…'],['燒瓶裂開了','Cracked flask'],
 ['回復視角','Restore view'],
 ['顯示控制欄','Show controls'],['收起控制欄','Hide controls'],
 ['全螢幕','Full screen'],['退出全螢幕','Exit full screen'],
@@ -20,6 +21,7 @@ const teacherLines = {
   blocked: ["同學！檢查清楚你啲水喉接駁！","Take a good look at those hose connections!"],
   flame: ["同學小心啊！不如熄火先啦！","Careful there! Let's turn off the burner first!"],
   wipe: ["同學！抹返乾淨張枱先繼續！","Wipe the bench dry before you carry on!"],
+  dry: ["同學！啲海水蒸乾晒喇！快啲熄火！","The seawater has boiled dry! Turn off the burner!"],
   empty: ["同學！你未落海水喎！快啲熄火！你就嚟燒爛個 flask 啦！","You haven't added the seawater! Turn off the burner! You're about to crack the flask!"],
   almostDry: ["同學！啲海水就快俾你蒸乾喇！快啲熄火！","You're about to boil the flask dry! Turn off the burner!"],
   noWater: ["同學！冷凝管未有水喎！","There's no cooling water flowing through the condenser!"],

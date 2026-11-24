@@ -96,7 +96,7 @@ function updateBrine(volume,surge){
   const h=(lo+hi)/2;
   if(h*h*(3-h)<2*volume/50)lo=h;else hi=h;
  }
- const offset=innerRadius*((lo+hi)/2-1)+.16*surge;
+ const offset=Math.max(-innerRadius,Math.min(innerRadius,innerRadius*((lo+hi)/2-1)+.16*surge));
  waterSurface.position.y=waterline.constant=flask.y+offset;
  waterSurface.scale.setScalar(Math.sqrt(innerRadius**2-offset**2));
 }
@@ -168,6 +168,7 @@ const screw=rod(vec(0,.045,0),vec(0,.071,0),.058,metal);
 handle.add(lever,grip,screw);valveParts.push(handle);
 handle.rotation.y=Math.PI/2;
 function toggleBurner(){
+ if(broken)return;
  heat=!heat;
  if(heat)granulesLocked=true;
 }
@@ -396,7 +397,7 @@ for(const key of [...taps,'high','low','sink']){
 let recovery='',blockedTime=0,failedJoint=null;
 let hotDisconnectAttempt=false;
 function hosesLockedByHeat(){
- return heat || Math.max(temp,headTemp)>=40;
+ return heat || Math.max(temp,headTemp,baseTemperature)>=40;
 }
 function connect(key){
  if(recovery)return;
@@ -514,7 +515,46 @@ let nextBump=1.6,burstAge=1,granuleAttempt=false,bumped=false;
 const splash=Array.from({length:5},()=>ball(flask.clone(),.023,water,.86));
 const bubbles=Array.from({length:6},()=>ball(flask.clone(),.034,0xe1f8fb,.75));
 const mist=Array.from({length:10},()=>ball(vec(0,0,0),.09,0xf2f6f4,.35));
-$('add').onclick=()=>{if(!charge&&!heat&&temp<40)charge=50};
+// A classroom model: the damage threshold varies by flask and is not a material rating.
+const damageDose=Math.random()<.55?15+20*Math.random():Infinity;
+let dryDose=0,baseTemperature=22,broken=false,wallHeat=0,inFlight=null;
+let flaskSaltMg=0,sampleSaltMg=0;
+const sampleKey='seawater.receiver.v1';
+function saveReceiver(){
+ try{sessionStorage.setItem(sampleKey,JSON.stringify({volumeMl:dist,saltMg:sampleSaltMg}))}catch{}
+}
+const heatBands=Array.from({length:8},(_,i)=>solid(new T.SphereGeometry(.722,40,4,0,2*Math.PI,Math.PI-(i+1)*.13,.13),glass,flask,.82));
+const crystals=Array.from({length:32},(_,i)=>{
+ const a=i*2.4,r=.09+.32*Math.sqrt(i/32);
+ const crystal=box(flask.x+r*Math.cos(a),flask.y-Math.sqrt(innerRadius**2-r*r)+.027,r*Math.sin(a),.085,.035,.065,0xf2f4ee);
+ crystal.rotation.y=a;return crystal;
+});
+const crackPoints=[[-.34,-.45],[-.24,-.37],[-.26,-.23],[-.12,-.17],[-.16,-.04],[.02,.04]].map(([x,y])=>flask.clone().add(vec(x,y,Math.sqrt(.723**2-x*x-y*y))));
+const crack=solid(new T.TubeGeometry(new T.CatmullRomCurve3(crackPoints),18,.013,6,false),0x39302d,vec(0,0,0));
+crack.visible=false;
+const brineSlug=ball(flask,.062,water,.95);
+brineSlug.visible=false;
+function startCarryover(){
+ if(inFlight||charge<.12||Math.random()>=.22)return;
+ const volume=.12,salt=volume*Math.min(360,flaskSaltMg/charge);
+ flaskSaltMg-=salt;charge-=volume;
+ inFlight={age:0,volume,salt,start:vec(flask.x,waterline.constant,0)};
+}
+function moveCarryover(dt){
+ brineSlug.visible=Boolean(inFlight);if(!inFlight)return;
+ const slug=inFlight;slug.age+=dt;
+ if(slug.age<.4)brineSlug.position.lerpVectors(slug.start,branchStart,slug.age/.4);
+ else if(slug.age<.75)brineSlug.position.lerpVectors(branchStart,high,(slug.age-.4)/.35);
+ else if(slug.age<2.25)deliveryPath.getPointAt((slug.age-.75)/1.5,brineSlug.position);
+ else{
+  const f=Math.min(1,(slug.age-2.25)/.22);
+  brineSlug.position.copy(outlet);brineSlug.position.y-=(outlet.y-.05-.525*dist/50)*f*f;
+  if(f>=1){dist+=slug.volume;sampleSaltMg+=slug.salt;inFlight=null;brineSlug.visible=false;saveReceiver()}
+ }
+}
+$('add').onclick=()=>{if(!charge&&!heat&&Math.max(temp,baseTemperature)<40){charge=50;flaskSaltMg+=1750}};
+$('incident').addEventListener('cancel',e=>e.preventDefault());
+$('restartIncident').onclick=()=>location.reload();
 // Select the loose joint once, when the blocked circuit fails.
 function advanceBlockedCircuit(dt){
  if(recovery||jacketClip.constant<c1IntakeHeight||![...openTaps].some(k=>trace(k).blocked)){blockedTime=0;return}
@@ -857,27 +897,33 @@ function frame(now){
  updateCoolant(fill);
  const paths=taps.map(trace);
 
- const canAdvance=heat&&charge>2&&steamAge<4;
+ const canAdvance=heat;
  if(!canAdvance)fast=false;
  const elapsed=dt*(fast?8:1);
  // Classroom model at atmospheric pressure; ignore the small boiling-point elevation.
- if(heat)temp=Math.min(100,temp+elapsed*(charge?1.4:3));
+ if(heat&&charge)temp=Math.min(100,temp+elapsed*1.4);
  else temp+=(22-temp)*(1-Math.exp(-dt*.055));
- const boiling=heat&&charge>2&&temp>=100;
+ baseTemperature+=((heat?(charge?temp+5:265):22)-baseTemperature)*(1-Math.exp(-elapsed*(heat ? .045 : .055)));
+ if(heat&&!charge&&baseTemperature>150)dryDose+=elapsed;
+ if(!broken&&dryDose>=damageDose){
+  broken=true;heat=fast=false;crack.visible=true;saveReceiver();
+ }
+ const boiling=heat&&charge>0&&temp>=100;
  steamAge=boiling?Math.min(4,steamAge+elapsed):0;
  const headTarget=steamAge>=1?100:22+.12*(temp-22);
  headTemp+=(headTarget-headTemp)*(1-Math.exp(-elapsed*(steamAge>=1?.85:.09)));
  const collecting=boiling&&steamAge>=4;
- if(collecting)fast=false;
- $('fast').disabled=!canAdvance||collecting;$('fast').setAttribute('aria-pressed',String(fast));
+
+ $('fast').disabled=!canAdvance;$('fast').setAttribute('aria-pressed',String(fast));
  iconButton($('fast'),'fast',fast?'回復正常速度':'快轉八倍',fast?'1×':'8×');
  liveText('thermo',labText('溫度計　')+Math.round(headTemp)+' °C');
- const efficiency=.18+.81*fill;
- const evaporated=boiling?Math.min(charge-2,.025*dt):0;
+ wallHeat+=((flow?0:boiling?1:0)-wallHeat)*(1-Math.exp(-elapsed*(flow ? .18 : .035)));
+ const efficiency=.18+.81*fill*(1-wallHeat);
+ const evaporated=boiling?Math.min(charge,.025*elapsed):0;
  charge-=evaporated;
  if(fallAge!==null){
   fallAge+=dt;
-  if(fallAge>=fallDuration){dist+=dropVolume;fallAge=null}
+  if(fallAge>=fallDuration){dist+=dropVolume;fallAge=null;saveReceiver()}
  }
  if(collecting){
   dripPhase+=evaporated*efficiency/dropVolume;
@@ -886,7 +932,7 @@ function frame(now){
  // Illustrative burst timing; surface nucleation varies between real flasks.
  if(boiling&&!useGranules){
   nextBump-=dt;burstAge+=dt;
-  if(nextBump<=0){bumped=true;burstAge=0;nextBump=1.8+Math.random()*2.7}
+  if(nextBump<=0){bumped=true;burstAge=0;startCarryover();nextBump=1.8+Math.random()*2.7}
  }else{burstAge=1;nextBump=1.6}
  const surge=burstAge<.85?Math.sin(Math.PI*burstAge/.85)*Math.exp(-2*burstAge):0;
  bubbles.forEach((bubble,i)=>{
@@ -902,6 +948,7 @@ function frame(now){
   drop.visible=boiling&&!useGranules&&f>0&&f<1;
   if(drop.visible)drop.position.set(flask.x+.24*f*Math.cos(i*2.4),waterline.constant+.05+.49*4*f*(1-f),.24*f*Math.sin(i*2.4));
  });
+ moveCarryover(dt);
  if(!heat)bumped=false;
  if(!heat&&temp<40){granulesLocked=false;granuleAttempt=false}
  const running=taps.filter(k=>openTaps.has(k));
@@ -916,7 +963,7 @@ function frame(now){
   instruction=leaking?teacherLine('leak'):teacherLine('otherTap');
  }else if(blockedTime>0)instruction=teacherLine('blocked');
  else if(recovery==='wipe')instruction=heat?teacherLine('flame'):teacherLine('wipe');
- else if(heat&&!charge)instruction=teacherLine('empty');
+ else if(heat&&!charge)instruction=teacherLine(flaskSaltMg>0?'dry':'empty');
  else if(heat&&charge<=2.001)instruction=teacherLine('almostDry');
  else if(heat&&!flow&&!taps.some((k,i)=>openTaps.has(k)&&paths[i].inlet))instruction=teacherLine('noWater');
  else if(heat&&bumped)instruction=teacherLine('bumping');
@@ -942,7 +989,7 @@ function frame(now){
 
  liveText('read',labText('收集到嘅蒸餾水　')+dist.toFixed(2)+' mL');
  for(const [id,state,on,off] of [['heat',heat,'熄火','開火'],['eye',thermal,'除低熱像眼鏡','戴上熱像眼鏡']]){const el=$(id);iconButton(el,id,state?on:off);el.setAttribute('aria-pressed',state)}
- $('add').disabled=charge>0||heat||temp>=40;
+ $('add').disabled=charge>0||heat||Math.max(temp,baseTemperature)>=40;
  const targetAngle=heat?0:Math.PI/2;
  handle.rotation.y+=Math.sign(targetAngle-handle.rotation.y)*Math.min(Math.abs(targetAngle-handle.rotation.y),dt*Math.PI*2);
  flame.visible=heat;updateBrine(charge,surge);
@@ -1007,12 +1054,18 @@ function frame(now){
  scene.background.setHex(thermal?0x211533:document.documentElement.dataset.theme==='tech'?0x14272e:0xe7e7db);
  for(let j=0;j<18;j++){
  const f=(j+.5)/18,covered=high.y+(low.y-high.y)*f<jacketClip.constant;
- const target=22+Math.max(0,temp-65)*(1-f*.44)*(covered&&flow?.24:1.5);
+ const target=22+Math.max(0,temp-65)*(1-f*.44)*(covered ? .24+wallHeat : 1.5);
  section[j]+=(target-section[j])*(1-Math.exp(-dt*.55));
  jackets[j].visible=thermal;
  if(thermal)tint(jackets[j].material,section[j]);
  }
  jacketShell.visible=!thermal;
+ const precipitate=Math.max(0,flaskSaltMg-360*charge);
+ crystals.forEach((v,i)=>{v.visible=precipitate>i*40+.01});
+ heatBands.forEach((band,i)=>{
+  band.visible=thermal;
+  if(thermal)tint(band.material,temp+(baseTemperature-temp)*Math.exp(-i*.42));
+ });
  if(thermal){tint(bulb.material,temp);tint(brine.material,temp);tint(waterSurface.material,temp);tint(flame.material,110)}
  droplet.visible=collecting&&dripPhase>.005;
  if(droplet.visible){
@@ -1036,7 +1089,9 @@ function frame(now){
  const thermometerTop=raised(-3,thermometerTopY,0).project(camera);
  $('thermo').style.left=Math.max(58,Math.min(w-58,(thermometerTop.x+1)*w/2))+'px';
  $('thermo').style.top=Math.max(3,Math.min(h-30,(1-thermometerTop.y)*h/2-29))+'px';
- liveText('tag',labText(thermal?'第一身 · 熱像眼鏡':'實驗枱'));placeMarkers(w,h);renderer.render(scene,camera);requestAnimationFrame(frame)
+ liveText('tag',labText(thermal?'第一身 · 熱像眼鏡':'實驗枱'));placeMarkers(w,h);renderer.render(scene,camera);
+ if(broken){$('incident').showModal();return}
+ requestAnimationFrame(frame)
 }
 requestAnimationFrame(frame);
 

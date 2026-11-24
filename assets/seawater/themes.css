@@ -56,3 +56,5 @@ html:has(#view.lab-expanded){overflow:hidden}
  #view.lab-expanded.controls-folded{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
  #view.lab-expanded.controls-folded #console{display:none}
 }
+
+#incident{box-sizing:border-box;width:min(560px,88vw);padding:clamp(18px,4vw,40px);background:var(--face);color:var(--ink);border:2px solid var(--line);border-top:6px solid #b65036;border-radius:8px;font-family:var(--type)}#incident::backdrop{background:#14202299}#incident h2{margin:0;font-size:clamp(24px,4vw,36px)}#incident p{line-height:1.65;font-size:clamp(17px,2vw,22px)}#restartIncident{min-height:44px;padding:6px 18px;background:var(--button);color:var(--ink);border:1px solid var(--line);border-radius:4px}
