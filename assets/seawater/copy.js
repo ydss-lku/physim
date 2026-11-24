@@ -1,4 +1,5 @@
 const pairs=[
+['建議打橫手機，睇清楚成套蒸餾裝置。','Turn your phone sideways to see the whole setup.'],['收起橫屏提示','Dismiss landscape tip'],
 ['放大','Zoom in'],['縮細','Zoom out'],
 ['海水蒸餾實驗','Seawater distillation'],['中一科學 · 分離混合物','S1 Science · Separating mixtures'],['科學老師','Science teacher'],['枱面俯視','Bench surface'],['拖動抹布，或用方向鍵移動','Drag the cloth or use the arrow keys'],['三維蒸餾裝置，可拖動改變視角','Distillation apparatus. Drag to rotate.'],
 ['枱面抹乾喇，檢查喉頭，改好接駁先再開水。','Bench dry. Check the hoses before opening a tap.'],['點喉頭或接口開始接駁。','Select a hose end or a port.'],['點喉頭（取消）','Select a hose end'],['點接口（取消）','Select a port'],['取消選擇','Cancel selection'],['：由洗手盆拎返上去',' · lift out of the sink'],['拎返上去','Lift out'],['鬆開','Disconnect'],['未接','free'],['青喉','Teal hose'],['啡喉','Brown hose'],['燒瓶端（高位）','upper port'],['接收器端（低位）','lower port'],['水龍頭','water tap'],['洗手盆','sink'],

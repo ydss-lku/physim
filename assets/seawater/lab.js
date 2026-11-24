@@ -10,6 +10,12 @@ function iconButton(el,icon,label,badge=''){
  if(badge){const tag=document.createElement('small');tag.textContent=badge;el.append(tag)}
 }
 const $=id=>document.getElementById(id), T=THREE, vec=(x,y,z)=>new T.Vector3(x,y,z);
+const rotateHint=$('rotateHint');
+try{rotateHint.hidden=sessionStorage.getItem('seawater.rotateHintDismissed')==='1'}catch{}
+$('dismissRotate').onclick=()=>{
+ rotateHint.hidden=true;
+ try{sessionStorage.setItem('seawater.rotateHintDismissed','1')}catch{}
+};
 const scene=new T.Scene(), camera=new T.PerspectiveCamera(34,1,.1,100);
 const renderer=new T.WebGLRenderer({canvas:$('sceneCanvas'),antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
