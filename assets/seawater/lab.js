@@ -414,6 +414,19 @@ function connect(key){
 hose(0);hose(1);
 // Use the same horizontal surface that is drawn inside the jacket.
 const c1IntakeHeight=upperSocket.y+socketNormal.y*outerR;
+function canDrainPort(port){
+ const end=connections.indexOf(port);
+ if(end<0)return true;
+ const outlet=connections[end^1];
+ return outlet==='sink'||outlet==='free';
+}
+function retainedJacketLevel(){
+ // A hose ending at a shut tap is a closed branch. Only an open outlet can lower the surface.
+ const lowIntake=lowerSocket.y-socketNormal.y*outerR;
+ const outletHeight=canDrainPort('low')?lowIntake:canDrainPort('high')?c1IntakeHeight:jacketTop;
+ const limit=Math.max(0,(outletHeight-jacketBottom)/(jacketTop-jacketBottom));
+ return Math.min(fill,limit);
+}
 function trace(key){
  const ends=connections,idx=ends.indexOf(key);
  if(idx<0)return {out:ports[key],drain:true};
@@ -798,7 +811,7 @@ function frame(now){
  advanceBlockedCircuit(dt);
  const feeds=taps.filter((k,i)=>supplies[i].ready).map(trace);
  const flow=feeds.find(p=>p.inlet)?.inlet;
- const targetFill=feeds.some(p=>p.blocked)||flow==='low'?1:flow ? .42 : 0;
+ const targetFill=feeds.some(p=>p.blocked)||flow==='low'?1:flow ? .42 : retainedJacketLevel();
  fill+=(targetFill-fill)*(1-Math.exp(-dt*1.5));
  updateCoolant(fill);
  const paths=taps.map(trace);
