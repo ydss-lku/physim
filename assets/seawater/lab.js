@@ -57,7 +57,7 @@ const renderer=new T.WebGLRenderer({canvas:$('sceneCanvas'),antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 scene.add(new T.HemisphereLight(0xffffff,0x788a92,2));
 const sun=new T.DirectionalLight(0xfff4de,2);sun.position.set(-4,9,6);scene.add(sun);
-for(const [id,icon,label] of [['add','add','加入海水'],['granules','granules','防暴沸粒：有'],['labels','labels','隱藏標籤'],['reset','reset','重新開始'],['cloth','cloth','拖動抹布，或用方向鍵移動']])iconButton($(id),icon,label);
+for(const [id,icon,label] of [['add','add','加入海水'],['granules','granules','防暴沸粒：有'],['labels','labels','顯示標籤'],['reset','reset','重新開始'],['cloth','cloth','拖動抹布，或用方向鍵移動']])iconButton($(id),icon,label);
 iconButton(document.querySelector('#hosePanel summary'),'hose','接駁膠喉');
 const surfaces=[];
 function solid(geometry,color,position,alpha=1){
@@ -562,7 +562,7 @@ const filmBeads=Array.from({length:16},(_,i)=>({
 }));
 let beadIndex=0,escapingFraction=0;
 function advanceFilm(amount,dt){
- const forming=amount>0;
+ const forming=amount>1e-10;
  while(amount>1e-10){
   const bead=filmBeads[beadIndex],take=Math.min(amount,dropVolume/2-bead.volume);
   bead.volume+=take;amount-=take;
@@ -585,6 +585,9 @@ function advanceFilm(amount,dt){
 const fallingDrop=ball(outlet.clone(),.07,0x378ca5,.95);
 const fallDuration=.18;
 let fallAge=null;
+// Liquid-equivalent vapour volumes in mL; count condensate on impact.
+let boilPower=0,vapourInHead=0,experimentSeconds=0;
+const arrivalTimes=[];
 let dripPhase=0, steamAge=0, headTemp=22, fast=false;
 $('fast').onclick=()=>fast=!fast;
 let nextBump=1.6,burstAge=1,granuleAttempt=false,bumped=false;
@@ -917,7 +920,7 @@ function marker(code,getPoint,end,key){
  btn.dataset.copyAria=end===undefined?names[key]:code+' '+(end<2?'青喉':'啡喉');btn.setAttribute('aria-label',labText(btn.dataset.copyAria));
  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
  const dot=document.createElement('span');dot.className='socket-dot';
- dot.setAttribute('aria-hidden','true');dot.onclick=()=>btn.click();
+ dot.tabIndex=0;dot.setAttribute('role','button');dot.dataset.copyAria=btn.dataset.copyAria;dot.setAttribute('aria-label',btn.getAttribute('aria-label'));dot.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();btn.click()}};dot.onclick=()=>btn.click();
  $('leaders').append(line);$('markers').append(btn,dot);markers.push({btn,getPoint,end,line,dot,key,isTap:taps.includes(key)});
  btn.onclick=()=>{if(end!==undefined)pickEnd(end);else if(selected>=0)connect(key);else choose(-1,selectedPort===key?null:key)};
 }
@@ -1066,7 +1069,19 @@ function frame(now){
  steamAge=boiling?Math.min(4,steamAge+elapsed):0;
  const headTarget=steamAge>=1?100:22+.12*(temp-22);
  headTemp+=(headTarget-headTemp)*(1-Math.exp(-elapsed*(steamAge>=1?.85:.09)));
- const collecting=boiling&&steamAge>=4;
+ // Integrate a burner response and residual stored heat over simulation time.
+ const targetPower=boiling ? .025 : 0, tau=boiling ? 4 : 3;
+ const previousPower=boilPower;
+ boilPower=approach(previousPower,targetPower,1/tau,elapsed);
+ const evaporated=Math.min(charge,Math.max(0,targetPower*elapsed+(previousPower-boilPower)*tau));
+ charge-=evaporated;
+ if(!charge)boilPower=0;
+ // Vapour in the head takes time to reach the condenser, including after shutoff.
+ const retention=Math.exp(-elapsed/2);
+ const nextInventory=vapourInHead*retention+2*(elapsed>0?evaporated/elapsed:0)*(1-retention);
+ const delivered=Math.max(0,vapourInHead+evaporated-nextInventory);
+ vapourInHead=nextInventory;
+ experimentSeconds+=elapsed;
 
  $('fast').disabled=!canAdvance;$('fast').setAttribute('aria-pressed',String(fast));
  iconButton($('fast'),'fast',fast?'回復正常速度':'快轉八倍',fast?'1×':'8×');
@@ -1074,24 +1089,24 @@ function frame(now){
  advanceCooling(elapsed,flow,boiling);
  // Compare incoming vapour with the heat-removal capacity of the wetted glass.
  // Capacities are illustrative mL/s equivalents for this classroom burner.
- const vapourRate=.025;
  const wallFilm=flow==='high' ? .14 : 0;
  const wetted=fill+(1-fill)*wallFilm;
  const meanWarmth=coolantWarmth.reduce((sum,w)=>sum+w,0)/coolantWarmth.length;
  const capacity=.0045+.065*wetted*(1-meanWarmth);
- const efficiency=Math.min(1,capacity/vapourRate);
- const uncondensed=collecting?Math.max(0,vapourRate-capacity)/vapourRate:0;
+ const condensed=Math.min(delivered,capacity*elapsed);
+ const efficiency=delivered>0?condensed/delivered:1;
+ const uncondensed=(delivered-condensed)/Math.max(.025*elapsed,1e-9);
  escapingFraction=approach(escapingFraction,uncondensed,1.2,elapsed);
- const evaporated=boiling?Math.min(charge,vapourRate*elapsed):0;
- charge-=evaporated;
  if(fallAge!==null){
-  fallAge+=dt;
-  if(fallAge>=fallDuration){mixReceiver(dropVolume,equipmentHeat.tip);dist+=dropVolume;fallAge=null;saveReceiver()}
+  fallAge+=elapsed;
+  if(fallAge>=fallDuration){
+   mixReceiver(dropVolume,equipmentHeat.tip);dist+=dropVolume;fallAge=null;
+   arrivalTimes.push(experimentSeconds);saveReceiver();
+  }
  }
- if(collecting){
-  dripPhase+=evaporated*efficiency/dropVolume;
-  if(dripPhase>=1){fallAge=0;dripPhase-=1}
- }
+ advanceFilm(condensed,elapsed);
+ if(fallAge===null&&dripPhase>=1){fallAge=0;dripPhase-=1}
+ while(arrivalTimes.length&&arrivalTimes[0]<=experimentSeconds-30)arrivalTimes.shift();
  // Illustrative burst timing; surface nucleation varies between real flasks.
  if(boiling&&!useGranules){
   nextBump-=dt;burstAge+=dt;
@@ -1150,7 +1165,7 @@ function frame(now){
  const speech=instruction?'⚠ '+instruction:'';
  if($('warn').textContent!==speech){$('warn').hidden=!speech;$('warn').textContent=speech}
 
- liveText('read',labText('收集到嘅蒸餾水　')+dist.toFixed(2)+' mL');
+ liveText('read',labText('收集到嘅蒸餾水　')+dist.toFixed(2)+' mL · '+(arrivalTimes.length*2)+' '+labText('滴／分鐘'));
  for(const [id,state,on,off] of [['heat',heat,'熄火','開火'],['eye',thermal,'除低熱像眼鏡','戴上熱像眼鏡']]){const el=$(id);iconButton(el,id,state?on:off);el.setAttribute('aria-pressed',state)}
  $('add').disabled=charge>0||heat||Math.max(temp,baseTemperature)>=40;
  const targetAngle=heat?0:Math.PI/2;

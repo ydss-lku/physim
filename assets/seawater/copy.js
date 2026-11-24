@@ -1,4 +1,5 @@
 const pairs=[
+['滴／分鐘','drops/min'],
 ['儀器損壞，同學被科學老師帶走訓話，實驗結束了‧‧‧‧‧‧','The apparatus is damaged. Your science teacher takes you aside for a serious talk. Experiment over…'],['燒瓶裂開了','Cracked flask'],
 ['回復視角','Restore view'],
 ['顯示控制欄','Show controls'],['收起控制欄','Hide controls'],
