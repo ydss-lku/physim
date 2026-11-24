@@ -1,0 +1,9 @@
+@font-face{font-family:Oxanium;src:url('../cyberpunk-assets/Oxanium.ttf') format('truetype');font-weight:200 800;font-display:swap}
+*{box-sizing:border-box}body{margin:0;background:#eee9dc;color:#293e35;font-family:system-ui,'Microsoft JhengHei',sans-serif}main{max-width:960px;margin:auto;padding:clamp(28px,8vh,92px) clamp(16px,4vw,44px) 20px}
+.notice{background:#faf8ed;position:relative;border:1px solid #b1aa96;box-shadow:5px 6px 0 #d5ceba,7px 8px 0 #afa892}.notice:after{content:'';position:absolute;right:-1px;top:-1px;width:36px;height:36px;background:linear-gradient(45deg,#ded6bd 49%,#aaa38c 50%,#eee9dc 52%)}
+.sheet{padding:clamp(28px,7vw,78px)}header{display:flex;flex-wrap:wrap;gap:.3em .65em;align-items:baseline;font-weight:650;color:#526858}small{font-size:.78em}h1{margin:clamp(40px,9vh,90px) 0 0;font:600 clamp(30px,5.7vw,62px)/1.12 Georgia,serif}h1 small{display:block;margin-top:12px;font:600 .58em/1.5 system-ui,'Microsoft JhengHei',sans-serif}footer{margin-top:28px}
+html[data-style=tech] body{background:#080f13;color:#e8f0ef;font-family:Oxanium,system-ui,sans-serif}
+html[data-style=tech] .notice{--aug-tl:25px;--aug-tr:8px;--aug-br:28px;--aug-bl:8px;--aug-border-all:1px;--aug-border-bg:#547880;padding:15px;border:0;background:#181f23 url('../cyberpunk-assets/brushed-metal.png');box-shadow:0 18px 42px #0009}
+html[data-style=tech] .notice:after{display:none}html[data-style=tech] .sheet{background:#101e25;border:1px solid #77f5ef;box-shadow:0 0 12px #2fe9ef55,inset 0 0 12px #2fe9ef20}
+html[data-style=tech] header{color:#acccce}html[data-style=tech] h1{font-family:Oxanium,system-ui,sans-serif;color:#fcee0a}html[data-style=tech] h1 small{color:#e8f0ef}
+@media(max-width:520px){html[data-style=tech] .notice{padding:9px;--aug-tl:15px;--aug-br:17px}}
