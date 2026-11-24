@@ -362,6 +362,7 @@ const names={free:'鬆開',tap:'T1 水龍頭',tap2:'T2 水龍頭',high:'C1 燒�
 const connections=Array(4).fill('free'),hoses=[],endButtons=[];
 let slippedEnd=-1,slippedPosition;
 function point(i){return ports[connections[i]]||(i===slippedEnd?slippedPosition:loose[i])}
+const hoseWater=[],hoseBands=[];
 function hose(i){
  const a=point(2*i),b=point(2*i+1),mid=a.clone().lerp(b,.5);mid.y=.21;mid.z=1.1+i*.48;
  const resting=connections[2*i]==='free'&&connections[2*i+1]==='free';
@@ -370,6 +371,14 @@ function hose(i){
   : [a,a.clone().lerp(mid,.35).add(vec(0,.08,.32)),mid.clone().add(vec(0,0,.38)),b.clone().lerp(mid,.35).add(vec(0,.08,.32)),b];
  const curve=new T.CatmullRomCurve3(positions);
  const geometry=new T.TubeGeometry(curve,48,.074,12,false);
+ // A translucent cutaway overlay lets students follow water through an opaque rubber hose.
+ for(const [layer,radius,color,opacity] of [[hoseWater,.076,0x52cddd,.64],[hoseBands,.078,0xc0ffff,.95]]){
+  const g=new T.TubeGeometry(curve,48,radius,12,false);
+  g.setDrawRange(0,0);
+  if(layer[i]){layer[i].geometry.dispose();layer[i].geometry=g}
+  else layer[i]=solid(g,color,vec(0,0,0),opacity);
+  layer[i].renderOrder=layer===hoseWater?2:3;
+ }
  if(hoses[i]){hoses[i].geometry.dispose();hoses[i].geometry=geometry}else hoses[i]=solid(geometry,i?0xbb833b:0x387c83,vec(0,0,0));
 }
 let heat=false,thermal=false,charge=0,dist=0,temp=22,fill=0,spill=0,section=Array(18).fill(22),yaw=.12,pitch=.47;
@@ -400,7 +409,7 @@ function connect(key){
  }
  if(key!=='free'&&occupied>=0)connections[occupied]='free';
  if(selected===slippedEnd)slippedEnd=-1;
- connections[selected]=key;hose(0);hose(1);choose(-1);detectLeak();return true;
+ connections[selected]=key;hose(0);hose(1);choose(-1);return true;
 }
 hose(0);hose(1);
 // Use the same horizontal surface that is drawn inside the jacket.
@@ -408,15 +417,16 @@ const c1IntakeHeight=upperSocket.y+socketNormal.y*outerR;
 function trace(key){
  const ends=connections,idx=ends.indexOf(key);
  if(idx<0)return {out:ports[key],drain:true};
- const dest=ends[idx^1];if(dest==='sink')return {out:ports.sink,drain:true};
- if(dest==='free')return {out:point(idx^1),looseEnd:idx^1};
+ const dest=ends[idx^1];if(dest==='sink')return {out:ports.sink,drain:true,hoseStart:idx};
+ if(dest==='free')return {out:point(idx^1),looseEnd:idx^1,hoseStart:idx};
  if(taps.includes(dest))return {tapLoop:true};
  const other=dest==='low'?'high':'low',exit=ends.indexOf(other);
  if(exit>=0&&taps.includes(ends[exit^1]))return {blocked:true,feed:dest};
  if(dest==='low'&&jacketClip.constant<c1IntakeHeight)return {inlet:dest,drain:exit>=0&&ends[exit^1]==='sink'};
- return {inlet:dest,openPort:exit<0?other:null,out:exit<0?ports[other]:point(exit^1),drain:exit>=0&&ends[exit^1]==='sink'};
+ return {inlet:dest,hoseStart:exit>=0?exit:undefined,openPort:exit<0?other:null,out:exit<0?ports[other]:point(exit^1),drain:exit>=0&&ends[exit^1]==='sink'};
 }
-const streams=taps.map(()=>({jet:rod(vec(0,0,0),vec(0,1,0),.044,water,.82),puddle:ball(vec(0,.012,1.7),1,water,.56),size:0}));
+const streams=taps.map(()=>({jet:rod(vec(0,0,0),vec(0,1,0),.044,water,.82),puddle:ball(vec(0,.012,1.7),1,water,.56),size:0,route:null,age:0}));
+const plumes=taps.map(()=>solid(new T.BufferGeometry(),water,vec(0,0,0),.68));
 const spray=taps.map(()=>Array.from({length:20},()=>ball(vec(0,0,0),.039,water,.84)));
 function sprayOffset(i,f){return vec((i%2?1:-1)*.55*f,.55*f,1.13*f)}
 const droplet=ball(outlet.clone(),.07,0x378ca5,.95);
@@ -439,20 +449,18 @@ function advanceBlockedCircuit(dt){
  failedJoint=Math.random()<.5?'high':'low';
  const end=connections.indexOf(failedJoint);
  slippedPosition=ports[failedJoint].clone().add(vec(.22,-.13,.35));slippedEnd=end;
- connections[end]='free';blockedTime=0;hose(Math.floor(end/2));detectLeak();
+ connections[end]='free';blockedTime=0;hose(Math.floor(end/2));
 }
-function detectLeak(){
- if(!recovery&&[...openTaps].some(k=>{const p=trace(k);return p.out&&!p.drain})){
-  for(const k of openTaps){const path=trace(k);if(path.out&&!path.drain){const stream=streams[taps.indexOf(k)];stream.size=Math.max(.42,stream.size);stream.puddle.position.copy(path.out)}}
-  recovery='stop';choose(-1);
-  for(const btn of endButtons)btn.disabled=true;
- }
+function beginLeakRecovery(){
+ if(recovery)return;
+ recovery='stop';choose(-1);
+ for(const btn of endButtons)btn.disabled=true;
 }
 function toggleWater(key){
  if(recovery&&!openTaps.has(key))return;
  if(openTaps.has(key))openTaps.delete(key);else openTaps.add(key);
  if(recovery==='stop'&&!openTaps.size){recovery='wipe';startWiping()}
- detectLeak();
+
 }
 taps.forEach(key=>$(key).onclick=()=>toggleWater(key));
 const board=$('wipeBoard'), mop=$('cloth'), ink=board.getContext('2d',{willReadFrequently:true});
@@ -731,7 +739,7 @@ function frame(now){
  fill+=(targetFill-fill)*(1-Math.exp(-dt*1.5));
  updateCoolant(fill);
  const paths=taps.map(trace);
- detectLeak();
+
  const canAdvance=heat&&charge>2&&steamAge<4;
  if(!canAdvance)fast=false;
  const elapsed=dt*(fast?8:1);
@@ -822,20 +830,63 @@ function frame(now){
  handle.rotation.y+=Math.sign(targetAngle-handle.rotation.y)*Math.min(Math.abs(targetAngle-handle.rotation.y),dt*Math.PI*2);
  flame.visible=heat;updateBrine(charge,surge);
  collected.visible=dist>.01;collected.scale.y=dist/50;collected.position.y=.035+.2625*dist/50;
+ for(const mesh of [...hoseWater,...hoseBands])mesh.visible=false;
  streams.forEach((stream,i)=>{
- const {jet,puddle}=stream,p=paths[i];jet.visible=Boolean(openTaps.has(taps[i])&&p.out);
- const spurting=Boolean(recovery === 'stop' && jet.visible && !p.drain && failedJoint && (p.openPort===failedJoint || p.looseEnd===slippedEnd));
- spray[i].forEach((drop,j)=>{
-  drop.visible=spurting;if(!spurting)return;
-  const f=(clock*1.8+j/20)%1;
-  drop.position.copy(p.out).add(sprayOffset(i,f));
-  drop.position.y-=(p.out.y+.53)*f*f;
-  drop.position.x+=.045*Math.sin(j*3)*f;
- });
- if(jet.visible){jet.position.copy(p.out);jet.scale.y=Math.max(.04,p.out.y-(p.drain?-.47:.025));jet.position.y-=jet.scale.y/2}
- if(jet.visible&&!p.drain){puddle.position.copy(p.out);if(spurting)puddle.position.add(sprayOffset(i,1));stream.size=Math.min(1.5,stream.size+dt*.16)}else if(!recovery)stream.size=Math.max(0,stream.size-dt*.035);
- if(spurting)jet.visible=false;
- puddle.visible=stream.size>.01;puddle.position.y=.016;puddle.scale.set(stream.size,.012,stream.size*.65);
+  const {jet,puddle}=stream,p=paths[i];
+  const active=openTaps.has(taps[i])&&p.out;
+  const start=p.hoseStart, n=start===undefined?-1:Math.floor(start/2);
+  const route=active?[p.inlet,start,p.openPort,p.looseEnd,p.out.x,p.out.y,p.out.z,failedJoint].join('|'):null;
+  const newRoute=route!==stream.route;
+  if(newRoute){stream.age=0;stream.route=route}
+  if(active)stream.age+=dt;
+  let transit=0;
+  if(active&&n>=0){
+   transit=hoses[n].geometry.parameters.path.getLength()/3.8;
+   const front=Math.min(48,Math.floor(48*stream.age/transit));
+   const reversed=start%2===1;
+   const draw=(mesh,first,count)=>{
+    mesh.visible=count>0;
+    mesh.geometry.setDrawRange((reversed?48-first-count:first)*72,count*72);
+   };
+   draw(hoseWater[n],0,front);
+   const band=Math.floor(48*((stream.age/transit)%1));
+   draw(hoseBands[n],Math.max(0,band-3),Math.min(3,band,front));
+  }
+  const age=active?Math.max(0,stream.age-transit):0;
+  const spurting=active&&!p.drain&&failedJoint&&(p.openPort===failedJoint||p.looseEnd===slippedEnd);
+  const height=active?Math.max(.02,p.out.y-(p.drain?-.47:.025)):0;
+  const flight=spurting ? .55 : Math.sqrt(2*height/9.8);
+  const plume=plumes[i];
+  if(spurting&&newRoute){
+   const points=Array.from({length:17},(_,j)=>{
+    const f=j/16,position=sprayOffset(i,f);
+    position.y-=(height+.55)*f*f;
+    return position;
+   });
+   plume.geometry.dispose();
+   plume.geometry=new T.TubeGeometry(new T.CatmullRomCurve3(points),40,.025,8,false);
+   plume.position.copy(p.out);
+  }
+  plume.visible=Boolean(spurting&&age>0);
+  if(plume.visible)plume.geometry.setDrawRange(0,48*Math.min(40,Math.floor(40*age/flight)));
+  const falling=Math.min(height,4.9*age*age);
+  jet.visible=age>0&&!spurting;
+  if(jet.visible){jet.scale.y=falling;jet.position.copy(p.out);jet.position.y-=falling/2}
+  spray[i].forEach((drop,j)=>{
+   const launched=age-j*flight/20;
+   drop.visible=Boolean(spurting&&launched>0);
+   if(!drop.visible)return;
+   const f=(launched%flight)/flight;
+   drop.position.copy(p.out).add(sprayOffset(i,f));
+   drop.position.y-=(height+.55)*f*f;
+   drop.position.x+=.045*Math.sin(j*3)*f;
+  });
+  if(age>=flight&&active&&!p.drain){
+   puddle.position.copy(p.out);if(spurting)puddle.position.add(sprayOffset(i,1));
+   stream.size=Math.min(1.5,Math.max(.08,stream.size+dt*.16));
+   beginLeakRecovery();
+  }else if(!recovery)stream.size=Math.max(0,stream.size-dt*.035);
+  puddle.visible=stream.size>.01;puddle.position.y=.016;puddle.scale.set(stream.size,.012,stream.size*.65);
  });
  if(oldMode!==thermal){for(const {obj,color} of surfaces){if(thermal)tint(obj.material,22);else obj.material.color.set(color)}oldMode=thermal}
  if(!scene.background)scene.background=new T.Color();
