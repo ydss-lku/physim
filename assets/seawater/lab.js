@@ -495,6 +495,7 @@ $('eye').onclick=()=>{thermal=!thermal;$('lens').hidden=$('scale').hidden=!therm
 $('reset').onclick=()=>location.reload();
 const canvas=renderer.domElement,picker=new T.Raycaster(),pointers=new Map();
 let zoom=1,press=null;
+let panX=0,panY=0,pinchStart=null;
 function changeZoom(factor){
  zoom=Math.max(.65,Math.min(3,zoom*factor));
  $('zoomIn').disabled=zoom>=3;
@@ -514,19 +515,26 @@ function fingerDistance(){
  const [a,b]=pointers.values();
  return Math.hypot(a.x-b.x,a.y-b.y);
 }
+function beginPinch(){
+ if(pointers.size!==2){pinchStart=null;return}
+ const [a,b]=pointers.values();
+ pinchStart={x:(a.x+b.x)/2,y:(a.y+b.y)/2,distance:fingerDistance(),zoom,panX,panY};
+}
 canvas.onpointerdown=e=>{
  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
  press=pointers.size===1?{x:e.clientX,y:e.clientY}:null;
+ beginPinch();
  canvas.setPointerCapture(e.pointerId);
 };
 canvas.onpointermove=e=>{
  const old=pointers.get(e.pointerId);
  if(!old)return;
- const previous=pointers.size===2?fingerDistance():0;
  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
- if(pointers.size===2){
-  const next=fingerDistance();
-  if(previous>2&&next>2)changeZoom(next/previous);
+ if(pointers.size===2&&pinchStart){
+  const [a,b]=pointers.values();
+  panX=Math.max(-2,Math.min(2,pinchStart.panX+((a.x+b.x)/2-pinchStart.x)/canvas.clientWidth));
+  panY=Math.max(-2,Math.min(2,pinchStart.panY+((a.y+b.y)/2-pinchStart.y)/canvas.clientHeight));
+  if(pinchStart.distance>2)changeZoom(pinchStart.zoom*fingerDistance()/(pinchStart.distance*zoom));
  }else if(pointers.size===1){
   yaw-=(e.clientX-old.x)*.008;
   pitch=Math.max(.12,Math.min(1.15,pitch+(e.clientY-old.y)*.006));
@@ -540,9 +548,10 @@ canvas.onpointerup=e=>{
  const hit=picker.intersectObjects([...waterHandles,...valveParts],true)[0];
  if(hit){const i=waterHandles.indexOf(hit.object);if(i<0)toggleBurner();else toggleWater(taps[i])}
  }
+ beginPinch();
  press=null;
 };
-canvas.onpointercancel=canvas.onlostpointercapture=e=>{pointers.delete(e.pointerId);press=null};
+canvas.onpointercancel=canvas.onlostpointercapture=e=>{if(pointers.delete(e.pointerId))beginPinch();press=null};
 const palette=['#21114c','#7751c6','#ec5682','#ffac43','#fff3a7'].map(x=>new T.Color(x));
 function tint(mat,t){const n=Math.max(0,Math.min(3.999,(t-15)/90*4)),k=Math.floor(n);mat.color.copy(palette[k]).lerp(palette[k+1],n-k)}
 $('labels').onclick=()=>{
@@ -653,7 +662,7 @@ function placeNames(w,h,markersPlaced){
 }
 let previousLayout='';
 function placeMarkers(w,h){
- const signature=[w,h,yaw,pitch,zoom,thermal,showNames,$('view').classList.contains('unlabelled'),selected,selectedPort,...connections].join(',');
+ const signature=[w,h,yaw,pitch,zoom,panX,panY,thermal,showNames,$('view').classList.contains('unlabelled'),selected,selectedPort,...connections].join(',');
  if(signature===previousLayout)return;previousLayout=signature;camera.updateMatrixWorld();
  const placed=[];
  const detach=$('detach');
@@ -681,7 +690,7 @@ function placeMarkers(w,h){
  const isCondenser=m=>m.key==='high'||m.key==='low';
  const ordered=[...markers.filter(m=>m.isTap),...markers.filter(isCondenser),...markers.filter(m=>!m.isTap&&!isCondenser(m))];
  for(const m of ordered){
- m.dot.hidden=m.btn.hidden;m.line.style.display=m.btn.hidden||isCondenser(m)?'none':'';if(m.btn.hidden)continue;
+ m.dot.hidden=m.btn.hidden;m.line.style.display=m.btn.hidden||m.isTap||isCondenser(m)?'none':'';if(m.btn.hidden)continue;
  const v=m.getPoint().clone().project(camera),px=(1+v.x)*w/2,py=(1-v.y)*h/2;
  m.dot.style.left=px+'px';m.dot.style.top=py+'px';
  m.dot.style.zIndex=m.end===undefined?'1':'2';
@@ -842,7 +851,7 @@ function frame(now){
  }
  mist.forEach((m,i)=>{const f=(clock*.75+i/10)%1;m.visible=boiling&&efficiency<.82;m.position.set(2.35+f*.57,outlet.y+f*.86,.05+f*.1);m.scale.setScalar(.5+f);m.material.opacity=.33*(1-f)});
  const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.floor(w*renderer.getPixelRatio())||canvas.height!==Math.floor(h*renderer.getPixelRatio()))renderer.setSize(w,h,false);
- camera.aspect=w/h;camera.updateProjectionMatrix();
+ camera.setViewOffset(w,h,-panX*w,-panY*h,w,h);
  const distance=Math.max(thermal?7.6:11.8,(thermal?6.3:10.8)/(.57*camera.aspect))/zoom;
  const angle=thermal?yaw*.7:yaw,tilt=thermal?Math.min(.43,pitch):pitch;
  camera.position.set(.55+distance*Math.cos(tilt)*Math.sin(angle),(thermal?1.7:2.12)+distance*Math.sin(tilt),distance*Math.cos(tilt)*Math.cos(angle));camera.lookAt(.55,thermal?1.7:2.12,0);camera.updateMatrixWorld();
