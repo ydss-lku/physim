@@ -80,7 +80,7 @@
   }
   const inline = 'span,small,b,strong,i,em,sub,sup,br,p,h1,h2,h3,tspan';
   function render(el, inherited) {
-    if (el.matches('script,style,noscript,template,[data-language-switch],.control-glyph')) return;
+    if (el.matches('[data-lab-localized],script,style,noscript,template,[data-language-switch],.control-glyph')) return;
     attributes(el);
     if (el.matches('option') && !el.hasAttribute('value')) el.value = el.textContent;
     const own = explicit(el) || inherited;
@@ -142,6 +142,7 @@
     const observer = new MutationObserver(records => {
       const targets = new Set();
       for (const record of records) {
+        if ((record.target.parentElement?.closest('[data-lab-localized]') || record.target.hasAttribute?.('data-lab-localized'))) continue;
         if (record.type === 'attributes') {
           if (attrNames.includes(record.attributeName)) attributes(record.target);
           else if (record.target.matches('button')) window.labControlIcons?.render(record.target);
