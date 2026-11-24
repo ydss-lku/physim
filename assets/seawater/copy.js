@@ -19,11 +19,10 @@ const teacherLines = {
   almostDry: ["同學！啲海水就快俾你蒸乾喇！快啲熄火！","You're about to boil the flask dry! Turn off the burner!"],
   noWater: ["同學！冷凝管未有水喎！","There's no cooling water flowing through the condenser!"],
   bumping: ["同學小心啊！啲海水暴沸喇！不如熄火先啦！","Careful! The seawater is bumping! Let's turn off the burner first!"],
-  hot: ["同學！個 flask 仲熱㗎！開返 {tap} 俾冷卻水流返先！","The flask is still hot! Turn {tap} back on to get the cooling water flowing!"],
   loop: ["同學！喺實驗室唔准玩水！如果你再玩水，培育組老師會同你跟進一下！","No playing with water in the lab! If you do it again, the PC Team will follow up with you!"],
   hotReverse: ["同學！熄咗火、攤返凍，先好掹走啲喉呀！","Turn off the burner and let the apparatus cool before you pull off the hoses!"],
   waste: ["同學！唔准浪費食水!","Don't waste water!"],
-  reverseOn: ["同學，你而家嘅接駁方法唔啱啊！應該係下面入水，上面出水！你依家閂水喉兼熄火，重新嚟過啦！","You've got the hoses the wrong way round! Water goes in at the bottom and out at the top. Turn off the tap and the burner, then start again!"],
+  reverseOn: ["同學，你而家嘅接駁方法唔啱啊！應該係下面入水，上面出水！你依家閂咗水喉先啦！","You've got the hoses the wrong way round! Water goes in at the bottom and out at the top. Turn off the tap first!"],
   reverseOff: ["供水喉要駁下面！","Connect the supply hose to the lower port!"]
 };
 function teacherLine(key, tap = "") {

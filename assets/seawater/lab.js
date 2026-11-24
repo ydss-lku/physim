@@ -661,7 +661,6 @@ function frame(now){
  const runningWith=predicate=>running.find(k=>predicate(paths[taps.indexOf(k)]));
  const leaking=runningWith(p=>p.out&&!p.drain);
  const label=k=>names[k].split(' ')[0];
- const supply=taps.find((k,i)=>paths[i].inlet==='low'&&paths[i].drain);
  const reverse=taps.find((k,i)=>paths[i].inlet==='high'&&paths[i].drain);
  const loop=runningWith(p=>p.tapLoop);
  if(!hosesLockedByHeat())hotDisconnectAttempt=false;
@@ -675,7 +674,6 @@ function frame(now){
  else if(heat&&!flow)instruction=teacherLine('noWater');
  else if(heat&&bumped)instruction=teacherLine('bumping');
  else if(hotDisconnectAttempt)instruction=teacherLine('hotReverse');
- else if(!heat&&temp>52&&!flow&&supply)instruction=teacherLine('hot', label(supply));
  else if(granuleAttempt&&heat)instruction=teacherLine('flame');
  else if(loop)instruction=teacherLine('loop');
 
