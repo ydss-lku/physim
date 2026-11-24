@@ -289,12 +289,14 @@ const loose=[vec(-4.2,.11,1.47),vec(-.65,.11,1.47),vec(.12,.11,1.72),vec(3.08,.1
 const taps=['tap','tap2'];
 ports.tap2=ports.tap.clone();ports.tap.z+=.6;ports.tap2.z-=.6;
 const openTaps=new Set();
+const spoutMidpoints={};
 const waterHandles=taps.map(k=>{
  const outlet=ports[k],z=outlet.z,bodyX=5.48;
  rod(vec(bodyX,-.02,z),vec(bodyX,.09,z),.21,metal);
  rod(vec(bodyX,.09,z),vec(bodyX,1.61,z),.112,metal);
  ball(vec(bodyX,1.52,z),.155,metal);
  const bend=new T.CatmullRomCurve3([vec(bodyX,1.49,z),vec(5.23,1.56,z),vec(4.77,1.63,z),vec(4.33,1.64,z),vec(4.10,1.56,z),vec(outlet.x,1.42,z)]);
+ spoutMidpoints[k]=bend.getPointAt(.5);
  solid(new T.TubeGeometry(bend,40,.112,20,false),metal,vec(0,0,0));
  rod(vec(outlet.x,1.43,z),outlet,.135,metal);
  rod(outlet,vec(outlet.x,outlet.y-.003,z),.095,0x354b50);
@@ -584,19 +586,36 @@ function placeMarkers(w,h){
   const y=Math.max(24,Math.min(h-24,py));
   detach.style.left=x+'px';detach.style.top=y+'px';placed.push({x,y,wide:true});
  }
- for(const m of markers){
+ // Reserve the tap labels first so only the movable labels dodge other controls.
+ const tapLabels={};
+ for(const k of taps){
+  const v=spoutMidpoints[k].clone().project(camera);
+  const x=Math.max(23,Math.min(w-23,(1+v.x)*w/2));
+  let y=Math.max(24,Math.min(h-25,(1-v.y)*h/2-28));
+  if(k==='tap2'){
+   const first=tapLabels.tap;
+   const near=Math.max(0,Math.min(1,(72-Math.abs(x-first.x))/24));
+   y-=near*Math.max(0,y-first.y+40);
+   if(y<24){first.y+=24-y;y=24}
+  }
+  tapLabels[k]={x,y};
+ }
+ const ordered=[...markers.filter(m=>m.isTap),...markers.filter(m=>!m.isTap)];
+ for(const m of ordered){
  m.dot.hidden=m.btn.hidden;m.line.style.display=m.btn.hidden?'none':'';if(m.btn.hidden)continue;
  const v=m.getPoint().clone().project(camera),px=(1+v.x)*w/2,py=(1-v.y)*h/2;
  m.dot.style.left=px+'px';m.dot.style.top=py+'px';
  m.dot.style.zIndex=m.end===undefined?'1':'2';
- let best,score=Infinity;
+ let best=tapLabels[m.key],score=Infinity;
+ if(!m.isTap){
  for(let dy=-125;dy<=125;dy+=25)for(let dx=-126;dx<=126;dx+=21){
  const x=Math.max(23,Math.min(w-23,px+dx)),y=Math.max(57,Math.min(h-25,py+dy));
  const overlap=placed.some(p=>Math.abs(p.x-x)<(p.wide?54:46)&&Math.abs(p.y-y)<45);
  const left=m.key==='low';
- const lift=m.isTap?75:left?0:25;
- const cost=(overlap?100000:0)+(m.isTap&&y>py-35?10000:0)+(left&&x>px-28?10000:0)+(x-px+(left?63:0))**2+(y-py+lift)**2;
+ const lift=left?0:25;
+ const cost=(overlap?100000:0)+(left&&x>px-28?10000:0)+(x-px+(left?63:0))**2+(y-py+lift)**2;
  if(cost<score){score=cost;best={x,y}}
+ }
  }
  placed.push(best);m.btn.style.left=best.x+'px';m.btn.style.top=best.y+'px';
  for(const [k,value] of Object.entries({x1:px,y1:py,x2:best.x,y2:best.y}))m.line.setAttribute(k,value);
