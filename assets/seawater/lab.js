@@ -525,6 +525,45 @@ function advanceBlockedCircuit(dt){
  slippedPosition=ports[failedJoint].clone().add(vec(.22,-.13,.35));slippedEnd=end;
  connections[end]='free';blockedTime=0;hose(Math.floor(end/2));
 }
+// Gravity drainage from an exposed lower socket, independent of the tap-fed jets.
+const jacketDrain={
+ jet:rod(vec(0,0,0),vec(0,1,0),.052,water,.85),
+ puddle:ball(vec(0,.016,0),1,water,.56),size:0,landed:0,packets:[],age:0
+};
+function drainLowerSocket(dt){
+ const d=jacketDrain,out=ports.low,height=out.y-.025;
+ const flight=Math.sqrt(height/4.9);
+ const pouring=!openTaps.size&&!connections.includes('low')&&fill>0;
+ if(pouring){
+  // A finite drawdown: discharge slows with the square root of remaining head.
+  const next=Math.max(0,Math.sqrt(fill)-.17*dt)**2;
+  d.packets.push({at:clock,amount:fill-next});
+  fill=next;
+ }
+ while(d.packets.length&&clock-d.packets[0].at>=flight){
+  d.landed+=d.packets.shift().amount;
+  d.size=Math.sqrt(d.landed);
+  if(!recovery){
+   recovery=openTaps.size?'stop':'drain';choose(-1);
+   for(const btn of endButtons)btn.disabled=true;
+  }
+ }
+ if(pouring)d.age+=dt;
+ const bottom=Math.min(height,4.9*d.age*d.age);
+ const top=pouring?0:d.packets.length?Math.min(height,4.9*(clock-d.packets[d.packets.length-1].at)**2):height;
+ d.jet.visible=bottom>top;
+ if(d.jet.visible){
+  const radius=.12+.88*Math.sqrt(fill);
+  d.jet.scale.set(radius,bottom-top,radius);
+  d.jet.position.copy(out);d.jet.position.y-=(bottom+top)/2;
+ }else if(!pouring)d.age=0;
+ d.puddle.visible=d.size>0;
+ d.puddle.position.set(out.x,.016,out.z);
+ d.puddle.scale.set(d.size,.012,d.size*.65);
+ if(recovery==='drain'&&!pouring&&!d.packets.length){
+  recovery='wipe';startWiping();
+ }
+}
 function beginLeakRecovery(){
  if(recovery)return;
  recovery='stop';choose(-1);
@@ -533,7 +572,7 @@ function beginLeakRecovery(){
 function toggleWater(key){
  if(recovery&&!openTaps.has(key))return;
  if(openTaps.has(key)){openTaps.delete(key)}else openTaps.add(key);
- if(recovery==='stop'&&!openTaps.size){recovery='wipe';startWiping()}
+ if(recovery==='stop'&&!openTaps.size){recovery='drain'}
 
 }
 taps.forEach(key=>$(key).onclick=()=>toggleWater(key));
@@ -546,7 +585,7 @@ function putCloth(x,y){
 function startWiping(){
  $('cleaning').hidden=false;
  ink.globalCompositeOperation='source-over';ink.clearRect(0,0,board.width,board.height);
- for(const stream of streams){
+ for(const stream of [...streams,jacketDrain]){
   if(stream.size<=0)continue;
   const pos=stream.puddle.position,x=300+pos.x*42,y=100+pos.z*29;
   const r=16+stream.size*24;ink.fillStyle='#57afbc';ink.beginPath();ink.ellipse(x,y,r,r*.65,-.16,0,2*Math.PI);ink.fill();
@@ -569,7 +608,8 @@ mop.onkeydown=e=>{const delta={ArrowLeft:[-12,0],ArrowRight:[12,0],ArrowUp:[0,-1
 function finishWiping(){
  if(recovery!=='wipe'||openTaps.size)return;
  clothDrag=null;failedJoint=null;$('cleaning').hidden=true;
- for(const stream of streams){stream.size=0;stream.puddle.visible=false}
+ jacketDrain.landed=0;
+ for(const stream of [...streams,jacketDrain]){stream.size=0;stream.puddle.visible=false}
  recovery='';
  for(const btn of endButtons)btn.disabled=false;
  choose(-1);
@@ -812,7 +852,8 @@ function frame(now){
  const feeds=taps.filter((k,i)=>supplies[i].ready).map(trace);
  const flow=feeds.find(p=>p.inlet)?.inlet;
  const targetFill=feeds.some(p=>p.blocked)||flow==='low'?1:flow ? .42 : retainedJacketLevel();
- fill+=(targetFill-fill)*(1-Math.exp(-dt*1.5));
+ if(openTaps.size||connections.includes('low'))fill+=(targetFill-fill)*(1-Math.exp(-dt*1.5));
+ drainLowerSocket(dt);
  updateCoolant(fill);
  const paths=taps.map(trace);
 
