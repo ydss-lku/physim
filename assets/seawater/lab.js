@@ -341,13 +341,22 @@ for(const key of [...taps,'high','low','sink']){
  const btn=document.createElement('button');iconButton(btn,taps.includes(key)?'tap':key,names[key],names[key].split(' ')[0]);btn.onclick=()=>connect(key);$('targets').append(btn);
 }
 let recovery='',blockedTime=0,failedJoint=null;
+let hotDisconnectAttempt=false;
+function hosesLockedByHeat(){
+ return heat || Math.max(temp,headTemp)>=40;
+}
 function connect(key){
  if(recovery)return;
  if(selected<0)return;
  const occupied=connections.indexOf(key);
+ const removesConnection=connections[selected]!==key && (connections[selected]!=='free' || (key!=='free' && occupied>=0));
+ if(removesConnection && hosesLockedByHeat()){
+  hotDisconnectAttempt=true;
+  return false;
+ }
  if(key!=='free'&&occupied>=0)connections[occupied]='free';
  if(selected===slippedEnd)slippedEnd=-1;
- connections[selected]=key;hose(0);hose(1);choose(-1);detectLeak();
+ connections[selected]=key;hose(0);hose(1);choose(-1);detectLeak();return true;
 }
 hose(0);hose(1);
 function trace(key){
@@ -506,8 +515,8 @@ function detachSelected(){
  if(selectedPort)selected=connections.indexOf(selectedPort);
  const lifted=selected;
  const pickup=connections[lifted]==='sink';
- connect('free');
- if(pickup&&!recovery)choose(lifted);
+ const removed=connect('free');
+ if(removed&&pickup&&!recovery)choose(lifted);
 }
 $('detach').onclick=$('panelDetach').onclick=detachSelected;
 $('connectHint').onclick=()=>choose(-1);
@@ -655,6 +664,7 @@ function frame(now){
  const supply=taps.find((k,i)=>paths[i].inlet==='low'&&paths[i].drain);
  const reverse=taps.find((k,i)=>paths[i].inlet==='high'&&paths[i].drain);
  const loop=runningWith(p=>p.tapLoop);
+ if(!hosesLockedByHeat())hotDisconnectAttempt=false;
  let instruction='';
  if(recovery==='stop'){
   instruction=leaking?teacherLine('leak'):teacherLine('otherTap');
@@ -664,11 +674,12 @@ function frame(now){
  else if(heat&&charge<=2.001)instruction=teacherLine('almostDry');
  else if(heat&&!flow)instruction=teacherLine('noWater');
  else if(heat&&bumped)instruction=teacherLine('bumping');
+ else if(hotDisconnectAttempt)instruction=teacherLine('hotReverse');
  else if(!heat&&temp>52&&!flow&&supply)instruction=teacherLine('hot', label(supply));
  else if(granuleAttempt&&heat)instruction=teacherLine('flame');
  else if(loop)instruction=teacherLine('loop');
 
- else if(reverse && openTaps.has(reverse) && heat)instruction=teacherLine('hotReverse');
+ else if(reverse && hosesLockedByHeat())instruction=teacherLine('hotReverse');
  else if(runningWith(p=>p.out&&p.drain&&!p.inlet))instruction=teacherLine('waste');
  else if(reverse){
   if(openTaps.has(reverse))instruction=teacherLine('reverseOn');
