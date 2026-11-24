@@ -104,20 +104,44 @@ function updateBrine(volume,surge){
 // Open glass neck with a lateral opening at the steam takeoff.
 const neckRadius=.19,branchRadius=.115,neckBase=2.39,mouth=3.81;
 const branchHeight=3.25;
-const neckMesh=new T.CylinderGeometry(neckRadius,neckRadius,mouth-neckBase,96,80,true);
-const index=neckMesh.index.array,pos=neckMesh.attributes.position,kept=[];
-for(let i=0;i<index.length;i+=3){
- const v=new T.Vector3();
- for(let j=0;j<3;j++)v.add(new T.Vector3().fromBufferAttribute(pos,index[i+j]));
- v.divideScalar(3);
- if(v.x>0&&(v.z/branchRadius)**2+((v.y+(mouth+neckBase)/2-branchHeight)/.121)**2<1)continue;
- kept.push(index[i],index[i+1],index[i+2]);
-}
-neckMesh.setIndex(kept);
-const neck=solid(neckMesh,glass,raised(-3,(mouth+neckBase)/2,0),.32);
 const branchStart=raised(-3+neckRadius-.02,branchHeight,0);
-const branch=rod(branchStart,high,branchRadius,glass,.42);
-branch.geometry.dispose();branch.geometry=new T.CylinderGeometry(branchRadius,branchRadius,branchStart.distanceTo(high),48,1,true);
+const branchAxis=high.clone().sub(branchStart).normalize();
+const branchUp=vec(-branchAxis.y,branchAxis.x,0);
+// Each strip joins two matching polylines. The opening and sidearm share their rim vertices.
+function glassStripGeometry(strips){
+ const vertices=[],indices=[];
+ for(const [left,right] of strips){
+  const first=vertices.length/3;
+  left.forEach((v,i)=>{vertices.push(v.x,v.y,v.z,right[i].x,right[i].y,right[i].z)});
+  for(let i=0;i+1<left.length;i++){
+   const j=first+i*2;
+   indices.push(j,j+1,j+2,j+2,j+1,j+3);
+  }
+ }
+ const geometry=new T.BufferGeometry();
+ geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));
+ geometry.setIndex(indices);geometry.computeVertexNormals();
+ return geometry;
+}
+const topRim=[],bottomRim=[],topExit=[],bottomExit=[];
+for(let i=0;i<=32;i++){
+ const a=-Math.PI/2+i*Math.PI/32,z=branchRadius*Math.sin(a);
+ const x=Math.sqrt(neckRadius**2-z*z);
+ for(const sign of [1,-1]){
+  const offset=sign*branchRadius*Math.cos(a);
+  const y=branchStart.y+(flask.x+x-branchStart.x)*branchAxis.y/branchAxis.x+offset/branchAxis.x;
+  (sign===1?topRim:bottomRim).push(vec(flask.x+x,y,z));
+  (sign===1?topExit:bottomExit).push(high.clone().addScaledVector(branchUp,offset).add(vec(0,0,z)));
+ }
+}
+const edgeAngleAtNeck=Math.asin(branchRadius/neckRadius);
+const backArc=Array.from({length:81},(_,i)=>{
+ const a=edgeAngleAtNeck+(2*Math.PI-2*edgeAngleAtNeck)*i/80;
+ return vec(flask.x+neckRadius*Math.cos(a),0,neckRadius*Math.sin(a));
+});
+const atHeight=(rim,y)=>rim.map(p=>vec(p.x,y+lift,p.z));
+const neck=solid(glassStripGeometry([[atHeight(bottomRim,neckBase),bottomRim],[topRim,atHeight(topRim,mouth)],[atHeight(backArc,neckBase),atHeight(backArc,mouth)]]),glass,vec(0,0,0),.32);
+const branch=solid(glassStripGeometry([[topExit,topRim],[bottomRim,bottomExit]]),glass,vec(0,0,0),.42);
 // Continuous open glass bore, including the rounded delivery bend.
 const bendStart=tip.clone().lerp(high,.048),bendEnd=tip.clone().lerp(outlet,.35);
 const deliveryPath=new T.CurvePath();
