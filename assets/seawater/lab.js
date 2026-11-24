@@ -451,20 +451,56 @@ function finishWiping(){
 $('heat').onclick=toggleBurner;
 $('eye').onclick=()=>{thermal=!thermal;$('lens').hidden=$('scale').hidden=!thermal};
 $('reset').onclick=()=>location.reload();
-const canvas=renderer.domElement;let drag;
-let press;const picker=new T.Raycaster();
-canvas.onpointerdown=e=>{press=[e.clientX,e.clientY];drag=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)};
-canvas.onpointermove=e=>{if(drag){yaw-=(e.clientX-drag[0])*.008;pitch=Math.max(.12,Math.min(1.15,pitch+(e.clientY-drag[1])*.006));drag=[e.clientX,e.clientY]}};
+const canvas=renderer.domElement,picker=new T.Raycaster(),pointers=new Map();
+let zoom=1,press=null;
+function changeZoom(factor){
+ zoom=Math.max(.65,Math.min(3,zoom*factor));
+ $('zoomIn').disabled=zoom>=3;
+ $('zoomOut').disabled=zoom<=.65;
+}
+for(const [id,factor,label] of [['zoomIn',1.25,'放大'],['zoomOut',.8,'縮細']]){
+ iconButton($(id),id,label);
+ $(id).onclick=()=>changeZoom(factor);
+}
+canvas.style.touchAction='none';
+canvas.addEventListener('wheel',e=>{
+ e.preventDefault();
+ const pixels=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?canvas.clientHeight:1);
+ changeZoom(Math.exp(-Math.max(-300,Math.min(300,pixels))*.002));
+},{passive:false});
+function fingerDistance(){
+ const [a,b]=pointers.values();
+ return Math.hypot(a.x-b.x,a.y-b.y);
+}
+canvas.onpointerdown=e=>{
+ pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ press=pointers.size===1?{x:e.clientX,y:e.clientY}:null;
+ canvas.setPointerCapture(e.pointerId);
+};
+canvas.onpointermove=e=>{
+ const old=pointers.get(e.pointerId);
+ if(!old)return;
+ const previous=pointers.size===2?fingerDistance():0;
+ pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pointers.size===2){
+  const next=fingerDistance();
+  if(previous>2&&next>2)changeZoom(next/previous);
+ }else if(pointers.size===1){
+  yaw-=(e.clientX-old.x)*.008;
+  pitch=Math.max(.12,Math.min(1.15,pitch+(e.clientY-old.y)*.006));
+  if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>=6)press=null;
+ }
+};
 canvas.onpointerup=e=>{
- if(press&&Math.hypot(e.clientX-press[0],e.clientY-press[1])<6){
+ if(pointers.delete(e.pointerId)&&press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)<6){
  const r=canvas.getBoundingClientRect();
  picker.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,1-(e.clientY-r.top)/r.height*2),camera);
  const hit=picker.intersectObjects([...waterHandles,...valveParts],true)[0];
  if(hit){const i=waterHandles.indexOf(hit.object);if(i<0)toggleBurner();else toggleWater(taps[i])}
  }
- drag=press=null;
+ press=null;
 };
-canvas.onpointercancel=()=>drag=press=null;
+canvas.onpointercancel=canvas.onlostpointercapture=e=>{pointers.delete(e.pointerId);press=null};
 const palette=['#21114c','#7751c6','#ec5682','#ffac43','#fff3a7'].map(x=>new T.Color(x));
 function tint(mat,t){const n=Math.max(0,Math.min(3.999,(t-15)/90*4)),k=Math.floor(n);mat.color.copy(palette[k]).lerp(palette[k+1],n-k)}
 $('labels').onclick=()=>{
@@ -575,7 +611,7 @@ function placeNames(w,h,markersPlaced){
 }
 let previousLayout='';
 function placeMarkers(w,h){
- const signature=[w,h,yaw,pitch,thermal,showNames,$('view').classList.contains('unlabelled'),selected,selectedPort,...connections].join(',');
+ const signature=[w,h,yaw,pitch,zoom,thermal,showNames,$('view').classList.contains('unlabelled'),selected,selectedPort,...connections].join(',');
  if(signature===previousLayout)return;previousLayout=signature;camera.updateMatrixWorld();
  const placed=[];
  const detach=$('detach');
@@ -765,7 +801,7 @@ function frame(now){
  mist.forEach((m,i)=>{const f=(clock*.75+i/10)%1;m.visible=boiling&&efficiency<.82;m.position.set(2.35+f*.57,outlet.y+f*.86,.05+f*.1);m.scale.setScalar(.5+f);m.material.opacity=.33*(1-f)});
  const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.floor(w*renderer.getPixelRatio())||canvas.height!==Math.floor(h*renderer.getPixelRatio()))renderer.setSize(w,h,false);
  camera.aspect=w/h;camera.updateProjectionMatrix();
- const distance=Math.max(thermal?7.6:11.8,(thermal?6.3:10.8)/(.57*camera.aspect));
+ const distance=Math.max(thermal?7.6:11.8,(thermal?6.3:10.8)/(.57*camera.aspect))/zoom;
  const angle=thermal?yaw*.7:yaw,tilt=thermal?Math.min(.43,pitch):pitch;
  camera.position.set(.55+distance*Math.cos(tilt)*Math.sin(angle),(thermal?1.7:2.12)+distance*Math.sin(tilt),distance*Math.cos(tilt)*Math.cos(angle));camera.lookAt(.55,thermal?1.7:2.12,0);camera.updateMatrixWorld();
  const thermometerTop=raised(-3,thermometerTopY,0).project(camera);
