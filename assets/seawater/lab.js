@@ -986,7 +986,7 @@ function frame(now){
 
  $('fast').disabled=!canAdvance;$('fast').setAttribute('aria-pressed',String(fast));
  iconButton($('fast'),'fast',fast?'回復正常速度':'快轉八倍',fast?'1×':'8×');
- liveText('thermo',labText('溫度計　')+Math.round(headTemp)+' °C');
+ liveText('thermo',labText('溫度 ')+Math.round(headTemp)+' °C');
  wallHeat+=((flow?0:boiling?1:0)-wallHeat)*(1-Math.exp(-elapsed*(flow ? .18 : .035)));
  const efficiency=.18+.81*fill*(1-wallHeat);
  const evaporated=boiling?Math.min(charge,.025*elapsed):0;
@@ -1157,7 +1157,7 @@ function frame(now){
  camera.position.set(.55+distance*Math.cos(tilt)*Math.sin(angle),(thermal?1.7:2.12)+distance*Math.sin(tilt),distance*Math.cos(tilt)*Math.cos(angle));camera.lookAt(.55,thermal?1.7:2.12,0);camera.updateMatrixWorld();
  const thermometerTop=raised(-3,thermometerTopY,0).project(camera);
  $('thermo').style.left=Math.max(58,Math.min(w-58,(thermometerTop.x+1)*w/2))+'px';
- $('thermo').style.top=Math.max(3,Math.min(h-30,(1-thermometerTop.y)*h/2-29))+'px';
+ $('thermo').style.top=Math.max(3,Math.min(h-30,(1-thermometerTop.y)*h/2-17))+'px';
  liveText('tag',labText(thermal?'第一身 · 熱像眼鏡':'實驗枱'));placeMarkers(w,h);renderer.render(scene,camera);
  if(broken){$('incident').showModal();return}
  requestAnimationFrame(frame)
