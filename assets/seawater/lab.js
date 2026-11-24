@@ -301,6 +301,18 @@ const waterHandles=taps.map(k=>{
  rod(vec(bodyX,1.60,z),vec(bodyX,1.82,z),.062,metal);
  return box(bodyX,1.84,z,.42,.08,.11,0x267882);
 });
+// An outline marks the moving controls without changing their thermal colours.
+const reducedValveMotion=matchMedia('(prefers-reduced-motion: reduce)');
+const valveOutlineMaterial=new T.LineBasicMaterial({color:0xffed9a,transparent:true,depthWrite:false});
+function outlineValve(part){
+ const outline=new T.LineSegments(new T.EdgesGeometry(part.geometry),valveOutlineMaterial);
+ outline.scale.setScalar(1.04);
+ outline.raycast=()=>{};
+ part.add(outline);
+ return outline;
+}
+[lever,grip].forEach(outlineValve);
+const waterOutlines=waterHandles.map(outlineValve);
 const codes=['A1','A2','B1','B2'];
 const names={free:'鬆開',tap:'T1 水龍頭',tap2:'T2 水龍頭',high:'C1 燒瓶端（高位）',low:'C2 接收器端（低位）',sink:'S 洗手盆'};
 const connections=Array(4).fill('free'),hoses=[],endButtons=[];
@@ -666,6 +678,9 @@ function frame(now){
  const on=openTaps.has(k),btn=$(k);btn.disabled=Boolean(recovery&&!on);iconButton(btn,'tap',(on?'閂 ':'開 ')+'T'+(i+1),'T'+(i+1));
  btn.setAttribute('aria-pressed',on);waterHandles[i].rotation.y=on?Math.PI/2:0;
  });
+ // One smooth brightening and fading cycle every two real seconds, even on fast forward.
+ valveOutlineMaterial.opacity=reducedValveMotion.matches ? .75 : .12+.86*(1-Math.cos(now*Math.PI/1000))/2;
+ waterOutlines.forEach((outline,i)=>{outline.visible=!$(taps[i]).disabled});
  const speech=instruction?'⚠ '+instruction:'';
  if($('warn').textContent!==speech){$('warn').hidden=!speech;$('warn').textContent=speech}
 
