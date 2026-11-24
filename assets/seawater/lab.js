@@ -444,15 +444,49 @@ function updateSupply(key,i,dt){
  const state=supplies[i],start=connections.indexOf(key);
  const dest=start<0?null:connections[start^1];
  const active=openTaps.has(key)&&(dest==='low'||dest==='high');
- const route=active?start+':'+dest:null;
+ const route=(dest==='low'||dest==='high')?start+':'+dest:null;
  if(route!==state.route){state.route=route;state.age=0}
  state.ready=false;
  if(active){
   state.age+=dt;
   state.ready=state.age>=drawHoseFlow(start,state.age);
+ }else if(route&&state.age>0){
+  drawHoseFlow(start,state.age);
+  hoseBands[Math.floor(start/2)].visible=false;
  }
 }
 const streams=taps.map(()=>({jet:rod(vec(0,0,0),vec(0,1,0),.044,water,.82),puddle:ball(vec(0,.012,1.7),1,water,.56),size:0,route:null,age:0}));
+// Each stopped return flow leaves a finite slug, including any water already in free fall.
+const drainingReturns=[];
+function releaseReturn(start,age){
+ const n=Math.floor(start/2),source=hoseWater[n];
+ const waterSlug=new T.Mesh(source.geometry.clone(),source.material);
+ waterSlug.renderOrder=source.renderOrder;
+ const lastJet=new T.Mesh(streams[0].jet.geometry,streams[0].jet.material);
+ scene.add(waterSlug,lastJet);
+ drainingReturns.push({start,inlet:connections[start],age,elapsed:0,waterSlug,lastJet,
+  transit:hoses[n].geometry.parameters.path.getLength()/3.8});
+}
+function advanceDrains(dt){
+ for(let i=drainingReturns.length-1;i>=0;i--){
+  const d=drainingReturns[i],out=ports.sink;
+  d.elapsed+=dt;
+  const height=Math.max(.02,out.y+.47);
+  if(connections[d.start]!==d.inlet||connections[d.start^1]!=='sink'||d.elapsed>=d.transit+Math.sqrt(height/4.9)){
+   scene.remove(d.waterSlug,d.lastJet);d.waterSlug.geometry.dispose();drainingReturns.splice(i,1);continue;
+  }
+  const front=Math.min(48,Math.floor(48*(d.age+d.elapsed)/d.transit));
+  const tail=Math.min(48,Math.floor(48*d.elapsed/d.transit));
+  d.waterSlug.geometry.setDrawRange((d.start%2?48-front:tail)*72,(front-tail)*72);
+  d.waterSlug.visible=front>tail;
+  const fall=time=>Math.min(height,4.9*Math.max(0,time-d.transit)**2);
+  const bottom=fall(d.age+d.elapsed),top=fall(d.elapsed);
+  d.lastJet.visible=bottom>top;
+  if(d.lastJet.visible){
+   d.lastJet.scale.y=bottom-top;d.lastJet.position.copy(out);d.lastJet.position.y-=(top+bottom)/2;
+  }
+ }
+}
 const plumes=taps.map(()=>solid(new T.BufferGeometry(),water,vec(0,0,0),.68));
 const spray=taps.map(()=>Array.from({length:20},()=>ball(vec(0,0,0),.039,water,.84)));
 function sprayOffset(i,f){return vec((i%2?1:-1)*.55*f,.55*f,1.13*f)}
@@ -485,7 +519,7 @@ function beginLeakRecovery(){
 }
 function toggleWater(key){
  if(recovery&&!openTaps.has(key))return;
- if(openTaps.has(key)){openTaps.delete(key);supplies[taps.indexOf(key)].route=null}else openTaps.add(key);
+ if(openTaps.has(key)){openTaps.delete(key)}else openTaps.add(key);
  if(recovery==='stop'&&!openTaps.size){recovery='wipe';startWiping()}
 
 }
@@ -866,7 +900,12 @@ function frame(now){
   const start=p.hoseStart, n=start===undefined?-1:Math.floor(start/2);
   const route=active?[p.inlet,start,p.openPort,p.looseEnd,p.out.x,p.out.y,p.out.z,failedJoint].join('|'):null;
   const newRoute=route!==stream.route;
-  if(newRoute){stream.age=0;stream.route=route}
+  if(newRoute){
+   if(stream.returnStart!=null&&stream.age>0&&connections[stream.returnStart]===stream.returnPort&&connections[stream.returnStart^1]==='sink')releaseReturn(stream.returnStart,stream.age);
+   stream.age=0;stream.route=route;
+   stream.returnStart=active&&p.inlet&&p.drain?start:null;
+   stream.returnPort=connections[start];
+  }
   if(active)stream.age+=dt;
   let transit=0;
   if(active&&n>=0){
@@ -908,6 +947,7 @@ function frame(now){
   }else if(!recovery)stream.size=Math.max(0,stream.size-dt*.035);
   puddle.visible=stream.size>.01;puddle.position.y=.016;puddle.scale.set(stream.size,.012,stream.size*.65);
  });
+ advanceDrains(dt);
  if(oldMode!==thermal){for(const {obj,color} of surfaces){if(thermal)tint(obj.material,22);else obj.material.color.set(color)}oldMode=thermal}
  if(!scene.background)scene.background=new T.Color();
  scene.background.setHex(thermal?0x211533:document.documentElement.dataset.theme==='tech'?0x14272e:0xe7e7db);
