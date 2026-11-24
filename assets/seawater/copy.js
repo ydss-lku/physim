@@ -1,4 +1,5 @@
 const pairs=[
+['顯示控制欄','Show controls'],['收起控制欄','Hide controls'],
 ['全螢幕','Full screen'],['退出全螢幕','Exit full screen'],
 ['建議打橫手機，睇清楚成套蒸餾裝置。','Turn your phone sideways to see the whole setup.'],['收起橫屏提示','Dismiss landscape tip'],
 ['放大','Zoom in'],['縮細','Zoom out'],

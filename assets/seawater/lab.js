@@ -11,11 +11,21 @@ function iconButton(el,icon,label,badge=''){
 }
 const $=id=>document.getElementById(id), T=THREE, vec=(x,y,z)=>new T.Vector3(x,y,z);
 const labView=$('view'),fullscreenButton=$('fullscreenLab');
+const drawerToggle=$('drawerToggle');
+function foldControls(folded){
+ labView.classList.toggle('controls-folded',folded);
+ drawerToggle.setAttribute('aria-expanded',String(!folded));
+ iconButton(drawerToggle,'drawer',folded?'顯示控制欄':'收起控制欄');
+ if(folded)$('hosePanel').open=false;
+}
+drawerToggle.onclick=()=>foldControls(!labView.classList.contains('controls-folded'));
 function setLabExpanded(active){
+ if(active!==labView.classList.contains('lab-expanded'))foldControls(active);
  labView.classList.toggle('lab-expanded',active);
  fullscreenButton.setAttribute('aria-pressed',String(active));
  iconButton(fullscreenButton,active?'collapse':'expand',active?'退出全螢幕':'全螢幕');
 }
+foldControls(false);
 setLabExpanded(false);
 fullscreenButton.onclick=async()=>{
  if(labView.classList.contains('lab-expanded')){
