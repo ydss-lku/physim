@@ -67,6 +67,7 @@ function solid(geometry,color,position,alpha=1){
 function box(x,y,z,w,h,d,color){return solid(new T.BoxGeometry(w,h,d),color,vec(x,y,z))}
 function rod(a,b,r,c,alpha=1){const v=b.clone().sub(a),obj=solid(new T.CylinderGeometry(r,r,v.length(),32),c,a.clone().lerp(b,.5),alpha);obj.quaternion.setFromUnitVectors(vec(0,1,0),v.normalize());return obj}
 function ball(p,r,c,alpha=1){return solid(new T.SphereGeometry(r,40,28),c,p,alpha)}
+const gauzeWires=[],tripodLegs=[],burnerParts=[],socketGlass=[],standParts=[],innerGlass=[];
 const metal=0x82979e,glass=0xbbe6e8,water=0x43b5cf;
 // Cut the sink opening through the worktop; its upper surface is y = -.02.
 const slab=new T.Shape();
@@ -113,7 +114,7 @@ for(let i=0;i<index.length;i+=3){
  kept.push(index[i],index[i+1],index[i+2]);
 }
 neckMesh.setIndex(kept);
-solid(neckMesh,glass,raised(-3,(mouth+neckBase)/2,0),.32);
+const neck=solid(neckMesh,glass,raised(-3,(mouth+neckBase)/2,0),.32);
 const branchStart=raised(-3+neckRadius-.02,branchHeight,0);
 const branch=rod(branchStart,high,branchRadius,glass,.42);
 branch.geometry.dispose();branch.geometry=new T.CylinderGeometry(branchRadius,branchRadius,branchStart.distanceTo(high),48,1,true);
@@ -131,8 +132,8 @@ const rim=solid(new T.TorusGeometry(neckRadius,.017,12,48),glass,raised(-3,mouth
 const bungProfile=[[.047,3.66],[.167,3.66],[.183,mouth],[.227,mouth+.02],[.233,mouth+.15],[.047,mouth+.15],[.047,3.66]];
 const bung=solid(new T.LatheGeometry(bungProfile.map(([r,y])=>new T.Vector2(r,y)),48),0x854b39,raised(-3,0,0));bung.material.side=T.DoubleSide;
 const thermometerTopY=5.20;
-rod(raised(-3,3.24,0),raised(-3,thermometerTopY,0),.044,glass,.43);
-rod(raised(-3,3.23,0),raised(-3,thermometerTopY-.14,0),.012,0xad3936);
+const thermometerStem=rod(raised(-3,3.24,0),raised(-3,thermometerTopY,0),.044,glass,.43);
+const thermometerColumn=rod(raised(-3,3.23,0),raised(-3,thermometerTopY-.14,0),.012,0xad3936);
 const sensor=ball(raised(-3,3.21,0),.051,0x983732);sensor.scale.y=1.65;
 for(let i=0;i<13;i++)box(-2.981,4.04+lift+i*.085,.033,.026,.009,.009,metal);
 const granules=[];
@@ -145,13 +146,16 @@ for(let i=0;i<9;i++){
 // Tripod and open wire mesh below the flask.
 for(let i=0;i<3;i++){
  const a=i*Math.PI*2/3+.3;
- rod(vec(-3+.65*Math.cos(a),.02,.65*Math.sin(a)),vec(-3+.49*Math.cos(a),1.045+lift,.49*Math.sin(a)),.035,metal);
+ const foot=vec(-3+.65*Math.cos(a),.02,.65*Math.sin(a)),top=vec(-3+.49*Math.cos(a),1.045+lift,.49*Math.sin(a));
+ for(let j=0;j<6;j++)tripodLegs.push({mesh:rod(foot.clone().lerp(top,j/6),foot.clone().lerp(top,(j+1)/6),.035,metal),fraction:(j+.5)/6});
 }
 const support=solid(new T.TorusGeometry(.50,.03,10,48),metal,raised(-3,1.047,0));support.rotation.x=Math.PI/2;
 for(let i=-6;i<=6;i++){
  const d=i*.09;
+ const wireStart=surfaces.length;
  rod(vec(-3+d,1.082+lift,-.55),vec(-3+d,1.082+lift,.55),.009,metal);
  rod(vec(-3.55,1.093+lift,d),vec(-2.45,1.093+lift,d),.009,metal);
+ for(const {obj} of surfaces.slice(wireStart))gauzeWires.push({mesh:obj,weight:1-.6*Math.abs(i)/6});
 }
 const gasLine=new T.CatmullRomCurve3([vec(-3.57,.27,.20),vec(-3.88,.105,.38),vec(-4.45,.09,.65),vec(-4.84,.17,.43),vec(-5.02,.43,.40)]);
 solid(new T.TubeGeometry(gasLine,32,.055,12,false),0x393c40,vec(0,0,0));
@@ -219,7 +223,8 @@ for(const end of [high,low]){
 }
 for(let j=0;j<18;j++){
  const a=high.clone().lerp(low,j/18),b=high.clone().lerp(low,(j+1)/18);
- jackets.push(openTube(a,b,.265,glass,.95));
+ jackets.push(openTube(a,b,.265,glass,.48));
+ innerGlass.push(openTube(a,b,.107,glass,.84));
 }
 // Intersect a horizontal water surface with the tilted annular jacket.
 const jacketAxis=low.clone().sub(high).normalize(),jacketLength=high.distanceTo(low);
@@ -276,7 +281,7 @@ for(const [base,end] of [[upperSocket,ports.high],[lowerSocket,ports.low]]){
  }
  points.needsUpdate=true;nozzle.geometry.computeVertexNormals();
  const lip=solid(new T.RingGeometry(.066,.092,32),glass,end,.85);
- lip.quaternion.setFromUnitVectors(vec(0,0,1),direction);lip.material.side=T.DoubleSide;
+ lip.quaternion.setFromUnitVectors(vec(0,0,1),direction);lip.material.side=T.DoubleSide;socketGlass.push([nozzle,lip]);
 }
 // Brushed steel liner inset below a thin flush rim.
 box(4.30,-.53,.15,1.90,.08,2.40,metal);
@@ -289,6 +294,7 @@ for(const x of [3.35,5.25]){
 rod(vec(4.30,-.491,.15),vec(4.30,-.477,.15),.145,0x455a60);
 for(let i=-1;i<=1;i++)box(4.30,-.472,.15+i*.058,.21,.012,.016,metal);
 // Bunsen burner: cast foot, gas inlet, brass collar and open chimney.
+const burnerStart=surfaces.length;
 const brass=0xc59750,iron=0x48565b;
 solid(new T.CylinderGeometry(.32,.48,.135,36),iron,vec(-3,.072,0));
 rod(vec(-3,.13,0),vec(-3,.27,0),.16,brass);
@@ -298,15 +304,17 @@ const sleeve=(r,h,y,color,start=0,arc=Math.PI*2)=>{
  const wall=solid(new T.CylinderGeometry(r,r,h,48,1,true,start,arc),color,vec(-3,y,0));
  wall.material.side=T.DoubleSide;
 };
-sleeve(.135,.36+lift,.59+lift/2,metal);
+for(let i=0;i<6;i++)sleeve(.135,(.36+lift)/6,.41+(i+.5)*(.36+lift)/6,metal);
 sleeve(.17,.045,.288,brass);sleeve(.17,.045,.427,brass);
 // Opposed openings through the collar and mixing tube.
 for(const start of [.52,Math.PI+.52])sleeve(.17,.096,.357,brass,start,Math.PI-1.04);
 sleeve(.085,.15,.343,iron);
+burnerParts.push(...surfaces.slice(burnerStart).map(s=>s.obj));
 const flame=solid(new T.ConeGeometry(.133,.39,32),0x408aff,raised(-3,.965,0));
 
 // Clamp the flask neck and the condenser jacket on independent retort stands.
 function standClamp(centre,axis,radius){
+ const first=surfaces.length;
  const z=-.83;
  box(centre.x,.07,z,.81,.14,.86,iron);
  rod(vec(centre.x,.14,z),vec(centre.x,centre.y+.35,z),.047,metal);
@@ -323,6 +331,7 @@ function standClamp(centre,axis,radius){
   solid(new T.TubeGeometry(new T.CatmullRomCurve3(pts),20,.035,10,false),iron,vec(0,0,0));
   rod(pts[15],pts[18],.047,0x895c49);
  }
+ standParts.push(surfaces.slice(first).map(s=>s.obj));
 }
 standClamp(raised(-3,2.70,0),vec(0,1,0),.223);
 standClamp(high.clone().lerp(low,.58),low.clone().sub(high).normalize(),.298);
@@ -549,7 +558,7 @@ function moveCarryover(dt){
  else{
   const f=Math.min(1,(slug.age-2.25)/.22);
   brineSlug.position.copy(outlet);brineSlug.position.y-=(outlet.y-.05-.525*dist/50)*f*f;
-  if(f>=1){dist+=slug.volume;sampleSaltMg+=slug.salt;inFlight=null;brineSlug.visible=false;saveReceiver()}
+  if(f>=1){mixReceiver(slug.volume,(temp+equipmentHeat.tip)/2);dist+=slug.volume;sampleSaltMg+=slug.salt;inFlight=null;brineSlug.visible=false;saveReceiver()}
  }
 }
 $('add').onclick=()=>{if(!charge&&!heat&&Math.max(temp,baseTemperature)<40){charge=50;flaskSaltMg+=1750}};
@@ -724,6 +733,67 @@ canvas.onpointerup=e=>{
 };
 canvas.onpointercancel=canvas.onlostpointercapture=e=>{if(pointers.delete(e.pointerId))beginPinch();press=null};
 const palette=['#21114c','#7751c6','#ec5682','#ffac43','#fff3a7'].map(x=>new T.Color(x));
+// Relative surface temperatures for the classroom thermal view. Each node keeps its heat after the flame goes out.
+const equipmentHeat={gauze:22,ring:22,barrel:22,neck:22,branch:22,bung:22,tip:22,receiver:22,flaskClamp:22,jacketClamp:22};
+let sampleTemperature=22;
+function mixReceiver(volume,incoming){
+ sampleTemperature=(dist*sampleTemperature+volume*incoming)/(dist+volume);
+}
+const boreTemperatures=Array(18).fill(22);
+function approach(current,target,rate,dt){return target+(current-target)*Math.exp(-rate*dt)}
+function updateEquipmentHeat(dt,boiling,efficiency){
+ const t=equipmentHeat;
+ function follow(key,target,rate){t[key]=approach(t[key],target,rate,dt)}
+ follow('barrel',heat?168:22,heat ? .12 : .055);
+ follow('gauze',heat?240:22,heat ? .15 : .045);
+ follow('ring',22+.46*(t.gauze-22),.055);
+ follow('neck',Math.max(headTemp,22+.23*(baseTemperature-22)),.12);
+ follow('bung',22+.52*(t.neck-22),.035);
+ follow('branch',22+(t.neck-22)*(boiling ? .98 : .54),.16);
+ follow('flaskClamp',22+.43*(t.neck-22),.05);
+ for(let i=0;i<18;i++){
+  const f=(i+.5)/18, covered=high.y+(low.y-high.y)*f<jacketClip.constant;
+  const cooling=covered?(1-wallHeat)*.80+.08:.10;
+  boreTemperatures[i]=approach(boreTemperatures[i],22+(t.branch-22)*(1-cooling*f),.35,dt);
+  section[i]=approach(section[i],22+(boreTemperatures[i]-22)*(covered ? .14+.70*wallHeat : .78),.12,dt);
+ }
+ follow('jacketClamp',22+.48*(section[10]-22),.04);
+ follow('tip',22+.82*(boreTemperatures[17]-22),.15);
+ sampleTemperature=approach(sampleTemperature,22,.012,dt);
+ follow('receiver',22+(sampleTemperature-22)*Math.min(.8,dist/3),.045);
+}
+function paintEquipment(){
+ const t=equipmentHeat;
+ const paint=(obj,value)=>tint(obj.material,value);
+ for(const {mesh,weight} of gauzeWires)paint(mesh,22+(t.gauze-22)*weight);
+ paint(support,t.ring);
+ for(const {mesh,fraction} of tripodLegs)paint(mesh,22+(t.ring-22)*(.05+.95*fraction**2));
+ for(const part of burnerParts)paint(part,22+(t.barrel-22)*Math.max(.025,Math.min(1,(part.position.y/1.32)**1.8)));
+ paint(neck,t.neck);paint(branch,t.branch);paint(bung,t.bung);paint(rim,t.bung);
+ paint(sensor,headTemp);paint(thermometerStem,22+.27*(headTemp-22));paint(thermometerColumn,22+.3*(headTemp-22));
+ standParts.forEach((parts,i)=>parts.forEach((obj,j)=>paint(obj,22+((i?t.jacketClamp:t.flaskClamp)-22)*(j<2 ? .08 : j<5 ? .5 : 1))));
+ streams.forEach((stream,i)=>{
+  const path=trace(taps[i]);
+  const outletHeat=path.inlet?section[path.inlet==='low'?1:16]:22;
+  paint(stream.jet,outletHeat);paint(plumes[i],outletHeat);
+  for(const drop of spray[i])paint(drop,outletHeat);
+ });
+ paint(jacketDrain.jet,section[16]);
+ paint(deliveryTube,t.tip);paint(cup,t.receiver);paint(collected,sampleTemperature);
+ for(const obj of [droplet,fallingDrop])paint(obj,t.tip);
+ for(const obj of [...granules,...crystals])paint(obj,charge?temp:baseTemperature);
+ for(const obj of [...splash,...bubbles,brineSlug])paint(obj,temp);
+ for(const obj of mist)paint(obj,22+.75*(t.tip-22));
+ socketGlass.forEach((parts,i)=>parts.forEach(obj=>paint(obj,section[i?16:1])));
+ paint(coolant,(section[1]+section[16])/2);paint(coolantSurface,(section[1]+section[16])/2);
+ hoses.forEach((obj,i)=>{
+  const socket=connections.slice(2*i,2*i+2).find(k=>k==='high'||k==='low');
+  const out=streams.some(s=>s.returnStart!=null&&Math.floor(s.returnStart/2)===i);
+  const local=socket==='high'?section[1]:section[16];
+  paint(obj,22+(socket?(local-22)*(out ? .54 : .10):0));
+  paint(hoseWater[i],out?local:22);paint(hoseBands[i],out?local:22);
+ });
+}
 function tint(mat,t){const n=Math.max(0,Math.min(3.999,(t-15)/90*4)),k=Math.floor(n);mat.color.copy(palette[k]).lerp(palette[k+1],n-k)}
 $('labels').onclick=()=>{
  const hide=$('view').classList.toggle('unlabelled');
@@ -923,7 +993,7 @@ function frame(now){
  charge-=evaporated;
  if(fallAge!==null){
   fallAge+=dt;
-  if(fallAge>=fallDuration){dist+=dropVolume;fallAge=null;saveReceiver()}
+  if(fallAge>=fallDuration){mixReceiver(dropVolume,equipmentHeat.tip);dist+=dropVolume;fallAge=null;saveReceiver()}
  }
  if(collecting){
   dripPhase+=evaporated*efficiency/dropVolume;
@@ -1052,13 +1122,12 @@ function frame(now){
  if(oldMode!==thermal){for(const {obj,color} of surfaces){if(thermal)tint(obj.material,22);else obj.material.color.set(color)}oldMode=thermal}
  if(!scene.background)scene.background=new T.Color();
  scene.background.setHex(thermal?0x211533:document.documentElement.dataset.theme==='tech'?0x14272e:0xe7e7db);
+ updateEquipmentHeat(elapsed,boiling,efficiency);
  for(let j=0;j<18;j++){
- const f=(j+.5)/18,covered=high.y+(low.y-high.y)*f<jacketClip.constant;
- const target=22+Math.max(0,temp-65)*(1-f*.44)*(covered ? .24+wallHeat : 1.5);
- section[j]+=(target-section[j])*(1-Math.exp(-dt*.55));
- jackets[j].visible=thermal;
- if(thermal)tint(jackets[j].material,section[j]);
+  jackets[j].visible=innerGlass[j].visible=thermal;
+  if(thermal){tint(jackets[j].material,section[j]);tint(innerGlass[j].material,boreTemperatures[j])}
  }
+ if(thermal)paintEquipment();
  jacketShell.visible=!thermal;
  const precipitate=Math.max(0,flaskSaltMg-360*charge);
  crystals.forEach((v,i)=>{v.visible=precipitate>i*40+.01});
@@ -1066,7 +1135,7 @@ function frame(now){
   band.visible=thermal;
   if(thermal)tint(band.material,temp+(baseTemperature-temp)*Math.exp(-i*.42));
  });
- if(thermal){tint(bulb.material,temp);tint(brine.material,temp);tint(waterSurface.material,temp);tint(flame.material,110)}
+ if(thermal){tint(bulb.material,Math.max(temp,22+.19*(baseTemperature-22)));tint(brine.material,temp);tint(waterSurface.material,temp);tint(flame.material,110)}
  droplet.visible=collecting&&dripPhase>.005;
  if(droplet.visible){
   const size=Math.cbrt(dripPhase);
