@@ -19,11 +19,12 @@ function foldControls(folded){
  if(folded)$('hosePanel').open=false;
 }
 drawerToggle.onclick=()=>foldControls(!labView.classList.contains('controls-folded'));
-const fullscreenHome=fullscreenButton.nextElementSibling;
+const zoomButtons=[$('zoomIn'),$('zoomOut')];
+const controlsHome=zoomButtons[1].nextElementSibling;
 function setLabExpanded(active){
  if(active!==labView.classList.contains('lab-expanded')){
-  if(active)drawerToggle.after(fullscreenButton);
-  else fullscreenHome.before(fullscreenButton);
+  if(active)drawerToggle.after(fullscreenButton,...zoomButtons);
+  else controlsHome.before(fullscreenButton,...zoomButtons);
   foldControls(active);
  }
  labView.classList.toggle('lab-expanded',active);
