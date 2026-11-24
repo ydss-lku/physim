@@ -249,7 +249,7 @@
     }
     const heading = document.querySelector('header .brand:not(:has(h1))') && location.pathname.endsWith('motion-graph-practice.html')
       ? document.querySelector('header .brand') : document.querySelector('h1');
-    if (heading) addShareButton(heading);
+    if (heading && !heading.hasAttribute('data-no-share')) addShareButton(heading);
     watch(document.body);if(shadow)watch(shadow);
     window.addEventListener('storage',e=>{if(e.key===key && (e.newValue==='en'||e.newValue==='zh-HK') && e.newValue!==language)set(e.newValue);});
   });
