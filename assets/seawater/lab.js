@@ -19,8 +19,8 @@ function foldControls(folded){
  if(folded)$('hosePanel').open=false;
 }
 drawerToggle.onclick=()=>foldControls(!labView.classList.contains('controls-folded'));
-const zoomButtons=[$('zoomIn'),$('zoomOut'),$('restoreView')];
-const controlsHome=zoomButtons[2].nextElementSibling;
+const zoomButtons=[$('inspectGlass'),$('zoomIn'),$('zoomOut'),$('restoreView')];
+const controlsHome=zoomButtons[3].nextElementSibling;
 function setLabExpanded(active){
  if(active!==labView.classList.contains('lab-expanded')){
   if(active)drawerToggle.after(fullscreenButton,...zoomButtons);
@@ -55,14 +55,53 @@ $('dismissRotate').onclick=()=>{
 const scene=new T.Scene(), camera=new T.PerspectiveCamera(34,1,.1,100);
 const renderer=new T.WebGLRenderer({canvas:$('sceneCanvas'),antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-scene.add(new T.HemisphereLight(0xffffff,0x788a92,2));
-const sun=new T.DirectionalLight(0xfff4de,2);sun.position.set(-4,9,6);scene.add(sun);
+// A small photographic studio reflected in the metal and curved glass.
+function studioBackdrop(top,centre,edge){
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
+ const ctx=canvas.getContext('2d'),gradient=ctx.createRadialGradient(220,160,12,220,160,320);
+ gradient.addColorStop(0,centre);gradient.addColorStop(.64,top);gradient.addColorStop(1,edge);
+ ctx.fillStyle=gradient;ctx.fillRect(0,0,512,256);
+ const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;return texture;
+}
+const backdrops={tech:studioBackdrop('#23303a','#465966','#121b24'),paper:studioBackdrop('#e1dfd5','#faf5e8','#c0c6bf'),thermal:new T.Color(0x211533)};
+const studio=new T.Scene();
+studio.background=new T.Color(0x39424b);
+for(const [x,y,z,w,h,intensity] of [[-5,4,2,2,8,5],[3,6,-4,8,3,4],[5,2,4,1,6,3]]){
+ const panel=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({color:new T.Color(intensity,intensity,intensity)}));
+ panel.position.set(x,y,z);panel.lookAt(0,0,0);studio.add(panel);
+}
+const generator=new T.PMREMGenerator(renderer);
+const studioReflection=generator.fromScene(studio,.025);
+generator.dispose();
+studio.children.forEach(p=>{p.geometry.dispose();p.material.dispose()});
+scene.environment=studioReflection.texture;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=T.PCFSoftShadowMap;
+scene.add(new T.HemisphereLight(0xf4faff,0x88949b,.68));
+const sun=new T.DirectionalLight(0xfff4de,2);sun.position.set(-4,9,6);sun.intensity=1.35;scene.add(sun);
+sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+Object.assign(sun.shadow.camera,{left:-7,right:7,top:6,bottom:-6,near:.5,far:24});
+sun.shadow.normalBias=.015;sun.shadow.bias=-.00025;
+const backlight=new T.DirectionalLight(0xb5dcff,1.1);backlight.position.set(3,4,-5);scene.add(backlight);
 for(const [id,icon,label] of [['add','add','加入海水'],['granules','granules','防暴沸粒：有'],['labels','labels','顯示標籤'],['reset','reset','重新開始'],['cloth','cloth','拖動抹布，或用方向鍵移動']])iconButton($(id),icon,label);
 iconButton(document.querySelector('#hosePanel summary'),'hose','接駁膠喉');
 const surfaces=[];
+const glassReflectance={value:1};
 function solid(geometry,color,position,alpha=1){
  const mat=new T.MeshStandardMaterial({color,transparent:alpha<1,opacity:alpha,depthWrite:alpha===1,roughness:.46});
- const obj=new T.Mesh(geometry,mat);obj.position.copy(position);scene.add(obj);surfaces.push({obj,color,alpha});return obj;
+ const polished=[0x82979e,0xc59750,0xb99141].includes(color);
+ if(polished){mat.metalness=.84;mat.roughness=.23}
+ else if(alpha===1){mat.roughness=.67;mat.envMapIntensity=.42}
+ if(color===0xbbe6e8||color===0x66b8be){
+  mat.roughness=.075;mat.metalness=.18;mat.envMapIntensity=1.1;
+  // Reflected light is strongest at grazing incidence. Keep the centre optically clear.
+  mat.onBeforeCompile=shader=>{
+   shader.uniforms.glassReflectance=glassReflectance;
+   shader.fragmentShader="uniform float glassReflectance;\n"+shader.fragmentShader.replace('#include <opaque_fragment>',
+    'diffuseColor.a *= mix(1.0,0.26 + 1.5 * pow(1.0 - abs(dot(normal,normalize(vViewPosition))),2.0),glassReflectance);\n#include <opaque_fragment>');
+  };
+ }
+ const obj=new T.Mesh(geometry,mat);obj.castShadow=alpha===1;obj.receiveShadow=alpha===1;obj.position.copy(position);scene.add(obj);surfaces.push({obj,color,alpha});return obj;
 }
 function box(x,y,z,w,h,d,color){return solid(new T.BoxGeometry(w,h,d),color,vec(x,y,z))}
 function rod(a,b,r,c,alpha=1){const v=b.clone().sub(a),obj=solid(new T.CylinderGeometry(r,r,v.length(),32),c,a.clone().lerp(b,.5),alpha);obj.quaternion.setFromUnitVectors(vec(0,1,0),v.normalize());return obj}
@@ -73,13 +112,26 @@ const metal=0x82979e,glass=0xbbe6e8,water=0x43b5cf;
 const slab=new T.Shape();
 slab.moveTo(-6,-2.5);slab.lineTo(6,-2.5);slab.lineTo(6,2.5);slab.lineTo(-6,2.5);slab.closePath();
 const cut=new T.Path();cut.moveTo(3.35,-1.35);cut.lineTo(3.35,1.05);cut.lineTo(5.25,1.05);cut.lineTo(5.25,-1.35);cut.closePath();slab.holes.push(cut);
-const worktop=solid(new T.ExtrudeGeometry(slab,{depth:.52,bevelEnabled:false}),0xa2b6b4,vec(0,-.54,0));
+const worktop=solid(new T.ExtrudeGeometry(slab,{depth:.52,bevelEnabled:false}),0x566270,vec(0,-.54,0));
 worktop.rotation.x=-Math.PI/2;
+// Fine mineral grain, tiled in local bench coordinates.
+const grain=document.createElement('canvas');grain.width=grain.height=128;
+const grainCtx=grain.getContext('2d'),grainPixels=grainCtx.createImageData(128,128);
+let seed=199;
+for(let i=0;i<grainPixels.data.length;i+=4){
+ seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+ const value=218+(seed>>>27);
+ grainPixels.data.set([value,value,value,255],i);
+}
+grainCtx.putImageData(grainPixels,0,0);
+const grainMap=new T.CanvasTexture(grain);grainMap.wrapS=grainMap.wrapT=T.RepeatWrapping;
+worktop.material.map=grainMap;worktop.material.roughness=.81;
 const lift=.55;
 const raised=(x,y,z)=>vec(x,y+lift,z);
 const outlet=raised(2.32,.76,0);
 const flask=raised(-3,1.8,0), high=raised(-1.85,2.85,0),low=raised(1.5,1.65,0),tip=raised(2.32,1.22,0);
-const bulb=ball(flask,.72,glass,.24);
+const collarAngle=Math.asin(.19/.72);
+const bulb=solid(new T.SphereGeometry(.72,80,48,0,2*Math.PI,collarAngle,Math.PI-collarAngle),glass,flask,.42);
 const innerRadius=.69;
 const brine=ball(flask.clone(),innerRadius,water,.75);
 renderer.localClippingEnabled=true;
@@ -102,7 +154,7 @@ function updateBrine(volume,surge){
  waterSurface.scale.setScalar(Math.sqrt(innerRadius**2-offset**2));
 }
 // Open glass neck with a lateral opening at the steam takeoff.
-const neckRadius=.19,branchRadius=.115,neckBase=2.39,mouth=3.81;
+const neckRadius=.19,branchRadius=.115,neckBase=1.8+.72*Math.cos(collarAngle),mouth=3.81;
 const branchHeight=3.25;
 const branchStart=raised(-3+neckRadius-.02,branchHeight,0);
 const branchAxis=high.clone().sub(branchStart).normalize();
@@ -242,8 +294,10 @@ shellGeometry.setIndex(shellFaces);shellGeometry.computeVertexNormals();
 const jacketShell=solid(shellGeometry,0x66b8be,vec(0,0,0),.32);
 jacketShell.material.side=T.DoubleSide;
 for(const end of [high,low]){
- const seal=solid(new T.RingGeometry(.106,shellRadius,48),glass,end,.36);
- seal.quaternion.setFromUnitVectors(vec(0,0,1),low.clone().sub(high).normalize());seal.material.side=T.DoubleSide;
+ const profile=[[shellRadius,0],[.298,.025],[.284,.055],[.250,.085],[.17,.119],[.119,.146],[.106,.166]];
+ const seal=solid(new T.LatheGeometry(profile.map(([r,y])=>new T.Vector2(r,y)),64),glass,end,.62);
+ seal.quaternion.setFromUnitVectors(vec(0,1,0),axisVector.clone().multiplyScalar(end===high?-1:1));
+ seal.material.side=T.DoubleSide;
 }
 for(let j=0;j<18;j++){
  const a=high.clone().lerp(low,j/18),b=high.clone().lerp(low,(j+1)/18);
@@ -334,7 +388,10 @@ sleeve(.17,.045,.288,brass);sleeve(.17,.045,.427,brass);
 for(const start of [.52,Math.PI+.52])sleeve(.17,.096,.357,brass,start,Math.PI-1.04);
 sleeve(.085,.15,.343,iron);
 burnerParts.push(...surfaces.slice(burnerStart).map(s=>s.obj));
-const flame=solid(new T.ConeGeometry(.133,.39,32),0x408aff,raised(-3,.965,0));
+const flame=solid(new T.LatheGeometry([[.085,0],[.128,.045],[.113,.145],[.07,.255],[.002,.39]].map(([r,y])=>new T.Vector2(r,y)),40),0x498bff,raised(-3,.77,0),.55);
+flame.material.emissive.setHex(0x164cbe);
+const flameCore=solid(new T.ConeGeometry(.081,.218,32),0x91e8ff,raised(-3,.882,0),.9);
+flameCore.material.emissive.setHex(0x38a4eb);
 
 // Clamp the flask neck and the condenser jacket on independent retort stands.
 function standClamp(centre,axis,radius){
@@ -359,7 +416,22 @@ function standClamp(centre,axis,radius){
 }
 standClamp(raised(-3,2.70,0),vec(0,1,0),.223);
 standClamp(high.clone().lerp(low,.58),low.clone().sub(high).normalize(),.298);
-const cup=solid(new T.CylinderGeometry(.46,.42,.69,40,1,true),glass,vec(2.32,.35,0),.42);
+// Model the heavy heel, hollow wall and rolled pouring lip as one revolved section.
+const cupProfile=[[.001,.012],[.388,.012],[.414,.02],[.423,.048],[.458,.65],[.468,.681],[.469,.697],[.458,.706],[.447,.697],[.446,.679],[.405,.07],[.385,.053],[.001,.053]];
+const cupGeometry=new T.LatheGeometry(cupProfile.map(([r,y])=>new T.Vector2(r,y)),96);
+const cupVertices=cupGeometry.attributes.position;
+for(let i=0;i<cupVertices.count;i++){
+ const x=cupVertices.getX(i),y=cupVertices.getY(i),z=cupVertices.getZ(i);
+ const spout=Math.pow(Math.max(0,-x/Math.hypot(x,z)),36)*Math.max(0,(y-.45)/.25);
+ cupVertices.setXYZ(i,x-.125*spout,y+.025*spout,z);
+}
+cupGeometry.computeVertexNormals();
+const cup=solid(cupGeometry,glass,vec(2.32,0,0),.58);
+for(let i=1;i<=8;i++){
+ const y=.095+i*.061,r=.421+.054*y;
+ const mark=solid(new T.TorusGeometry(r,.005,6,16,i%2===0?.48:.25),0xe8ece8,vec(2.32,y,0),.86);
+ mark.rotation.set(Math.PI/2,0,1.04);
+}
 const collected=rod(vec(2.32,.035,0),vec(2.32,.56,0),.405,water,.72);
 const loose=[vec(-4.2,.11,1.47),vec(-.65,.11,1.47),vec(.12,.11,1.72),vec(3.08,.11,1.96)];
 const taps=['tap','tap2'];
@@ -412,8 +484,17 @@ function hose(i){
   const normal=socketNormal.clone().multiplyScalar(key==='high'?1:-1);
   const tip=ports[key],exit=tip.clone().addScaledVector(normal,.12);
   const guide=tip.clone().addScaledVector(normal,.31);
-  if(end%2===0)positions.splice(0,1,exit,guide);
-  else positions.splice(positions.length-1,1,guide,exit);
+  const bend=[exit,guide];
+  if(key==='high'){
+   // Round the hanging hose over the barb before gravity draws it down.
+   const tangent=vec(normal.y,-normal.x,.5).normalize();
+   for(let j=1;j<=6;j++){
+    const angle=j*Math.PI/9;
+    bend.push(guide.clone().addScaledVector(normal,.35*Math.sin(angle)).addScaledVector(tangent,.35*(1-Math.cos(angle))));
+   }
+  }
+  if(end%2===0)positions.splice(0,1,...bend);
+  else positions.splice(positions.length-1,1,...bend.reverse());
   if(!sleeve){
    sleeve=socketSleeves[end]=solid(new T.CylinderGeometry(.075,.103,.32,32),i?0xbb833b:0x387c83,vec(0,0,0));
   }
@@ -738,7 +819,7 @@ $('heat').onclick=toggleBurner;
 $('eye').onclick=()=>{thermal=!thermal;$('lens').hidden=$('scale').hidden=!thermal};
 $('reset').onclick=()=>location.reload();
 const canvas=renderer.domElement,picker=new T.Raycaster(),pointers=new Map();
-let zoom=1,press=null;
+let zoom=1,press=null,inspectCondenser=false;
 let panX=0,panY=0,pinchStart=null;
 function changeZoom(factor){
  zoom=Math.max(.65,Math.min(3,zoom*factor));
@@ -749,9 +830,13 @@ for(const [id,factor,label] of [['zoomIn',1.25,'放大'],['zoomOut',.8,'縮細']
  iconButton($(id),id,label);
  $(id).onclick=()=>changeZoom(factor);
 }
+iconButton($('inspectGlass'),'inspectGlass','近看冷凝管');
+$('inspectGlass').onclick=()=>{
+ inspectCondenser=true;yaw=-.14;pitch=.18;panX=panY=0;changeZoom(2.3/zoom);beginPinch();
+};
 iconButton($('restoreView'),'restoreView','回復視角');
 $('restoreView').onclick=()=>{
- yaw=.12;pitch=.47;panX=0;panY=0;
+ inspectCondenser=false;yaw=.12;pitch=.47;panX=0;panY=0;
  changeZoom(1/zoom);
  beginPinch();
 };
@@ -1085,6 +1170,9 @@ function frame(now){
 
  $('fast').disabled=!canAdvance;$('fast').setAttribute('aria-pressed',String(fast));
  iconButton($('fast'),'fast',fast?'回復正常速度':'快轉八倍',fast?'1×':'8×');
+ const columnBottom=3.23+lift,columnLength=thermometerTopY-.14-3.23;
+ thermometerColumn.scale.y=.47+.5*Math.max(0,Math.min(1,(headTemp-22)/78));
+ thermometerColumn.position.y=columnBottom+.5*columnLength*thermometerColumn.scale.y;
  liveText('thermo',labText('溫度 ')+Math.round(headTemp)+' °C');
  advanceCooling(elapsed,flow,boiling);
  // Compare incoming vapour with the heat-removal capacity of the wetted glass.
@@ -1170,7 +1258,7 @@ function frame(now){
  $('add').disabled=charge>0||heat||Math.max(temp,baseTemperature)>=40;
  const targetAngle=heat?0:Math.PI/2;
  handle.rotation.y+=Math.sign(targetAngle-handle.rotation.y)*Math.min(Math.abs(targetAngle-handle.rotation.y),dt*Math.PI*2);
- flame.visible=heat;updateBrine(charge,surge);
+ flame.visible=heat;flameCore.visible=heat&&!thermal;updateBrine(charge,surge);
  collected.visible=dist>.01;collected.scale.y=dist/50;collected.position.y=.035+.2625*dist/50;
 
  streams.forEach((stream,i)=>{
@@ -1228,8 +1316,10 @@ function frame(now){
  });
  advanceDrains(dt);
  if(oldMode!==thermal){for(const {obj,color} of surfaces){if(thermal)tint(obj.material,22);else obj.material.color.set(color)}oldMode=thermal}
- if(!scene.background)scene.background=new T.Color();
- scene.background.setHex(thermal?0x211533:document.documentElement.dataset.theme==='tech'?0x14272e:0xe7e7db);
+
+ glassReflectance.value=thermal?0:1;
+ scene.environment=thermal?null:studioReflection.texture;
+ scene.background=thermal?backdrops.thermal:document.documentElement.dataset.theme==='tech'?backdrops.tech:backdrops.paper;
  updateEquipmentHeat(elapsed,boiling,efficiency);
  for(let j=0;j<18;j++){
   jackets[j].visible=innerGlass[j].visible=thermal;
@@ -1260,10 +1350,15 @@ function frame(now){
  mist.forEach((m,i)=>{const f=(clock*.75+i/10)%1;m.visible=escapingFraction>.035;m.position.set(2.35+f*.57,outlet.y+f*.86,.05+f*.1);m.scale.setScalar(.5+f);m.material.opacity=.33*escapingFraction*(1-f)});
  const w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.floor(w*renderer.getPixelRatio())||canvas.height!==Math.floor(h*renderer.getPixelRatio()))renderer.setSize(w,h,false);
  camera.setViewOffset(w,h,-panX*w,-panY*h,w,h);
- const distance=Math.max(thermal?7.6:11.8,(thermal?6.3:10.8)/(.57*camera.aspect))/zoom;
+ const closeThermal=thermal&&!inspectCondenser;
+ const distance=Math.max(closeThermal?7.6:11.8,(closeThermal?6.3:10.8)/(.57*camera.aspect))/zoom;
  const angle=thermal?yaw*.7:yaw,tilt=thermal?Math.min(.43,pitch):pitch;
- camera.position.set(.55+distance*Math.cos(tilt)*Math.sin(angle),(thermal?1.7:2.12)+distance*Math.sin(tilt),distance*Math.cos(tilt)*Math.cos(angle));camera.lookAt(.55,thermal?1.7:2.12,0);camera.updateMatrixWorld();
+ const targetX=inspectCondenser?(high.x+low.x)/2:.55;
+ const targetY=inspectCondenser?(high.y+low.y)/2:thermal?1.7:2.12;
+ camera.position.set(targetX+distance*Math.cos(tilt)*Math.sin(angle),targetY+distance*Math.sin(tilt),distance*Math.cos(tilt)*Math.cos(angle));
+ camera.lookAt(targetX,targetY,0);camera.updateMatrixWorld();
  const thermometerTop=raised(-3,thermometerTopY,0).project(camera);
+ $('thermo').hidden=inspectCondenser&&(Math.abs(thermometerTop.x)>.96||Math.abs(thermometerTop.y)>.94);
  $('thermo').style.left=Math.max(58,Math.min(w-58,(thermometerTop.x+1)*w/2))+'px';
  $('thermo').style.top=Math.max(3,Math.min(h-30,(1-thermometerTop.y)*h/2-17))+'px';
  liveText('tag',labText(thermal?'第一身 · 熱像眼鏡':'實驗枱'));placeMarkers(w,h);renderer.render(scene,camera);
