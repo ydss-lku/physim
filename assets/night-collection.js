@@ -49,20 +49,19 @@
   function indexLayout() {
     const header = q('main > header');
     const specimen = header.querySelector('img[data-specimen]');
-    const descriptions = {
-      'heat-and-gases':'Gas molecules in a cylinder with a sliding piston',
-      'force-and-motion':'A motion trolley approaching a light gate',
-      'wave-motion':'A candle and its inverted image inside a pinhole camera',
-      'electricity-and-magnetism':'Copper wire wound around the iron core of an electromagnet',
-      'radioactivity-and-nuclear-energy':'Two-sided counters modelling radioactive half-life',
-      'atomic-world':'A circular aperture and its diffraction pattern',
-      'energy-and-use-of-energy':'A transparent LED showing the semiconductor inside',
-      'mathematics':'Rectangles approximating the area under a curve'
-    };
-    if (specimen && descriptions[page]) {
+    if (specimen?.dataset.techAltEn) {
       const original = specimen.alt;
-      specimen.alt = descriptions[page];
-      undo.push(() => { specimen.alt = original; });
+      const describe = () => {
+        specimen.alt = root.dataset.language === 'zh-HK' ? specimen.dataset.techAltZh : specimen.dataset.techAltEn;
+      };
+      specimen.setAttribute('data-lab-localized', '');
+      describe();
+      window.addEventListener('lab-language-change', describe);
+      undo.push(() => {
+        window.removeEventListener('lab-language-change', describe);
+        specimen.removeAttribute('data-lab-localized');
+        specimen.alt = window.labLanguage?.label(original) ?? original;
+      });
     }
     const footer = q('main > footer');
     const content = [];
