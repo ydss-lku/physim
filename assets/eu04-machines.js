@@ -23,7 +23,7 @@ function turbineMachine(T,scene,wind){
     return {g,rotating}
   }
   const machine=group(scene),rotor=group(machine),flow=group(machine);
-  let radiusGroup,cover,innerRotor,jet,jetTraces,flowTurns,waterSpray;
+  let radiusGroup,cover,innerRotor,updateJet;
   if(wind){
     // Direct-drive nacelle with a longitudinal cutaway and an annular generator.
     cylinder(machine,alloy,0,-1.7,-.43,.15,.27,3.46,'y');
@@ -96,28 +96,80 @@ function turbineMachine(T,scene,wind){
         vertices.push(.10-bowl+.08*(u-.5),.91+radial,side*(.01+v*breadth))}
       for(let j=0;j<rows;j++)for(let k=0;k<cols;k++){const a=j*(cols+1)+k;idx.push(a,a+1,a+cols+1,a+1,a+cols+2,a+cols+1)}
       const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geo.setIndex(idx);geo.computeVertexNormals();return geo};
+    const splitters=[];
     const halves=[bucketGeo(-1),bucketGeo(1)];
-    for(let i=0;i<18;i++){const b=group(rotor);b.rotation.z=i*Math.PI/9;halves.forEach(g=>mesh(b,g,polish));const lip=block(b,alloy,.105,.913,0,.038,.37,.032);lip.rotation.z=-.16}
+    for(let i=0;i<18;i++){const b=group(rotor);b.rotation.z=i*Math.PI/9;halves.forEach(g=>mesh(b,g,polish));const lip=block(b,alloy,.105,.913,0,.038,.37,.032);lip.rotation.z=-.16;splitters.push(lip)}
     const y=-1.20;
     cylinder(machine,teal,-2.30,y,0,.285,.285,.93,'x');cylinder(machine,polish,-1.60,y,0,.125,.27,.55,'x');
     for(const x of [-2.67,-1.92]){cylinder(machine,graphite,x,y,0,.38,.38,.09,'x');for(let i=0;i<8;i++){const a=i*Math.PI/4;cylinder(machine,polish,x+.055,y+.32*Math.cos(a),.32*Math.sin(a),.034,.034,.07,'x',6)}}
-    cylinder(machine,brass,-1.27,y,0,.174,.178,.11,'x');
+    const mouthX=-1.215;
+    const nozzleLip=mesh(machine,new T.LatheGeometry([
+      new T.Vector2(.154,-.11),new T.Vector2(.18,-.11),new T.Vector2(.179,-.018),
+      new T.Vector2(.171,0),new T.Vector2(.153,0),new T.Vector2(.151,-.013),
+      new T.Vector2(.154,-.11)],48),brass,mouthX,y,0);
+    nozzleLip.rotation.z=-Math.PI/2;
+    cylinder(machine,graphite,mouthX-.018,y,0,.153,.153,.006,'x');
     cylinder(machine,teal,-2.30,y+.28,0,.15,.21,.35,'y');
     cylinder(machine,polish,-2.30,y+.59,0,.046,.046,.43,'y');
     const handwheel=ring(machine,oxide,-2.30,y+.83,0,.32,.044);handwheel.rotation.x=Math.PI/2;
     for(let i=0;i<3;i++){const spoke=block(machine,oxide,-2.30,y+.83,0,.61,.035,.035);spoke.rotation.y=i*Math.PI/3}
     
-    jet=cylinder(flow,material(0x60bcd1,.22,.18),-.535,y,0,.073,.073,1.37,'x');
-    jetTraces=group(flow);for(let i=0;i<5;i++)cylinder(jetTraces,white,0,y+.018,.045,.008,.008,.11,'x',8);
-    waterSpray=group(flow);for(const side of [-1,1]){
-      const curve=new T.CatmullRomCurve3([new T.Vector3(.13,y+.02,0),new T.Vector3(.22,y+.05,side*.18),new T.Vector3(.15,y+.02,side*.36),new T.Vector3(.02,y-.12,side*.54)]);
-      mesh(waterSpray,new T.TubeGeometry(curve,16,.027,8,false),jet.material)}
+    const water=new T.MeshPhysicalMaterial({color:0x45b8cc,metalness:0,roughness:.18,
+      clearcoat:.9,clearcoatRoughness:.12,transparent:true,opacity:.83,side:T.DoubleSide});
+    const jet=cylinder(flow,water,0,y,0,1,1,1,'x');
+    jet.name='Free jet';
+    // Travelling short glints hug the stream. Their speed follows sqrt(head).
+    const glints=new T.Group();flow.add(glints);
+    const foam=new T.MeshBasicMaterial({color:0xc3f5f4,transparent:true,opacity:.78});
+    const glintGeo=new T.SphereGeometry(1,10,6);
+    for(let i=0;i<12;i++)mesh(glints,glintGeo,foam);
+    const ray=new T.Raycaster(new T.Vector3(mouthX,y,0),new T.Vector3(1,0,0),0,2);
+    const hits=[];
+    // Form two return sheets, with their common inlet at the struck splitter.
+    const sheets=group(flow);sheets.name='Split discharge';
+    const rails=6,sections=20;
+    function returnSheet(side){
+      const vertices=[],indices=[];
+      for(let i=0;i<=sections;i++){
+        const t=i/sections;
+        for(let j=0;j<=rails;j++){
+          const cross=j/rails-.5;
+          vertices.push(.34*Math.sin(Math.PI*t)-.27*t*t+cross*(.055+.18*t),
+            .07*Math.sin(Math.PI*t)-.64*t*t-.05*cross*cross,
+            side*(.55*t+.055*Math.sin(Math.PI*t)*(1-4*cross*cross)));
+        }
+      }
+      for(let i=0;i<sections;i++)for(let j=0;j<rails;j++){
+        const n=i*(rails+1)+j;indices.push(n,n+1,n+rails+1,n+1,n+rails+2,n+rails+1)}
+      const geometry=new T.BufferGeometry();geometry.setAttribute('position',new T.Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+      return mesh(sheets,geometry,water)
+    }
+    const leftSheet=returnSheet(-1),rightSheet=returnSheet(1);
+    updateJet=(s,time)=>{
+      if(!flow.visible)return;
+      // Q = A v, with v proportional to sqrt(H) for an ideal nozzle.
+      const radius=.073*Math.sqrt(s.b/.2)*Math.pow(100/s.a,.25);
+      rotor.updateWorldMatrix(true,true);hits.length=0;
+      ray.intersectObjects(splitters,false,hits);
+      const length=hits.length?hits[0].distance:.20-mouthX;
+      jet.position.x=mouthX+length/2;jet.scale.set(radius,length,radius);
+      sheets.position.set(mouthX+length,y,0);
+      // Narrower streams wet less of each bucket. Both sheets drain into the tailrace.
+      leftSheet.scale.x=rightSheet.scale.x=Math.sqrt(radius/.073);
+      leftSheet.scale.z=rightSheet.scale.z=.75+.22*radius/.073;
+      const speed=.40*Math.sqrt(s.a);
+      glints.children.forEach((g,i)=>{
+        const t=(time*speed/length+i*.381966)%1,theta=i*2.39996+.14*Math.sin(8*t+i);
+        g.position.set(mouthX+t*length,y+.98*radius*Math.cos(theta),.98*radius*Math.sin(theta));
+        const width=Math.min(.045,radius*.60,t*length,(1-t)*length);
+        g.scale.set(width,radius*.072,radius*.072);
+      });
+    };
   }
   return {update(s,time,angle,inspect,showFlow){
     rotor.rotation.z=angle;innerRotor.rotation.z=angle;flow.visible=showFlow&&(wind||s.b>0);
     if(wind){radiusGroup.scale.setScalar(s.b/20);cover.visible=!inspect;
       flow.children.forEach((a,i)=>{a.position.z=1.70-(time*s.a*.16+i*.24)%1.1})}
-    else{jet.scale.x=jet.scale.z=Math.sqrt(s.b/.2)*Math.pow(100/s.a,.25);
-      jetTraces.children.forEach((p,i)=>{p.position.x=-1.20+((time*.45*Math.sqrt(s.a)+i*.262)%1.28)});jetTraces.visible=s.b>.055}
+    else updateJet(s,time);
   }}
 }
