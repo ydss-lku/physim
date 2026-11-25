@@ -106,7 +106,7 @@ aside select{max-width:100%;min-width:0}
   & main #beamStatus.blocked .dot {background-color:#ff92c0}
 }
 </style><link rel="stylesheet" href="assets/simulation-layout.css">
-</head>
+<style>.instrument-detail{display:block;margin:5px 10px 9px auto;min-height:40px;padding:5px 12px;cursor:pointer}.instrument-detail small{font-size:.75em}.instrument-detail[aria-pressed=true]{outline:2px solid currentColor;outline-offset:1px}canvas#scene{width:100%;height:clamp(225px,29vw,360px)}@media(max-width:600px){canvas#scene{height:clamp(195px,55vw,270px)}}</style></head>
 <body><nav class="rack"><a href="index.html">← 實驗櫃 <span>LAB CABINET</span></a><strong>ME / 02</strong></nav>
 <main>
 <aside>
@@ -131,7 +131,7 @@ aside select{max-width:100%;min-width:0}
 <div class="workspace">
  <header class="topbar branded-topbar"><div><div class="kicker">Single light gate<span class="bi-zh" lang="zh-HK">單光閘</span></div><h2>Estimating the instantaneous speed of P<br><span lang="zh-HK">估算 P 點的瞬時速率</span></h2></div><div class="actions"><button class="primary" id="play">Run<span class="bi-zh" lang="zh-HK">啟動</span></button><button id="reset">Reset<span class="bi-zh" lang="zh-HK">重設</span></button></div></header>
  <div class="explanation">The yellow point <strong lang="en" style="color:#865920">P</strong> is fixed at the centre of the trolley. Use <strong lang="en">L / Δt</strong> to estimate its instantaneous speed as P passes the gate, provided its speed changes very little during blocking.<span class="bi-zh" lang="zh-HK">黃點 P 固定在車身中央。若遮光期間速率變化很小，可用 L / Δt 估算 P 點通過光閘時的瞬時速率。</span></div>
- <div class="apparatus"><div class="scene-caption">Side view · schematic apparatus<span class="bi-zh" lang="zh-HK">裝置側視示意圖</span></div><canvas id="scene" role="img" aria-label="A trolley carries an opaque card through the beam of one light gate. · 小車載着遮光片通過光閘。">Trolley and light gate animation.<span class="bi-zh" lang="zh-HK">小車與光閘動畫。</span></canvas></div><div id="sceneNotes" class="reading-hint" hidden></div>
+ <div class="apparatus"><div class="scene-caption">Light gate and interrupt card<span class="bi-zh" lang="zh-HK">光閘與遮光片</span></div><canvas id="scene" role="img" aria-label="A trolley carries an opaque card through the beam of one light gate. · 小車載着遮光片通過光閘。">Trolley and light gate animation.<span class="bi-zh" lang="zh-HK">小車與光閘動畫。</span></canvas></div><div id="sceneNotes" class="reading-hint" hidden></div>
  <div class="readings">
   <div class="reading"><div class="reading-label">Card length, L<span class="bi-zh" lang="zh-HK">遮光片長度</span></div><div class="reading-value"><span id="lengthReadout">5.0</span> <small>cm</small></div><div class="reading-hint" id="metresReadout">0.050 m</div></div>
   <div class="reading"><div class="reading-label">Blocking time, Δt<span class="bi-zh" lang="zh-HK">遮光時間</span></div><div class="reading-value"><span id="timeReadout">0.0000</span> <small>s</small></div><div class="reading-hint" id="timerCaption">Waiting for leading edge<span class="bi-zh" lang="zh-HK">等待前緣到達</span></div></div>
@@ -154,11 +154,12 @@ aside select{max-width:100%;min-width:0}
 <!-- shared-footer -->
 <footer class="creator-credit physics-byline" data-author-credit><span class="credit-lockup"><span class="credit-mark" role="img" aria-label="YD Physics"></span>Designed by Mr. Lai Ka Chun (LKU) | CPCYDSS | GPT-6.2 Astra</span><a class="usage-link" href="terms.html" translate="no">Terms of Use · <span lang="zh-HK">使用條款</span></a></footer>
 <!-- /shared-footer -->
-<script>
+<script src="assets/seawater/three.min.js"></script><script src="assets/me01-apparatus.js"></script><script>
 'use strict';
 const $=id=>document.getElementById(id);
 const state={length:5,speed:2,acceleration:4,motion:'uniform',direction:1,t:0,running:false};
 const specs={length:[1,30,.5],speed:[.2,4,.1],acceleration:[.5,8,.5]};
+const renderInstrument=window.makeMotionBench?.('gate');
 const scene=$('scene'),signal=$('signal'),ctx=scene.getContext('2d'),sx=signal.getContext('2d');
 let W=1,H=1,SW=1,SH=1,last=null,dirty=true,lastPhase='';
 // Position refers to the leading edge, with the gate at zero.
@@ -234,6 +235,9 @@ function drawScene(){
  const notes=[],night=document.documentElement.dataset.theme==='tech';
  const m=model(),p=phase(m),blocked=p==='blocked',dir=state.direction;
  ctx.clearRect(0,0,W,H);
+ if(renderInstrument?.({length:state.length,front:position(m)*100,direction:dir,blocked,dimensions:$('dimensions').checked})){
+   if(Math.abs(state.t-m.pointTime)<1e-9)notes.push('P at gate · the instant being estimated／P 點通過光閘的一刻');
+ }else{
  const scale=(W-80)/(1.4+m.L),gate=W/2,px=x=>gate+x*scale,cy=H*.5-15,cardH=62,cardY=cy-cardH/2,track=cy+86;
  const lead=dir*position(m),trail=lead-dir*m.L,left=px(Math.min(lead,trail)),right=px(Math.max(lead,trail)),center=(left+right)/2;
  const bodyWidth=Math.min(W*.43,Math.max(96,right-left+30));
@@ -279,6 +283,7 @@ function drawScene(){
  text(ctx,'Light gate · 光閘',gate,labelY,(night?'#d9e8e7':'#334532'),13);
  if($('dimensions').checked){const y=cardY-10;line(ctx,left,y,right,y,(night?'#f2bb87':'#81492e'),1.2);line(ctx,left,y-4,left,y+4,(night?'#f2bb87':'#81492e'),1.2);line(ctx,right,y-4,right,y+4,(night?'#f2bb87':'#81492e'),1.2);text(ctx,'L = '+state.length.toFixed(1)+' cm',center,y-13,(night?'#f2bb87':'#81492e'),12)}
  const ay=track+65,arrowLength=46;arrow(ctx,center-dir*arrowLength/2,ay,center+dir*arrowLength/2,ay,(night?'#bfd0d1':'#4d5b4d'),2);
+ }
  if($('showTrueSpeed').checked)notes.push('Instantaneous speed of P (model) · P 點模型瞬時速率：'+(m.u+m.a*state.t).toFixed(2)+' m/s');
  // Label the crossing edge only at the two exact step positions.
  if(Math.abs(state.t-m.entry)<1e-9||Math.abs(state.t-m.exit)<1e-9){const caption=Math.abs(state.t-m.entry)<1e-9?'Leading edge · timer starts · 前緣到達，開始計時':'Trailing edge · timer stops · 後緣離開，停止計時';notes.push(caption)}
