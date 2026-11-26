@@ -248,7 +248,7 @@ const screw=rod(vec(0,.045,0),vec(0,.071,0),.058,metal);
 handle.add(lever,grip,screw);valveParts.push(handle);
 handle.rotation.y=Math.PI/2;
 function toggleBurner(){
- if(broken)return;
+ if(broken||(recovery&&!heat))return;
  heat=!heat;
  if(heat)granulesLocked=true;
 }
@@ -760,7 +760,7 @@ function drainLowerSocket(dt){
  d.puddle.visible=d.size>0;
  d.puddle.position.set(out.x,.016,out.z);
  d.puddle.scale.set(d.size,.012,d.size*.65);
- if(recovery==='drain'&&!pouring&&!d.packets.length){
+ if(recovery==='drain'&&!heat&&!pouring&&!d.packets.length){
   recovery='wipe';startWiping();
  }
 }
@@ -816,6 +816,7 @@ function finishWiping(){
  setHint('枱面抹乾喇，檢查喉頭，改好接駁先再開水。');
 };
 $('heat').onclick=toggleBurner;
+$('stopForWipe').onclick=()=>{if(heat)toggleBurner()};
 $('eye').onclick=()=>{thermal=!thermal;$('lens').hidden=$('scale').hidden=!thermal};
 $('reset').onclick=()=>location.reload();
 const canvas=renderer.domElement,picker=new T.Raycaster(),pointers=new Map();
@@ -1224,11 +1225,15 @@ function frame(now){
  const reverse=taps.find((k,i)=>paths[i].inlet==='high'&&paths[i].drain);
  const loop=runningWith(p=>p.tapLoop);
  if(!hosesLockedByHeat())hotDisconnectAttempt=false;
+ const needsFlameOff=recovery==='drain'&&heat;
+ $('stopForWipe').hidden=!needsFlameOff;
+ $('heat').disabled=Boolean(recovery&&!heat);
  let instruction='';
  if(recovery==='stop'){
   instruction=leaking?teacherLine('leak'):teacherLine('otherTap');
- }else if(blockedTime>0)instruction=teacherLine('blocked');
- else if(recovery==='wipe')instruction=heat?teacherLine('flame'):teacherLine('wipe');
+ }else if(needsFlameOff)instruction=teacherLine('flame');
+ else if(blockedTime>0)instruction=teacherLine('blocked');
+ else if(recovery==='wipe')instruction=teacherLine('wipe');
  else if(heat&&!charge)instruction=teacherLine(flaskSaltMg>0?'dry':'empty');
  else if(heat&&charge<=2.001)instruction=teacherLine('almostDry');
  else if(heat&&!flow&&!taps.some((k,i)=>openTaps.has(k)&&paths[i].inlet))instruction=teacherLine('noWater');
