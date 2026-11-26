@@ -249,6 +249,7 @@ handle.add(lever,grip,screw);valveParts.push(handle);
 handle.rotation.y=Math.PI/2;
 function toggleBurner(){
  if(broken||(recovery&&!heat))return;
+ fastCooling=false;
  heat=!heat;
  if(heat)granulesLocked=true;
 }
@@ -671,6 +672,11 @@ let boilPower=0,vapourInHead=0,experimentSeconds=0;
 const arrivalTimes=[];
 let dripPhase=0, steamAge=0, headTemp=22, fast=false;
 $('fast').onclick=()=>fast=!fast;
+let fastCooling=false;
+function coolingWait(){
+ return !heat&&!broken&&!recovery&&hosesLockedByHeat();
+}
+$('coolWait').onclick=()=>{if(coolingWait())fastCooling=!fastCooling};
 let nextBump=1.6,burstAge=1,granuleAttempt=false,bumped=false;
 const splash=Array.from({length:5},()=>ball(flask.clone(),.023,water,.86));
 const bubbles=Array.from({length:6},()=>ball(flask.clone(),.034,0xe1f8fb,.75));
@@ -1142,10 +1148,11 @@ function frame(now){
 
  const canAdvance=heat;
  if(!canAdvance)fast=false;
- const elapsed=dt*(fast?8:1);
+ if(!coolingWait())fastCooling=false;
+ const elapsed=dt*(fast||fastCooling?8:1);
  // Classroom model at atmospheric pressure; ignore the small boiling-point elevation.
  if(heat&&charge)temp=Math.min(100,temp+elapsed*1.4);
- else temp+=(22-temp)*(1-Math.exp(-dt*.055));
+ else temp+=(22-temp)*(1-Math.exp(-elapsed*.055));
  baseTemperature+=((heat?(charge?temp+5:265):22)-baseTemperature)*(1-Math.exp(-elapsed*(heat ? .045 : .055)));
  if(heat&&!charge&&baseTemperature>150)dryDose+=elapsed;
  if(!broken&&dryDose>=damageDose){
@@ -1169,6 +1176,11 @@ function frame(now){
  vapourInHead=nextInventory;
  experimentSeconds+=elapsed;
 
+ const waitButton=$('coolWait');
+ waitButton.hidden=!coolingWait();
+ if(waitButton.hidden)fastCooling=false;
+ waitButton.setAttribute('aria-pressed',String(fastCooling));
+ liveText('coolWait',labText(fastCooling?'冷卻中 · 8×（回復正常速度）':'等儀器冷卻 · 快轉 8×'));
  $('fast').disabled=!canAdvance;$('fast').setAttribute('aria-pressed',String(fast));
  iconButton($('fast'),'fast',fast?'回復正常速度':'快轉八倍',fast?'1×':'8×');
  const columnBottom=3.23+lift,columnLength=thermometerTopY-.14-3.23;

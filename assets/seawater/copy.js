@@ -1,4 +1,5 @@
 const pairs=[
+['等儀器冷卻 · 快轉 8×','Wait for cooling · Fast-forward 8×'],['冷卻中 · 8×（回復正常速度）','Cooling · 8× (return to 1×)'],
 ['近看冷凝管','Inspect condenser'],
 ['滴／分鐘','drops/min'],
 ['儀器損壞，同學被科學老師帶走訓話，實驗結束了‧‧‧‧‧‧','The apparatus is damaged. Your science teacher takes you aside for a serious talk. Experiment over…'],['燒瓶裂開了','Cracked flask'],
