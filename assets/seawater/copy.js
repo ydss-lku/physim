@@ -20,20 +20,22 @@ function labText(raw){
 }
 
 const teacherLines = {
-  leak: ["同學！唔准浪費食水!","Don't waste water!"],
-  otherTap: ["同學！閂埋另一個水龍頭呀！唔准浪費食水!","Turn off the other tap too! Don't waste water!"],
-  blocked: ["同學！檢查清楚你啲水喉接駁！","Take a good look at those hose connections!"],
+  spill: ["同學！漏水喇，閂返 {tap}！","There's a leak! Turn off {tap}!"],
+  closeTap: ["同學！閂返 {tap} 先！","Turn off {tap} first!"],
+  wasteTap: ["同學！唔准浪費食水，閂返 {tap}！","Don't waste water! Turn off {tap}!"],
+  waitDrain: ["同學！等啲水流完先！","Wait for the water to finish draining!"],
+  waitGlass: ["同學！等套儀器攤凍先拆喉呀！","Let the apparatus cool before disconnecting the hose!"],
+  waitChips: ["同學！等個 flask 攤凍先郁啲防暴沸粒呀！","Let the flask cool before changing the boiling chips!"],
+  chipsOff: ["個 flask 攤凍喇，而家可以拎走防暴沸粒！","The flask has cooled. You can remove the boiling chips now!"],
+  chipsOn: ["個 flask 攤凍喇，而家可以落防暴沸粒！","The flask has cooled. You can add the boiling chips now!"],
+  stoppedWater: ["同學！冷卻水停咗，熄火先！","Cooling water has stopped flowing. Turn off the burner!"],
+  noWater: ["同學！未有冷卻水流過，熄火先！","There is no cooling-water flow. Turn off the burner!"],
+  bumping: ["同學小心啊！啲海水暴沸喇！快啲熄火！","Careful! The seawater is bumping. Turn off the burner!"],
   flame: ["同學小心啊！不如熄火先啦！","Careful there! Let's turn off the burner first!"],
   wipe: ["同學！抹返乾淨張枱先繼續！","Wipe the bench dry before you carry on!"],
-  dry: ["同學！啲海水蒸乾晒喇！快啲熄火！","The seawater has boiled dry! Turn off the burner!"],
   empty: ["同學！你未落海水喎！快啲熄火！你就嚟燒爛個 flask 啦！","You haven't added the seawater! Turn off the burner! You're about to crack the flask!"],
+  dry: ["同學！啲海水蒸乾晒喇！快啲熄火！","The seawater has boiled dry! Turn off the burner!"],
   almostDry: ["同學！啲海水就快俾你蒸乾喇！快啲熄火！","You're about to boil the flask dry! Turn off the burner!"],
-  noWater: ["同學！冷凝管未有水喎！","There's no cooling water flowing through the condenser!"],
-  bumping: ["同學小心啊！啲海水暴沸喇！不如熄火先啦！","Careful! The seawater is bumping! Let's turn off the burner first!"],
-  loop: ["同學！喺實驗室唔准玩水！如果你再玩水，培育組老師會同你跟進一下！","No playing with water in the lab! If you do it again, the PC Team will follow up with you!"],
-  hotReverse: ["同學！熄咗火、攤返凍，先好掹走啲喉呀！","Turn off the burner and let the apparatus cool before you pull off the hoses!"],
-  waste: ["同學！唔准浪費食水!","Don't waste water!"],
-  reverseOn: ["同學，你而家嘅接駁方法唔啱啊！應該係下面入水，上面出水！你依家閂咗水喉先啦！","You've got the hoses the wrong way round! Water goes in at the bottom and out at the top. Turn off the tap first!"],
   reverseOff: ["供水喉要駁下面！","Connect the supply hose to the lower port!"]
 };
 function teacherLine(key, tap = "") {

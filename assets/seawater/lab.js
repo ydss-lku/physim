@@ -251,10 +251,11 @@ function toggleBurner(){
  if(broken||(recovery&&!heat))return;
  fastCooling=false;
  heat=!heat;
- if(heat)granulesLocked=true;
+ if(heat){granulesLocked=true;granuleAttempt=false}
 }
 $('granules').onclick=()=>{
  if(granulesLocked){granuleAttempt=true;return}
+ granuleAttempt=false;readyUntil=0;
  useGranules=!useGranules;
  granules.forEach(chip=>chip.visible=useGranules);
  $('granules').setAttribute('aria-pressed',String(useGranules));
@@ -544,6 +545,7 @@ function connect(key){
  }
  if(key!=='free'&&occupied>=0)connections[occupied]='free';
  if(selected===slippedEnd)slippedEnd=-1;
+ readyPending=false;readyUntil=0;
  connections[selected]=key;hose(0);hose(1);choose(-1);return true;
 }
 hose(0);hose(1);
@@ -1244,37 +1246,8 @@ function frame(now){
  });
  moveCarryover(dt);
  if(!heat)bumped=false;
- if(!heat&&temp<40){granulesLocked=false;granuleAttempt=false}
- const running=taps.filter(k=>openTaps.has(k));
- const runningWith=predicate=>running.find(k=>predicate(paths[taps.indexOf(k)]));
- const leaking=runningWith(p=>p.out&&!p.drain);
- const label=k=>names[k].split(' ')[0];
- const reverse=taps.find((k,i)=>paths[i].inlet==='high'&&paths[i].drain);
- const loop=runningWith(p=>p.tapLoop);
- if(!hosesLockedByHeat())hotDisconnectAttempt=false;
- const needsFlameOff=recovery==='drain'&&heat;
- $('stopForWipe').hidden=!needsFlameOff;
- $('heat').disabled=Boolean(recovery&&!heat);
- let instruction='';
- if(recovery==='stop'){
-  instruction=leaking?teacherLine('leak'):teacherLine('otherTap');
- }else if(needsFlameOff)instruction=teacherLine('flame');
- else if(blockedTime>0)instruction=teacherLine('blocked');
- else if(recovery==='wipe')instruction=teacherLine('wipe');
- else if(heat&&!charge)instruction=teacherLine(flaskSaltMg>0?'dry':'empty');
- else if(heat&&charge<=2.001)instruction=teacherLine('almostDry');
- else if(heat&&!flow&&!taps.some((k,i)=>openTaps.has(k)&&paths[i].inlet))instruction=teacherLine('noWater');
- else if(heat&&bumped)instruction=teacherLine('bumping');
- else if(hotDisconnectAttempt)instruction=teacherLine('hotReverse');
- else if(granuleAttempt&&heat)instruction=teacherLine('flame');
- else if(loop)instruction=teacherLine('loop');
-
- else if(reverse && hosesLockedByHeat())instruction=teacherLine('hotReverse');
- else if(runningWith(p=>p.out&&p.drain&&!p.inlet))instruction=teacherLine('waste');
- else if(reverse){
-  if(openTaps.has(reverse))instruction=teacherLine('reverseOn');
-  else instruction=teacherLine('reverseOff');
- }
+ if(!hosesLockedByHeat())granulesLocked=false;
+ if(!granulesLocked&&!readyPending&&clock>=readyUntil)granuleAttempt=false;
  taps.forEach((k,i)=>{
  const on=openTaps.has(k),btn=$(k);btn.disabled=Boolean(recovery&&!on);iconButton(btn,'tap',(on?'閂 ':'開 ')+'T'+(i+1),'T'+(i+1));
  btn.setAttribute('aria-pressed',on);waterHandles[i].rotation.y=on?Math.PI/2:0;
@@ -1282,14 +1255,6 @@ function frame(now){
  // One smooth brightening and fading cycle every two real seconds, even on fast forward.
  valveOutlineMaterial.opacity=reducedValveMotion.matches ? .75 : .12+.86*(1-Math.cos(now*Math.PI/1000))/2;
  waterOutlines.forEach((outline,i)=>{outline.visible=!$(taps[i]).disabled});
- const canAnnounce=!heat&&!broken&&!recovery&&!hosesLockedByHeat()&&!openTaps.size;
- if(canAnnounce&&(readyPending||clock<readyUntil)&&instruction===teacherLine('reverseOff'))instruction='';
- if(readyPending&&canAnnounce&&!instruction){readyUntil=clock+5;readyPending=false}
- const ready=canAnnounce&&!instruction&&clock<readyUntil;
- liveText('coolReady',ready?labText('而家可以拆喉喇！'):'');
- const speech=instruction?'⚠ '+instruction:'';
- if($('warn').textContent!==speech){$('warn').hidden=!speech;$('warn').textContent=speech}
-
  liveText('read',labText('收集到嘅蒸餾水　')+dist.toFixed(2)+' mL · '+(arrivalTimes.length*2)+' '+labText('滴／分鐘'));
  for(const [id,state,on,off] of [['heat',heat,'熄火','開火'],['eye',thermal,'除低熱像眼鏡','戴上熱像眼鏡']]){const el=$(id);iconButton(el,id,state?on:off);el.setAttribute('aria-pressed',state)}
  $('add').disabled=charge>0||heat||Math.max(temp,baseTemperature)>=40;
@@ -1352,6 +1317,52 @@ function frame(now){
   puddle.visible=stream.size>.01;puddle.position.y=.016;puddle.scale.set(stream.size,.012,stream.size*.65);
  });
  advanceDrains(dt);
+ const running=taps.filter(k=>openTaps.has(k));
+ const firstTap=predicate=>running.find(k=>predicate(paths[taps.indexOf(k)]));
+ const leaking=running.find(k=>{
+  const i=taps.indexOf(k);
+  return paths[i].out&&!paths[i].drain&&(streams[i].jet.visible||plumes[i].visible);
+ });
+ const blocked=firstTap(p=>p.blocked),loop=firstTap(p=>p.tapLoop);
+ const waste=firstTap(p=>p.out&&p.drain&&!p.inlet);
+ const reverse=taps.find((k,i)=>paths[i].inlet==='high'&&paths[i].drain);
+ const hasHose=connections.some(k=>k!=='free'&&k!=='sink');
+ const locked=hosesLockedByHeat();
+ if(!locked)hotDisconnectAttempt=false;
+ const needsFlameOff=recovery==='drain'&&heat;
+ $('stopForWipe').hidden=!needsFlameOff;
+ $('heat').disabled=Boolean(recovery&&!heat);
+
+ const close=(key,tap)=>teacherLine(key,tap==='tap'?'T1':'T2');
+ let instruction='';
+ if(!broken){
+  if(heat&&!charge)instruction=teacherLine(flaskSaltMg>0?'dry':'empty');
+  else if(heat&&charge<=2.001)instruction=teacherLine('almostDry');
+  else if(heat&&bumped)instruction=teacherLine('bumping');
+  else if(recovery==='stop'&&running.length)instruction=close(leaking?'spill':'closeTap',leaking||running[0]);
+  else if(needsFlameOff)instruction=teacherLine('flame');
+  else if(recovery==='wipe')instruction=teacherLine('wipe');
+  else if(recovery==='drain')instruction=teacherLine('waitDrain');
+  else if(leaking)instruction=close('spill',leaking);
+  else if(blocked||loop)instruction=close('closeTap',blocked||loop);
+  else if(heat&&!flow&&!firstTap(p=>p.inlet))instruction=teacherLine(fill>.01?'stoppedWater':'noWater');
+  else if(heat&&(reverse||hotDisconnectAttempt||granuleAttempt))instruction=teacherLine('flame');
+  else if(waste)instruction=close('wasteTap',waste);
+  else if(reverse&&openTaps.has(reverse))instruction=close('closeTap',reverse);
+  else if(locked&&(hotDisconnectAttempt||granuleAttempt||reverse))instruction=teacherLine(granuleAttempt?'waitChips':'waitGlass');
+  else if(readyPending&&hasHose&&!granuleAttempt&&running.length)instruction=close('closeTap',running[0]);
+  else if(reverse&&!readyPending&&clock>=readyUntil&&!granuleAttempt)instruction=teacherLine('reverseOff');
+ }
+ if(readyPending&&!instruction&&!heat&&!locked&&!recovery&&!broken){
+  readyUntil=(granuleAttempt||hasHose)?clock+5:0;
+  readyPending=false;
+ }
+ const ready=!instruction&&!heat&&!locked&&!recovery&&!broken&&clock<readyUntil;
+ const message=ready&&granuleAttempt?teacherLine(useGranules?'chipsOff':'chipsOn'):ready&&hasHose&&!openTaps.size?labText('而家可以拆喉喇！'):'';
+ liveText('coolReady',message);
+ const speech=instruction?'⚠ '+instruction:'';
+ if($('warn').textContent!==speech){$('warn').hidden=!speech;$('warn').textContent=speech}
+
  if(oldMode!==thermal){for(const {obj,color} of surfaces){if(thermal)tint(obj.material,22);else obj.material.color.set(color)}oldMode=thermal}
 
  glassReflectance.value=thermal?0:1;
