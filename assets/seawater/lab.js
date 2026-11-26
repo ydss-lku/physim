@@ -528,8 +528,10 @@ for(const key of [...taps,'high','low','sink']){
 }
 let recovery='',blockedTime=0,failedJoint=null;
 let hotDisconnectAttempt=false;
+const disconnectThreshold=40;
+function lockTemperature(){return Math.max(temp,headTemp,baseTemperature)}
 function hosesLockedByHeat(){
- return heat || Math.max(temp,headTemp,baseTemperature)>=40;
+ return heat || lockTemperature()>=disconnectThreshold;
 }
 function connect(key){
  if(recovery)return;
@@ -672,7 +674,7 @@ let boilPower=0,vapourInHead=0,experimentSeconds=0;
 const arrivalTimes=[];
 let dripPhase=0, steamAge=0, headTemp=22, fast=false;
 $('fast').onclick=()=>fast=!fast;
-let fastCooling=false;
+let fastCooling=false,coolingStart=null,readyPending=false,readyUntil=0;
 function coolingWait(){
  return !heat&&!broken&&!recovery&&hosesLockedByHeat();
 }
@@ -1148,6 +1150,8 @@ function frame(now){
 
  const canAdvance=heat;
  if(!canAdvance)fast=false;
+ if(heat||broken||recovery){coolingStart=null;readyPending=false;readyUntil=0}
+ if(coolingWait()&&coolingStart===null)coolingStart=lockTemperature();
  if(!coolingWait())fastCooling=false;
  const elapsed=dt*(fast||fastCooling?8:1);
  // Classroom model at atmospheric pressure; ignore the small boiling-point elevation.
@@ -1178,6 +1182,17 @@ function frame(now){
 
  const waitButton=$('coolWait');
  waitButton.hidden=!coolingWait();
+ const progress=$('coolProgress');
+ if(coolingStart!==null){
+  if(waitButton.hidden){
+   progress.value=1;readyPending=true;coolingStart=null;
+  }else{
+   const range=coolingStart-disconnectThreshold;
+   progress.value=range>0?Math.min(.999,Math.max(0,(coolingStart-lockTemperature())/range)):0;
+  }
+ }
+ $('coolPanel').hidden=waitButton.hidden;
+ progress.setAttribute('aria-label',labText('冷卻進度'));
  if(waitButton.hidden)fastCooling=false;
  waitButton.setAttribute('aria-pressed',String(fastCooling));
  liveText('coolWait',labText(fastCooling?'冷卻中 · 8×（回復正常速度）':'等儀器冷卻 · 快轉 8×'));
@@ -1267,6 +1282,11 @@ function frame(now){
  // One smooth brightening and fading cycle every two real seconds, even on fast forward.
  valveOutlineMaterial.opacity=reducedValveMotion.matches ? .75 : .12+.86*(1-Math.cos(now*Math.PI/1000))/2;
  waterOutlines.forEach((outline,i)=>{outline.visible=!$(taps[i]).disabled});
+ const canAnnounce=!heat&&!broken&&!recovery&&!hosesLockedByHeat()&&!openTaps.size;
+ if(canAnnounce&&(readyPending||clock<readyUntil)&&instruction===teacherLine('reverseOff'))instruction='';
+ if(readyPending&&canAnnounce&&!instruction){readyUntil=clock+5;readyPending=false}
+ const ready=canAnnounce&&!instruction&&clock<readyUntil;
+ liveText('coolReady',ready?labText('而家可以拆喉喇！'):'');
  const speech=instruction?'⚠ '+instruction:'';
  if($('warn').textContent!==speech){$('warn').hidden=!speech;$('warn').textContent=speech}
 

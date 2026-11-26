@@ -1,4 +1,5 @@
 const pairs=[
+['冷卻進度','Cooling progress'],['而家可以拆喉喇！','You can disconnect the hoses now!'],
 ['等儀器冷卻 · 快轉 8×','Wait for cooling · Fast-forward 8×'],['冷卻中 · 8×（回復正常速度）','Cooling · 8× (return to 1×)'],
 ['近看冷凝管','Inspect condenser'],
 ['滴／分鐘','drops/min'],
