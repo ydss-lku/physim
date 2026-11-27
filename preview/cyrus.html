@@ -21,7 +21,7 @@
     }
     .frame {
       display: block;
-      background: #101722;
+      background: #05070b;
       color: #e8eef7;
       font: 15px system-ui, sans-serif;
       box-sizing: border-box;
@@ -35,15 +35,24 @@
   <main aria-label="Simulation area">
     <svg class="frame" viewBox="0 0 640 360" aria-label="Reflection at a plane mirror">
       <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#ff676d"/></marker>
+        <filter id="rayGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="640" height="360">
+          <feGaussianBlur stdDeviation="4"/>
+        </filter>
       </defs>
       <g fill="currentColor" text-anchor="middle">
         <text x="320" y="32">Plane mirror</text>
         <path d="M55 53 H585" stroke="#9bd8f0" stroke-width="5"/>
         <path d="M320 56 V263" stroke="#abbaca" stroke-dasharray="7 5"/>
         <text x="320" y="283">Normal</text>
-        <g fill="none" stroke="#ff676d" stroke-width="3" marker-mid="url(#arrow)">
+        <g fill="none" stroke="#ff334b" stroke-width="8" filter="url(#rayGlow)" id="halo">
+          <use href="#incident"/><use href="#reflected"/>
+        </g>
+        <g fill="none" stroke="#ff858a" stroke-width="2">
           <path id="incident"/><path id="reflected"/>
+        </g>
+        <g fill="#ffc2bf">
+          <path id="inArrow" d="M7 0 L-6 -5 L-3 0 L-6 5 Z"/>
+          <path id="outArrow" d="M7 0 L-6 -5 L-3 0 L-6 5 Z"/>
         </g>
         <g id="lamp"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g>
         <text id="incomingLabel">Incident ray</text>
@@ -58,6 +67,19 @@
   </main>
   <script>
     const slider = document.querySelector('#rotation');
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    let rays = [];
+    let frame;
+    function animate(time) {
+      const phase = motion.matches ? 0.5 : time % 1700 / 1700;
+      const fraction = 0.5 + 0.42 * phase;
+      for (const [arrow, x, y, dx, dy] of rays) {
+        arrow.setAttribute('transform', `translate(${x + dx * fraction} ${y + dy * fraction}) rotate(${Math.atan2(dy, dx) * 180 / Math.PI})`);
+      }
+      const glow = motion.matches ? 0.57 : 0.57 - 0.19 * Math.cos(time * Math.PI / 2300);
+      document.querySelector('#halo').setAttribute('opacity', glow);
+      if (!motion.matches) frame = requestAnimationFrame(animate);
+    }
     function draw() {
       const degrees = Number(slider.value);
       const radians = degrees * Math.PI / 180;
@@ -69,6 +91,8 @@
       const reach = Math.min(232 / Math.cos(radians), 314 / Math.abs(Math.sin(radians)));
       const rx = reach * Math.sin(radians);
       const ry = reach * Math.cos(radians);
+      rays = [[document.querySelector('#inArrow'), x, y, dx, -dy],
+              [document.querySelector('#outArrow'), 320, 56, rx, ry]];
       document.querySelector('#reflected').setAttribute('d', `M 320 56 l ${rx * 0.7} ${ry * 0.7} L ${320 + rx} ${56 + ry}`);
       const side = degrees < 0 ? -1 : 1;
       const offset = Math.max(58, Math.abs(dx) * 0.6 + 40);
@@ -79,8 +103,11 @@
       }
       document.querySelector('#lamp').setAttribute('transform', `translate(${x} ${y}) rotate(${degrees})`);
       document.querySelector('#angle').textContent = Math.abs(degrees) + '°';
+      cancelAnimationFrame(frame);
+      animate(performance.now());
     }
     slider.addEventListener('input', draw);
+    motion.addEventListener('change', draw);
     draw();
   </script>
 </body>
