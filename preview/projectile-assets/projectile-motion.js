@@ -260,12 +260,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     let low=0,high=Math.max(w,h)*2;
     for(let i=0;i<24;i++){
       const mid=(low+high)/2, box=frameAt(mid);
-      if(box.right-box.left<=w-18 && box.top-box.bottom<=h-18)low=mid;
+      const fitsSubjects=box.right-box.left<=w-18 && box.top-box.bottom<=h-18;
+      const fitsGroundMargin=box.bottom>=-h*.22;
+      if(fitsSubjects && fitsGroundMargin)low=mid;
       else high=mid;
     }
     const scale=low, box=frameAt(scale);
     const start=(w-box.right-box.left)/2;
-    const floor=(h+box.top+box.bottom)/2;
+    // Keep the lowest visible subject just inside the frame. In wide shots this
+    // leaves the spare height above the field, instead of exposing the cutaway.
+    const floor=h-9+box.bottom;
     const toPxX = x => start+x*scale;
     const toPxY = y => floor-y*scale;
     trajectoryView = {p,toPxX,toPxY};
@@ -279,7 +283,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const step=niceStep((w-start)/scale,5);
     for(let x=0;!ready && toPxX(x)<w-22;x+=step){
       ctx.fillRect(toPxX(x),floor,1,6);
-      ctx.fillText(x+" m",toPxX(x)-5,floor+21);
+      ctx.fillText(x+" m",toPxX(x)-5,floor+21<h-2 ? floor+21 : floor-5);
     }
     function path(model,end,color,dash){
       ctx.beginPath();
