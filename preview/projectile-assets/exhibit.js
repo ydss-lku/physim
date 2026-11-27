@@ -8,9 +8,6 @@ function createProjectileExhibit(canvas) {
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.22;
   const scene = new T.Scene();
-  const landscapeGroup=new T.Group();
-  scene.add(landscapeGroup);
-  const updateLandscape=createFlightLandscape(T,landscapeGroup);
   const camera = new T.OrthographicCamera();
   camera.position.z = 48000;
   camera.near = 1;
@@ -177,7 +174,6 @@ function createProjectileExhibit(canvas) {
     ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
     updateEarth(size,my-flight.y0*size-ball.scale.x,rig.position.y-1.118*size,rig.position.x,ball,document.documentElement.dataset.theme==="tech",mx,flight.time,flight.vx);
-    updateLandscape(rig.position.x,my-flight.y0*size-ball.scale.x,size,document.documentElement.dataset.theme==="tech");
     if(view.active){
       // Frame the arc in the rotated camera's own plane, including its apex.
       scene.updateMatrixWorld(true);

@@ -8,13 +8,13 @@ function createEarthCut(T,scene){
   function edgeX(z){
     return 3.05-.43*(Math.sqrt(z*z+6.)-2.45)+.78*Math.sin(z*.46)+.25*Math.sin(z*1.17)+.09*Math.sin(z*2.8);
   }
-  const zs=[-640,-320,-160,-80];
+  const zs=[-210,-160,-80];
   for(let i=-200;i<=200;i++)zs.push(i*.22);
-  zs.push(80,160,320,640);
+  zs.push(80,160,210);
   const positions=[],weights=[],offsets=[],kinds=[],indices=[];
   const rows=[[-720,0,0,1],[-3,0,0,1],[-1.2,0,0,1],[-.91,.07,.09,1],
     [-.62,.23,.14,2],[-.29,.51,.16,2],[-.12,.80,.10,2],[.035,.96,.06,3],
-    [.13,1,.03,3],[.30,1,.02,0],[1,1,0,0],[720,1,0,0]];
+    [.13,1,.03,3],[.30,1,.02,0],[1,1,0,0],[510,1,0,0]];
   rows.forEach(([delta,weight,jitter,kind],row)=>{
     zs.forEach((z,i)=>{
       const offset=(random()-.5)*jitter;
@@ -76,7 +76,7 @@ function createEarthCut(T,scene){
       float side=radial.x < -1.8 ? length(radial+vec2(1.8,0.))-2.5 : (abs(radial.y)-2.5-.85*(radial.x+1.8))*.762;
       float edgeAA=max(.018,fwidth(side));
       float sector=1.-smoothstep(-edgeAA,edgeAA,side);
-      earth*=mix(.62,1.,sector);
+      if(side>.035)discard;
       float rim=1.-smoothstep(.028,.028+edgeAA,abs(side));
       earth=mix(earth,vec3(.76,.79,.68),rim*.8);
       float age=marks.y-band/max(.00001,marks.z);
@@ -149,7 +149,32 @@ function createEarthCut(T,scene){
     const sprite=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(canvas),transparent:true,depthWrite:false,toneMapped:false}));
     root.add(sprite);return sprite;
   }
-  let previousDepth=NaN;
+  function leftEdge(z,origin){
+    const az=Math.abs(z);
+    return origin-1.8+(az<=2.5?-Math.sqrt(6.25-az*az):(az-2.5)/.85);
+  }
+  function trimDetails(geometry,coords,stride,origin){
+    const kept=[];
+    for(let i=0;i<coords.length;i+=stride){
+      if(coords[i]<leftEdge(coords[i+2],origin)+.12)continue;
+      for(let j=0;j<stride/3;j++)kept.push(i/3+j);
+    }
+    geometry.setIndex(kept);
+  }
+  const placement=stones.instanceMatrix.array.slice(),tints=stones.instanceColor.array.slice();
+  function trimDecoration(origin){
+    trimDetails(bg,blades,27,origin);trimDetails(rg,roots,12,origin);
+    let count=0;
+    for(let j=0;j<placement.length;j+=16){
+      if(placement[j+12]<leftEdge(placement[j+14],origin)+.3)continue;
+      stones.instanceMatrix.array.set(placement.subarray(j,j+16),count*16);
+      const c=j/16*3;
+      stones.instanceColor.array.set(tints.subarray(c,c+3),count++*3);
+    }
+    stones.count=count;stones.instanceMatrix.needsUpdate=true;stones.instanceColor.needsUpdate=true;
+    stones.computeBoundingSphere();
+  }
+  let previousDepth=NaN,previousOrigin=NaN;
   return function update(size,field,contact,wheelX,ball,night,originX,time,vx){
     const wheelLevel=(contact-field)/size;
     const depth=Math.min(-.35,wheelLevel);
@@ -171,9 +196,25 @@ function createEarthCut(T,scene){
       label.scale.set(width,width/3,1);
     });
     root.position.set(wheelX,field,0);root.scale.setScalar(size);toe.position.y=depth;
-    if(Math.abs(depth-previousDepth)>.001 || !Number.isFinite(previousDepth)){
-      for(let i=0;i<pos.count;i++)pos.setY(i,depth*(1-weights[i])+offsets[i]);
-      pos.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();previousDepth=depth;
+    const origin=marks.value.x;
+    const moved=!Number.isFinite(previousOrigin)||Math.abs(origin-previousOrigin)>.0001;
+    if(moved)trimDecoration(origin);
+    if(moved||Math.abs(depth-previousDepth)>.001){
+      for(let i=0;i<zs.length;i++){
+        const boundary=leftEdge(zs[i],origin);
+        let rimHeight=depth;
+        for(let row=0;row<rows.length;row++){
+          const j=row*zs.length+i,x=positions[j*3],y=depth*(1-weights[j])+offsets[j];
+          if(row && positions[(j-zs.length)*3]<boundary && x>=boundary){
+            const k=j-zs.length,px=positions[k*3],py=depth*(1-weights[k])+offsets[k];
+            rimHeight=py+(y-py)*(boundary-px)/(x-px);
+            for(let n=i;n<j;n+=zs.length)pos.setY(n,rimHeight);
+          }
+          pos.setX(j,Math.max(boundary,x));pos.setY(j,y);
+        }
+      }
+      pos.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
+      previousOrigin=origin;previousDepth=depth;
     }
     darkness.value=night;grass.material.color.setScalar(night?.73:1);
     shadow.value.set((ball.position.x-wheelX)/size,Math.max(0,(ball.position.y-field)/ball.scale.x-1),ball.scale.x/size);
