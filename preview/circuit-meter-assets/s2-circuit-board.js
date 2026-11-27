@@ -114,37 +114,18 @@ function meterFace(type,cx,cy,value){
  const reading=value==null?'—':value.toFixed(amp?3:2)+' '+unit;
  return `<g transform="translate(${cx} ${cy})" pointer-events="none"><circle r="14" fill="var(--panel)" stroke="var(--symbol)" stroke-width="2"/>${label(0,5,unit,16)}<rect x="-32" y="16" width="64" height="19" rx="3" fill="var(--panel)"/>${label(0,30,reading,13)}</g>`;
 }
-let failures=0,guide=null,earned=false,closed=false,audio=null;
-function unlock(){
- const Context=window.AudioContext||window.webkitAudioContext;
- if(Context && matchMedia('(min-width:900px)').matches){audio??=new Context();audio.resume().catch(()=>{});}
-}
-board.addEventListener('pointerdown',unlock);
-board.addEventListener('keydown',unlock);
-let applause=null;
+let failures=0,guide=null,earned=false,closed=false;
+const applause=new Audio(new URL('classroom-applause.mp3',document.currentScript.src).href);
+applause.preload='auto';
+applause.volume=.7;
 function praise(){
  if(!matchMedia('(min-width:900px)').matches)return;
  document.querySelector('.great-job')?.remove();
  const badge=document.createElement('div');
  badge.className='great-job';badge.textContent='Great job!';board.parentElement.append(badge);
  badge.onanimationend=()=>badge.remove();
- if(!audio)return;
- applause?.stop();
- const rate=audio.sampleRate,buffer=audio.createBuffer(1,rate*6,rate),samples=buffer.getChannelData(0);
- for(let t=0;t<6;t+=.16+Math.random()*.10){
-   const start=Math.floor(t*rate),volume=.45+Math.random()*.30;
-   for(let j=0;j<rate*.065 && start+j<samples.length;j++)
-     { const seconds=j/rate;
-       const attack=Math.exp(-seconds/.009)+.55*Math.exp(-Math.abs(seconds-.013)/.005);
-       const knock=.35*Math.sin(2*Math.PI*810*seconds)*Math.exp(-seconds/.012);
-       samples[start+j]+=volume*((Math.random()*2-1)*attack+knock);
-     }
- }
- const source=audio.createBufferSource(),gain=audio.createGain(),now=audio.currentTime;
- source.buffer=buffer;source.connect(gain);gain.connect(audio.destination);
- gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.65,now+.3);
- gain.gain.setValueAtTime(.65,now+5);gain.gain.linearRampToValueAtTime(0,now+6);
- applause=source;source.onended=()=>{gain.disconnect();source.disconnect();if(applause===source)applause=null;};source.start();
+ applause.currentTime=0;
+ applause.play().catch(()=>{});
 }
 function resetBoard(){
  if(!Object.keys(parts).length)return;
