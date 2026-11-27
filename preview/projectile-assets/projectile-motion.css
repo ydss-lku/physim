@@ -139,3 +139,5 @@ main .observation .viewport{height:clamp(265px,28vw,380px)}
 
 #ballInset{position:absolute;top:8px;left:8px;width:clamp(136px,29%,230px);height:clamp(108px,39%,162px);border:1px solid var(--line);background:var(--field);border-radius:4px;pointer-events:none;overflow:hidden}
 #ballInset canvas{width:100%;height:100%}
+
+#ballInset{background:linear-gradient(#bbcdd2,#edead9)}html[data-theme=tech] #ballInset{background:linear-gradient(#192d38,#364850)}

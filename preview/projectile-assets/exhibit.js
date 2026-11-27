@@ -8,7 +8,9 @@ function createProjectileExhibit(canvas) {
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.22;
   const scene = new T.Scene();
-  const updateLandscape=createFlightLandscape(T,scene);
+  const landscapeGroup=new T.Group();
+  scene.add(landscapeGroup);
+  const updateLandscape=createFlightLandscape(T,landscapeGroup);
   const camera = new T.OrthographicCamera();
   camera.position.z = 900;
   camera.near = 1;
@@ -198,7 +200,7 @@ function createProjectileExhibit(canvas) {
     scene.add(arrow);
     return arrow;
   });
-  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,colors}){
+  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,colors,inset}){
     orbit.rotation.set(view.pitch,view.yaw,view.roll,'ZYX');
     camera.zoom=view.zoom;
     track.visible=view.active;
@@ -245,27 +247,42 @@ function createProjectileExhibit(canvas) {
     ball.position.set(x-w/2,h/2-y,0);
     groundUnderWheels(size,my-flight.y0*size,mx+flight.vx*flight.T*size);
     updateLandscape(w,h,mx,my,size);
+    if(inset){
+      const iw=inset.w, ih=inset.h;
+      const radius=Math.min(32,ih*.095,iw*.08);
+      const zoom=radius/ball.scale.x;
+      const left=ball.position.x-iw*.42/zoom;
+      portraitCamera.left=left;portraitCamera.right=left+iw/zoom;
+      portraitCamera.top=ball.position.y+ih*.5/zoom;
+      portraitCamera.bottom=portraitCamera.top-ih/zoom;
+      portraitCamera.updateProjectionMatrix();
+      const matrix=portraitCamera.projectionMatrix.elements;
+      matrix[8]=-.48*2*zoom/iw;matrix[9]=-.28*2*zoom/ih;
+      matrix[12]+=900*matrix[8];matrix[13]+=900*matrix[9];
+      // Keep distant hills in the shot with weaker parallax than the nearby turf.
+      updateLandscape(iw/zoom,ih/zoom,mx-ball.position.x,my-ball.position.y,size);
+      const offsetX=left+iw*.5/zoom;
+      landscapeGroup.position.set(offsetX,ball.position.y,0);
+      const showTrack=track.visible, showRig=rig.visible;
+      const arrows=impactArrows.map(arrow=>arrow.visible);
+      track.visible=false;rig.visible=false;
+      impactArrows.forEach(arrow=>arrow.visible=false);
+      renderer.setViewport(0,0,iw,ih);renderer.setScissor(0,0,iw,ih);renderer.setScissorTest(true);
+      renderer.render(scene,portraitCamera);
+      const source=renderer.domElement;
+      const sw=Math.floor(iw*ratio),sh=Math.floor(ih*ratio);
+      inset.ctx.clearRect(0,0,iw,ih);
+      inset.ctx.drawImage(source,0,source.height-sh,sw,sh,0,0,iw,ih);
+      renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);
+      track.visible=showTrack;rig.visible=showRig;
+      impactArrows.forEach((arrow,i)=>arrow.visible=arrows[i]);
+      landscapeGroup.position.set(0,0,0);
+      updateLandscape(w,h,mx,my,size);
+    }
     renderer.render(scene,camera);
   };
-  const portraitScene=new T.Scene();
-  portraitScene.environment=scene.environment;
-  const portraitBall=ball.clone();
-  portraitScene.add(portraitBall,key.clone(),rim.clone(),new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
   const portraitCamera=new T.OrthographicCamera(-1,1,1,-1,1,2000);
   portraitCamera.position.z=900;
-  render.portrait=(w,h,x,y,radius)=>{
-    const ratio=Math.min(devicePixelRatio||1,2);
-    if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
-      renderer.setPixelRatio(ratio); renderer.setSize(w,h,false);
-      previousWidth=w;previousHeight=h;previousRatio=ratio;
-    }
-    portraitCamera.left=-w/2;portraitCamera.right=w/2;
-    portraitCamera.top=h/2;portraitCamera.bottom=-h/2;
-    portraitCamera.updateProjectionMatrix();
-    portraitBall.position.set(x-w/2,h/2-y,0);
-    portraitBall.scale.setScalar(radius);
-    renderer.render(portraitScene,portraitCamera);
-  };
   render.cannonBounds=cannonBounds;
   return render;
 }

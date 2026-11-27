@@ -250,18 +250,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     insetToggle.setAttribute('aria-pressed',String(!ballInset.hidden));
     updateUI();
   });
-  // Lighting on the spherical ball is constant. Cache its portrait and redraw only the vectors.
-  const portrait=document.createElement('canvas');
-  portrait.width=portrait.height=128;
-  if(renderExhibit){
-    renderExhibit.portrait(128,128,64,64,54);
-    portrait.getContext('2d').drawImage(document.getElementById('exhibitCanvas'),0,0,128,128);
-  }
   function drawCloseUp(ctx,w,h,vx,vy,maxSpeed,colors){
-    ctx.clearRect(0,0,w,h);
     const x=w*.42,y=h/2,radius=Math.min(32,h*.095,w*.08);
-    if(renderExhibit)ctx.drawImage(portrait,x-radius*64/54,y-radius*64/54,radius*128/54,radius*128/54);
-    else {
+    if(!renderExhibit){
+      ctx.clearRect(0,0,w,h);
       ctx.beginPath();ctx.arc(x,y,radius,0,2*Math.PI);ctx.fillStyle=chartInk.muted;ctx.fill();
     }
     const scale=Math.min(w*.39,h*.38)/maxSpeed;
@@ -375,16 +367,14 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
       if(!ready)drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
     });
-    if(!ballInset.hidden){
-      const inset=setupCanvas(insetCanvas);
-      drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors);
-    }
+    const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
     if(renderExhibit){
       if(view.active)ctx.clearRect(0,0,w,h);
       renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
-        view,colors,flight:{...p,y0:state.y0,g:state.g,color:chartInk.trace}});
-      return;
+        view,colors,inset,flight:{...p,y0:state.y0,g:state.g,color:chartInk.trace}});
     }
+    if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors);
+    if(renderExhibit)return;
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
   }
 
