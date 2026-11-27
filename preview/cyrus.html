@@ -71,6 +71,7 @@
       <label>Source Y<input id="sy" type="range" min="62" max="298" value="280"></label>
       <label>Rotate source<input id="rotation" type="range" min="-89.9" max="89.9" step="0.1" value="20"></label>
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
+      <label>Mirror Y<input id="mirrorY" type="range" min="36" max="324" value="180"></label>
     </section>
   </main>
   <script>
@@ -131,12 +132,14 @@
       const dx = Math.sin(degrees*rad), dy = -Math.cos(degrees*rad);
       const nx = -Math.sin(tilt*rad), ny = Math.cos(tilt*rad);
       const dot = dx*nx + dy*ny;
-      const distance = Math.abs(dot) > 1e-9 ? ((320-x)*nx + (180-y)*ny)/dot : Infinity;
+      const mirrorY = +byId('mirrorY').value;
+      const distance = Math.abs(dot) > 1e-9 ? ((320-x)*nx + (mirrorY-y)*ny)/dot : Infinity;
       const hit = distance > 1e-6 && Number.isFinite(distance) &&
-        Math.abs((x+distance*dx-320)*ny - (y+distance*dy-180)*nx) <= 154.000001;
+        distance <= edge(x,y,dx,dy) &&
+        Math.abs((x+distance*dx-320)*ny - (y+distance*dy-mirrorY)*nx) <= 154.000001;
       const length = hit ? distance : edge(x,y,dx,dy);
       const hx = x+dx*length, hy = y+dy*length;
-      byId('mirror').setAttribute('transform', 'rotate('+tilt+' 320 180)');
+      byId('mirror').setAttribute('transform', 'translate(0 '+(mirrorY-180)+') rotate('+tilt+' 320 180)');
       byId('tiltValue').textContent = tilt+'°';
       byId('incident').setAttribute('d', 'M'+x+' '+y+' L'+hx+' '+hy);
       byId('lamp').setAttribute('transform','translate('+x+' '+y+') rotate('+degrees+')');
