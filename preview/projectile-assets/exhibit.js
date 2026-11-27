@@ -77,8 +77,49 @@ function createProjectileExhibit(canvas) {
   key.shadow.mapSize.set(1024,1024);key.shadow.normalBias=.4;scene.add(key);
   scene.add(new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
   const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
-  const floor=part(scene,new T.PlaneGeometry(2400,1800),new T.ShadowMaterial({opacity:.25}));
-  floor.rotation.x=-Math.PI/2;floor.castShadow=false;
+  // A solid cross-section joins the carriage terrace to the lower field.
+  // The flat terrace spans both wheel tracks, including their front and rear edges.
+  const groundGeometry=new T.BufferGeometry();
+  const faceColors=[],indices=[];
+  const bands=[0x687455,0x71664f,0x514c40];
+  const columns=6, rows=4;
+  const groundVertices=new Float32Array(columns*rows*3);
+  for(let row=0;row<rows;row++){
+    const tint=new T.Color(bands[Math.min(row,2)]);
+    for(let col=0;col<columns;col++){
+      faceColors.push(tint.r,tint.g,tint.b);
+      if(row<rows-1 && col<columns-1){
+        const i=row*columns+col;
+        indices.push(i,i+columns,i+1,i+1,i+columns,i+columns+1);
+      }
+    }
+  }
+  groundGeometry.setIndex(indices);
+  groundGeometry.setAttribute('position',new T.BufferAttribute(groundVertices,3));
+  groundGeometry.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));
+  const ground=part(scene,groundGeometry,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));
+  ground.castShadow=false;
+  ground.frustumCulled=false;
+  function groundUnderWheels(size,datum,landingX){
+    const wheelX=rig.position.x, contact=rig.position.y-1.118*size;
+    const edge=wheelX+1.03*size;
+    const radius=ball.scale.x;
+    const field=datum-radius;
+    const run=Math.max(.3*size,Math.min(2*size,(landingX-edge)*.65));
+    const xs=[wheelX-3000,wheelX-2.5*size,edge,edge+run,Math.max(edge+run+size,landingX),Math.max(edge+run,landingX)+3000];
+    const front=1.18*size;
+    for(let col=0;col<columns;col++){
+      const top=col<3?contact:field;
+      for(let row=0;row<rows;row++){
+        const i=3*(row*columns+col);
+        groundVertices[i]=xs[col];
+        groundVertices[i+1]=top-(row===2?.16*size:row===3?Math.max(2200,Math.abs(contact-field)+size):0);
+        groundVertices[i+2]=row===0?-3*size:front;
+      }
+    }
+    groundGeometry.attributes.position.needsUpdate=true;
+    groundGeometry.computeVertexNormals();
+  }
   let previousWidth=0, previousHeight=0, previousRatio=0;
   let cachedAngle, bounds;
   function cannonBounds(theta){
@@ -162,7 +203,7 @@ function createProjectileExhibit(canvas) {
     rig.position.set(mx-1.48*Math.cos(angle)*size,my-1.48*Math.sin(angle)*size,0);
     ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
-    floor.position.y=rig.position.y-1.11*size;
+    groundUnderWheels(size,my-flight.y0*size,mx+flight.vx*flight.T*size);
     updateLandscape(w,h,mx,my,size);
     renderer.render(scene,camera);
   };

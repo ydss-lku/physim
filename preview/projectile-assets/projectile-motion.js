@@ -325,7 +325,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(renderExhibit){
       if(view.active)ctx.clearRect(0,0,w,h);
       renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
-        view,colors,flight:{...p,g:state.g,color:chartInk.trace}});
+        view,colors,flight:{...p,y0:state.y0,g:state.g,color:chartInk.trace}});
       return;
     }
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
