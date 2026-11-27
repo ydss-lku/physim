@@ -908,7 +908,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         const deltaY=event.clientY-previous.y;
         if(!deltaX && !deltaY)return;
         const tiltPerPixel=Math.PI/(2*trajCanvas.clientHeight);
-        view.pitch=Math.max(-Math.PI/5,Math.min(Math.PI/18,view.pitch+deltaY*tiltPerPixel));
+        view.pitch=Math.max(-Math.PI/5,Math.min(Math.PI/18,view.pitch-deltaY*tiltPerPixel));
         const radiansPerPixel=Math.PI/(3*trajCanvas.clientWidth);
         view.yaw=Math.max(-turnLimit,Math.min(turnLimit,view.yaw-deltaX*radiansPerPixel));
         updateUI();
