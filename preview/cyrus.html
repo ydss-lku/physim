@@ -46,12 +46,12 @@
           <path id="incident"/><path id="reflected"/>
         </g>
         <g id="lamp"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g>
-        <text x="128" y="252">Incident ray</text>
-        <text x="512" y="252">Reflected ray</text>
+        <text id="incomingLabel">Incident ray</text>
+        <text id="outgoingLabel">Reflected ray</text>
       </g>
       <foreignObject x="80" y="293" width="480" height="64">
         <label style="display:grid;text-align:center">Rotate source · Angle to normal <output id="angle"></output>
-          <input id="rotation" aria-label="Angle of incidence in degrees" type="range" min="0" max="80" value="34" style="width:100%;margin:0;accent-color:#6aaaff">
+          <input id="rotation" aria-label="Rotate source across the normal" type="range" min="-80" max="80" value="0" style="width:100%;margin:0;accent-color:#6aaaff">
         </label>
       </foreignObject>
     </svg>
@@ -66,9 +66,19 @@
       const x = 320 - dx;
       const y = 56 + dy;
       document.querySelector('#incident').setAttribute('d', `M ${x} ${y} l ${dx / 2} ${-dy / 2} L 320 56`);
-      document.querySelector('#reflected').setAttribute('d', `M 320 56 l ${dx / 2} ${dy / 2} L ${320 + dx} ${y}`);
+      const reach = Math.min(232 / Math.cos(radians), 314 / Math.abs(Math.sin(radians)));
+      const rx = reach * Math.sin(radians);
+      const ry = reach * Math.cos(radians);
+      document.querySelector('#reflected').setAttribute('d', `M 320 56 l ${rx * 0.7} ${ry * 0.7} L ${320 + rx} ${56 + ry}`);
+      const side = degrees < 0 ? -1 : 1;
+      const offset = Math.max(58, Math.abs(dx) * 0.6 + 40);
+      for (const [id, sign] of [['#incomingLabel', -1], ['#outgoingLabel', 1]]) {
+        const label = document.querySelector(id);
+        label.setAttribute('x', 320 + sign * side * offset);
+        label.setAttribute('y', 80 + dy * 0.62);
+      }
       document.querySelector('#lamp').setAttribute('transform', `translate(${x} ${y}) rotate(${degrees})`);
-      document.querySelector('#angle').textContent = degrees + '°';
+      document.querySelector('#angle').textContent = Math.abs(degrees) + '°';
     }
     slider.addEventListener('input', draw);
     draw();
