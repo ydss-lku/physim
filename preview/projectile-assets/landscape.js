@@ -1,25 +1,5 @@
-// Continuous mountain silhouettes and a low stadium bowl surround the field on every side.
+// Distant ridges surround the level field.
 function createFlightLandscape(T,root){
-  const stone=new T.MeshStandardMaterial({color:0x26323a,roughness:.82});
-  const seat=new T.MeshStandardMaterial({color:0x263338,roughness:.68});
-  const trim=new T.MeshStandardMaterial({color:0x535f60,metalness:.65,roughness:.39});
-  function ring(radius,height,outer,outerHeight,material){
-    const a=[],idx=[];
-    for(let i=0;i<=240;i++){
-      const t=Math.PI*2*i/240;
-      const x=28+Math.cos(t)*86,z=Math.sin(t)*35;
-      for(const [r,y] of [[radius,height],[outer,outerHeight]])a.push(x+r*Math.cos(t),y,z+r*Math.sin(t));
-      if(i<240){const n=2*i;idx.push(n,n+1,n+2,n+1,n+3,n+2);}
-    }
-    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(a,3));
-    g.setIndex(idx);g.computeVertexNormals();material.side=T.DoubleSide;
-    root.add(new T.Mesh(g,material));
-  }
-  for(let i=0;i<9;i++){
-    const r=14+i*.9,y=.32+i*.39;
-    ring(r,y,r+.88,y,seat);ring(r+.88,y,r+.90,y+.39,stone);
-  }
-  ring(22,3.9,22.7,3.94,trim);
   const mountains=[];
   for(let layer=0;layer<2;layer++){
     const a=[],idx=[];

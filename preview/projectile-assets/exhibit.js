@@ -109,13 +109,15 @@ function createProjectileExhibit(canvas) {
   key.shadow.mapSize.set(2048,2048);key.shadow.normalBias=.4;scene.add(key);
   scene.add(new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
   const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
-  // Two level surfaces meet at a retaining face. Neither surface tilts toward the landing point.
-  // The flat terrace spans both wheel tracks, including their front and rear edges.
-  // A continuous playing surface with a local level bed for the carriage.
-  const groundGeometry=new T.PlaneGeometry(1,1,112,80);
-  groundGeometry.rotateX(-Math.PI/2);
-  const groundVertices=groundGeometry.attributes.position;
-  const originalGround=groundVertices.array.slice();
+  // Cross-section scenery: build each horizontal surface and each vertical soil face separately.
+  const groundGeometry=new T.BufferGeometry();
+  const groundVertices=new T.Float32BufferAttribute(new Float32Array(9*6*3),3);
+  const surfaceKinds=new T.Float32BufferAttribute(new Float32Array(9*6),1);
+  groundGeometry.setAttribute('position',groundVertices);
+  groundGeometry.setAttribute('surfaceKind',surfaceKinds);
+  [0,2,1,2,0,0,0,2,2].forEach((kind,face)=>{
+    for(let n=0;n<6;n++)surfaceKinds.setX(face*6+n,kind);
+  });
   const nightTurf={value:1};
   const fieldOrigin={value:0}, fieldUnit={value:1};
   const ballContact={value:new T.Vector3()};
@@ -125,42 +127,24 @@ function createProjectileExhibit(canvas) {
     shader.uniforms.fieldOrigin=fieldOrigin;
     shader.uniforms.fieldUnit=fieldUnit;
     shader.vertexShader=shader.vertexShader.replace('#include <common>',
-      '#include <common>\nuniform float fieldOrigin, fieldUnit; varying vec2 fieldMetres;')
+      '#include <common>\nattribute float surfaceKind;uniform float fieldOrigin, fieldUnit; varying vec2 fieldMetres;varying vec2 earthFace;varying float materialId;')
       .replace('#include <begin_vertex>',
-        '#include <begin_vertex>\nfieldMetres=vec2((position.x-fieldOrigin)/fieldUnit,position.z/fieldUnit);');
+        '#include <begin_vertex>\nfieldMetres=vec2((position.x-fieldOrigin)/fieldUnit,position.z/fieldUnit);earthFace=vec2(position.z+position.x,position.y)/fieldUnit;materialId=surfaceKind;');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-      '#include <common>\nvarying vec2 fieldMetres; uniform vec3 ballContact;uniform float nightTurf;')
+      '#include <common>\nvarying vec2 fieldMetres;varying vec2 earthFace;varying float materialId; uniform vec3 ballContact;uniform float nightTurf;')
       .replace('#include <color_fragment>',`
         #include <color_fragment>
         vec2 q=fieldMetres;
         float footprint=max(fwidth(q.x),fwidth(q.y));
         float aa=max(.009,footprint*.65);
-        // Alternating mowing passes, a red synthetic runway and painted sector markings.
-        float stripe=smoothstep(-.35,.35,sin(q.x*.57));
-        vec3 lawn=mix(vec3(.036,.132,.082),vec3(.046,.157,.093),stripe);
-        float grain=fract(sin(dot(floor(q*85.),vec2(37.1,91.7)))*1738.3);
-        lawn*=1.+(grain-.5)*.11*(1.-smoothstep(.004,.02,footprint));
-        float endLine=1.8-.045*q.y*q.y;
-        float lane=(1.-smoothstep(endLine-aa,endLine+aa,q.x))*(1.-smoothstep(2.5-aa,2.5+aa,abs(q.y)));
-        vec3 surface=mix(lawn,vec3(.26,.083,.055),lane);
-        float side=abs(abs(q.y)-2.44);
-        float arc=abs(q.x-endLine);
-        float paint=max((1.-smoothstep(.025,.025+aa,side))*step(q.x,endLine),
-                        (1.-smoothstep(.045,.045+aa,arc))*step(abs(q.y),2.48));
-        float spread=2.44+.34*max(0.,q.x-1.3);
-        float boundary=abs(abs(q.y)-spread);
-        paint=max(paint,(1.-smoothstep(.035,.035+aa,boundary))*step(1.3,q.x));
-        float radius=length(vec2(q.x+4.,q.y));
-        float distanceArc=abs(mod(radius+5.,10.)-5.);
-        paint=max(paint,(1.-smoothstep(.04,.04+aa,distanceArc))*step(2.,q.x)*step(abs(q.y),spread));
-        vec2 oval=q-vec2(28.,0.);
-        float perimeter=(length(oval/vec2(86.,35.))-1.)*29.;
-        float trackBand=smoothstep(-.12,.12,perimeter)*(1.-smoothstep(8.,8.2,perimeter));
-        float laneLine=1.-smoothstep(.028,.028+aa,abs(fract(perimeter+.5)-.5));
-        vec3 trackColour=mix(vec3(.245,.069,.048),vec3(.79,.76,.66),laneLine);
-        surface=mix(surface,vec3(.75,.79,.73),paint);
-        surface=mix(surface,trackColour,trackBand);
-        surface=mix(surface,vec3(.095,.135,.117),smoothstep(9.,16.,perimeter));
+        float patches=.5+.23*sin(q.x*.39+sin(q.y*.66))+.17*cos(q.y*.52-q.x*.23);
+        vec3 surface=mix(vec3(.052,.098,.038),vec3(.118,.159,.066),patches);
+        if(materialId>.5 && materialId<1.5){
+          surface=mix(vec3(.125,.078,.044),vec3(.23,.159,.087),patches);
+        }else if(materialId>1.5){
+          float strata=earthFace.y*14.+.7*sin(earthFace.x*2.7)+.4*cos(earthFace.x*4.9);
+          surface=mix(vec3(.13,.077,.041),vec3(.27,.167,.088),.5+.35*sin(strata)+.15*cos(strata*2.4));
+        }
         // Soft contact darkening narrows as the ball approaches the turf.
         vec2 separation=(q-vec2(ballContact.x,0.))/ballContact.z;
         float clearance=ballContact.y/ballContact.z;
@@ -173,8 +157,7 @@ function createProjectileExhibit(canvas) {
         surface=mix(surface,mix(vec3(.18,.23,.21),vec3(.026,.042,.046),nightTurf),farField*.86);
         float fibre=fract(sin(dot(floor(q*19.),vec2(17.1,41.7)))*1483.3);
         surface*=1.+(fibre-.5)*.19*(1.-smoothstep(.02,.12,footprint));
-        float area=abs(dFdx(q.x)*dFdy(q.y)-dFdy(q.x)*dFdx(q.y));
-        diffuseColor.rgb*=mix(vec3(.37,.29,.17),surface,step(.00000001,area));
+        diffuseColor.rgb*=surface;
       `);
   };
   const ground=part(scene,groundGeometry,turf);
@@ -184,21 +167,27 @@ function createProjectileExhibit(canvas) {
     const wheelX=rig.position.x, contact=rig.position.y-1.118*size;
     fieldOrigin.value=wheelX; fieldUnit.value=size;
     const field=datum-ball.scale.x;
-    const edge=wheelX+(field>contact?4.2:1.12)*size;
-    const below=ball.position.x<edge?contact:field;
+    const left=wheelX-3.25*size,right=wheelX+2.45*size;
+    const below=ball.position.x>=left && ball.position.x<=right?contact:field;
     ballContact.value.set((ball.position.x-wheelX)/size,
       Math.max(0,ball.position.y-ball.scale.x-below)/size,ball.scale.x/size);
-    if(ground.userData.shape===size+','+wheelX+','+contact+','+field)return;
-    ground.userData.shape=size+','+wheelX+','+contact+','+field;
-    // Nonlinear sampling concentrates vertices at the wheel bed and spans the whole arena.
-    for(let i=0;i<groundVertices.count;i++){
-      const u=2*originalGround[3*i],v=2*originalGround[3*i+2];
-      const x=4*u+380*u*Math.abs(u)**2,z=3*v+300*v*Math.abs(v)**2;
-      const gap=field>=contact?Math.max(0,x-4.):Math.max(0,Math.abs(x+.75)-2.25,Math.abs(z)-2.1);
-      const t=Math.min(1,gap/(field>contact?Math.max(2.8,Math.min(18,(landingX-wheelX)/size-4)):1.8));
-      const blend=t*t*(3-2*t);
-      groundVertices.setXYZ(i,wheelX+x*size,contact+(field-contact)*blend,z*size);
+    const extent=Math.max(400,Math.abs(landingX-wheelX)/size+80)*size;
+    const profile=[[wheelX-extent,field],[left,field],[left,contact],
+      [right,contact],[right,field],[wheelX+extent,field]];
+    let i=0;
+    function quad(a,b,c,d){
+      for(const point of [a,b,c,c,b,d])groundVertices.setXYZ(i++,...point);
     }
+    const near=3.7*size,far=-6.4*size;
+    for(let j=0;j<5;j++){
+      const [a,b]=profile.slice(j,j+2);
+      const z0=j===0 || j===4?-extent:far,z1=j===0 || j===4?extent:near;
+      quad([...a,z0],[...a,z1],[...b,z0],[...b,z1]);
+    }
+    for(const [lo,hi] of [[-extent,far],[near,extent]])
+      quad([left,field,lo],[left,field,hi],[right,field,lo],[right,field,hi]);
+    for(const z of [far,near])
+      quad([left,field,z],[left,contact,z],[right,field,z],[right,contact,z]);
     groundVertices.needsUpdate=true;
     groundGeometry.computeVertexNormals();
   }
