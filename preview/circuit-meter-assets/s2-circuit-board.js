@@ -131,10 +131,14 @@ function praise(){
  if(!audio)return;
  applause?.stop();
  const rate=audio.sampleRate,buffer=audio.createBuffer(1,rate*6,rate),samples=buffer.getChannelData(0);
- for(let t=0;t<6;t+=.012+Math.random()*.022){
-   const start=Math.floor(t*rate),volume=.14+Math.random()*.25;
+ for(let t=0;t<6;t+=.16+Math.random()*.10){
+   const start=Math.floor(t*rate),volume=.45+Math.random()*.30;
    for(let j=0;j<rate*.065 && start+j<samples.length;j++)
-     samples[start+j]+=(2*Math.random()-1)*volume*Math.exp(-j/(rate*.011));
+     { const seconds=j/rate;
+       const attack=Math.exp(-seconds/.009)+.55*Math.exp(-Math.abs(seconds-.013)/.005);
+       const knock=.35*Math.sin(2*Math.PI*810*seconds)*Math.exp(-seconds/.012);
+       samples[start+j]+=volume*((Math.random()*2-1)*attack+knock);
+     }
  }
  const source=audio.createBufferSource(),gain=audio.createGain(),now=audio.currentTime;
  source.buffer=buffer;source.connect(gain);gain.connect(audio.destination);
@@ -245,18 +249,26 @@ function label(x,y,text,size){
 }
 function choose(name) {
  tool=name;
+ if(name==='resistor' && parts[selectedResistor]?.type!=='resistor'){
+   const fitted=Object.keys(parts).filter(id=>parts[id].type==='resistor');
+   selectedResistor=fitted.length===1?fitted[0]:null;
+ }
  for(const b of el('tools').children) {
    const active=b.dataset.tool===tool;
    b.setAttribute('aria-pressed',String(active));
    if(active && document.documentElement.dataset.style==='tech') b.setAttribute('data-augmented-ui','br-clip border');
    else b.removeAttribute('data-augmented-ui');
  }
- hint=guide?['Suggested connection: tap each dashed component to fit it.','建議駁法：逐一點選虛線元件，將它們接入電路。']:tools[tool].slice(2,4);
+ hint=guide?['Use the dashed suggestion or choose another component from the tray.','可用「操作」點選虛線建議，亦可自行選擇其他元件。']:tools[tool].slice(2,4);
  el('hint').textContent=pick(...hint);render();
 }
 function operate(id) {
  const p=parts[id];
- if(guide?.[id] && !p){save();parts[id]={...guide[id]};choose(tool);return;}
+ if(tool==='use' && guide?.[id] && !p){
+   save();parts[id]={...guide[id]};
+   if(parts[id].type==='resistor'){selectedResistor=id;choose('resistor');}else choose(tool);
+   return;
+ }
  if(tool==='use'){
    if(p?.type==='resistor'){selectedResistor=id;choose('resistor');return;}
    if(p?.type==='switch'){save();p.closed=!p.closed;}
