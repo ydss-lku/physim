@@ -6,15 +6,15 @@ function createEarthCut(T,scene){
   function random(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
   // The two arms meet beside the launch point and remain open toward negative x.
   function edgeX(z){
-    return 3.05-.50*Math.abs(z)+.11*Math.sin(z*1.4)+.045*Math.sin(z*4.6);
+    return 3.05-.43*(Math.sqrt(z*z+6.)-2.45)+.78*Math.sin(z*.46)+.25*Math.sin(z*1.17)+.09*Math.sin(z*2.8);
   }
   const zs=[-640,-320,-160,-80];
   for(let i=-200;i<=200;i++)zs.push(i*.22);
   zs.push(80,160,320,640);
   const positions=[],weights=[],offsets=[],kinds=[],indices=[];
-  const rows=[[-720,0,0,1],[-3,0,0,1],[-1.2,0,0,1],[-.66,.07,.06,1],
-    [-.43,.23,.12,2],[-.29,.51,.16,2],[-.12,.80,.10,2],[.035,.96,.06,3],
-    [0,1,.03,3],[.30,1,.02,0],[1,1,0,0],[720,1,0,0]];
+  const rows=[[-720,0,0,1],[-3,0,0,1],[-1.2,0,0,1],[-.91,.07,.09,1],
+    [-.62,.23,.14,2],[-.29,.51,.16,2],[-.12,.80,.10,2],[.035,.96,.06,3],
+    [.13,1,.03,3],[.30,1,.02,0],[1,1,0,0],[720,1,0,0]];
   rows.forEach(([delta,weight,jitter,kind],row)=>{
     zs.forEach((z,i)=>{
       const offset=(random()-.5)*jitter;
@@ -28,13 +28,20 @@ function createEarthCut(T,scene){
   geo.setAttribute('position',pos);geo.setAttribute('kind',new T.Float32BufferAttribute(kinds,1));geo.setIndex(indices);
   const darkness={value:0},shadow={value:new T.Vector3()};
   const marks={value:new T.Vector3()};
+  const loader=new T.TextureLoader();
+  function surface(name){
+    const map=loader.load('preview/projectile-assets/'+name+'.webp');
+    map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4;
+    return {value:map};
+  }
+  const meadow=surface('meadow'),bank=surface('bank');
   const mat=new T.MeshStandardMaterial({side:T.DoubleSide,roughness:1,envMapIntensity:.16});
   mat.onBeforeCompile=s=>{
-    s.uniforms.marks=marks;s.uniforms.darkness=darkness;s.uniforms.ballShadow=shadow;
+    s.uniforms.meadow=meadow;s.uniforms.bank=bank;s.uniforms.marks=marks;s.uniforms.darkness=darkness;s.uniforms.ballShadow=shadow;
     s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nattribute float kind;varying float soilKind;varying vec3 soilPos;')
       .replace('#include <begin_vertex>','#include <begin_vertex>\nsoilKind=kind;soilPos=position;');
     s.fragmentShader=s.fragmentShader.replace('#include <common>',`#include <common>
-      varying vec3 soilPos;varying float soilKind;uniform float darkness;uniform vec3 ballShadow;uniform vec3 marks;
+      uniform sampler2D meadow,bank;varying vec3 soilPos;varying float soilKind;uniform float darkness;uniform vec3 ballShadow;uniform vec3 marks;
       float earthHash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
       float soilNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
         return mix(mix(mix(earthHash(i),earthHash(i+vec3(1,0,0)),f.x),mix(earthHash(i+vec3(0,1,0)),earthHash(i+vec3(1,1,0)),f.x),f.y),
@@ -42,12 +49,19 @@ function createEarthCut(T,scene){
       `).replace('#include <color_fragment>',`#include <color_fragment>
       vec3 p=soilPos;
       float broad=soilNoise(p*1.4), crumb=soilNoise(p*12.+broad), fine=soilNoise(p*52.);
-      vec3 grass=mix(vec3(.034,.056,.018),vec3(.14,.19,.058),broad*.55+crumb*.45);
-      vec3 loam=mix(vec3(.061,.032,.018),vec3(.255,.156,.079),.45*broad+.55*crumb);
-      float seam=soilNoise(vec3(p.x*1.3,p.y*8.+2.*broad,p.z*1.3));
-      loam*=.69+.52*seam;
-      loam=mix(loam,vec3(.19,.142,.098),smoothstep(.70,.89,crumb)*.42);
-      vec3 earth=mix(grass,loam,smoothstep(.18,.9,soilKind));
+      vec2 uv=p.xz;
+      float patch=soilNoise(vec3(uv*.24,2.));
+      mat2 turn=mat2(.8,.6,-.6,.8);
+      vec4 turf=mix(texture2D(meadow,uv*.42),texture2D(meadow,turn*uv*.27+.37),smoothstep(.23,.77,patch));
+      vec3 face=abs(normalize(cross(dFdx(p),dFdy(p))));
+      vec2 cutUV=vec2(p.z+.28*p.x,p.y+.16*p.x);
+      vec4 clay=mix(texture2D(bank,cutUV*.83),texture2D(bank,uv*.64),smoothstep(.42,.83,face.y));
+      vec3 grass=pow(turf.rgb,vec3(1.83))*vec3(.60,1.16,.88)*(.83+.36*patch);
+      vec3 loam=pow(clay.rgb,vec3(1.63))*vec3(1.18,.95,.82);
+      grass*=.82+.36*turf.a;loam*=.75+.50*clay.a;
+      float worn=1.-smoothstep(3.,10.,length(uv*vec2(.85,.7))+3.*(patch-.5));
+      float soil=smoothstep(.18,.9,soilKind)*max(worn,smoothstep(1.,1.75,soilKind));
+      vec3 earth=mix(grass,loam,soil);
       earth*=1.-.35*smoothstep(2.3,2.96,soilKind);
       float resolution=1.-smoothstep(.008,.05,length(fwidth(p)));
       earth*=1.+(fine-.5)*.42*resolution;
@@ -56,12 +70,13 @@ function createEarthCut(T,scene){
       vec2 radial=p.xz-vec2(marks.x,0.);
       float radius=length(radial), band=floor(radius/10.+.5)*10.;
       float aa=max(fwidth(radius),.025);
-      float stroke=1.-smoothstep(.05,.05+aa,abs(radius-band));
+      float major=1.-step(1.,mod(band,20.));
+      float stroke=1.-smoothstep(.034+.026*major,.034+.026*major+aa,abs(radius-band));
       float sector=1.-smoothstep(.53,.55,abs(radial.y)/max(.01,radial.x));
       float age=marks.y-band/max(.00001,marks.z);
       float reveal=smoothstep(0.,.35,age)*step(10.,band)*step(.01,radial.x);
       earth*=mix(1.,.64,darkness);
-      earth=mix(earth,vec3(.86,.89,.80),stroke*sector*reveal*(1.-smoothstep(.05,.20,soilKind)));
+      earth=mix(earth,vec3(.86,.89,.80),stroke*(.64+.3*major)*sector*reveal*(1.-smoothstep(.05,.20,soilKind)));
       diffuseColor.rgb*=earth;`)
       .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       vec3 ex=dFdx(vViewPosition),ey=dFdy(vViewPosition);
