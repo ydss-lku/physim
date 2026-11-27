@@ -132,3 +132,5 @@ html[data-theme=tech] .observation .viewport{background:radial-gradient(ellipse 
 main .observation .viewport{height:clamp(265px,28vw,380px)}
 #viewTools:not([hidden]){display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;font-size:.85rem;color:var(--muted)}
 #sideView{min-height:44px}.can-orbit{cursor:grab;touch-action:none}.can-orbit:active{cursor:grabbing}
+
+#viewTools{flex-wrap:wrap}.roll-control{display:flex;align-items:center;gap:7px}.roll-control input{width:clamp(85px,15vw,155px);min-height:44px}.roll-control output{min-width:4ch;text-align:right;font-variant-numeric:tabular-nums}

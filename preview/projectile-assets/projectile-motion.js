@@ -223,11 +223,22 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   let renderExhibit;
   try { renderExhibit=createProjectileExhibit(document.getElementById('exhibitCanvas')); }
   catch(error) { console.warn('Using the 2D flight view',error); }
-  const view={active:false,yaw:0,pitch:0,zoom:1};
+  const view={active:false,yaw:0,pitch:0,roll:0,zoom:1};
   const fingers=new Map();
   const viewTools=document.getElementById('viewTools');
+  const rollAngle=document.getElementById('rollAngle');
+  const rollValue=document.getElementById('rollValue');
+  rollAngle.addEventListener('input',()=>{
+    const degrees=Number(rollAngle.value);
+    view.roll=degrees*Math.PI/180;
+    view.active=Boolean(degrees || view.yaw || view.zoom!==1);
+    rollValue.value=degrees+'°';
+    updateUI();
+  });
   function resetView(){
-    Object.assign(view,{active:false,yaw:0,pitch:0,zoom:1});
+    rollAngle.value=0;
+    rollValue.value='0°';
+    Object.assign(view,{active:false,yaw:0,pitch:0,roll:0,zoom:1});
     fingers.clear();
   }
   document.getElementById('sideView').onclick=()=>{resetView();updateUI();};

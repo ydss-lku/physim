@@ -199,7 +199,7 @@ function createProjectileExhibit(canvas) {
     return arrow;
   });
   function render({w,h,start,muzzleY,x,y,theta,size,view,flight,colors}){
-    orbit.rotation.set(view.pitch,view.yaw,0,'YXZ');
+    orbit.rotation.set(view.pitch,view.yaw,view.roll,'ZYX');
     camera.zoom=view.zoom;
     track.visible=view.active;
     if(view.active){
