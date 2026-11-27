@@ -774,8 +774,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       if(distance>0){zoomView(pinchDistance()/distance);return;}
       if(fingers.size===1){
         view.active=true;
-        view.yaw-=(event.clientX-previous.x)*.009;
-        view.pitch=Math.max(-1.48,Math.min(1.48,view.pitch-(event.clientY-previous.y)*.009));
+        const turnLimit=Math.PI/6;
+        const deltaX=event.clientX-previous.x;
+        if(!deltaX)return;
+        const radiansPerPixel=2*turnLimit/trajCanvas.clientWidth;
+        view.yaw=Math.max(-turnLimit,Math.min(turnLimit,view.yaw-deltaX*radiansPerPixel));
         updateUI();
       }
       return;
