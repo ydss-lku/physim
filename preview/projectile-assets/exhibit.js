@@ -160,12 +160,6 @@ function createProjectileExhibit(canvas) {
       previousWidth=w; previousHeight=h; previousRatio=ratio;
     }
     camera.left=-w/2;camera.right=w/2;camera.top=h/2;camera.bottom=-h/2;camera.updateProjectionMatrix();
-    // Oblique depth reveals the front rim and both wheels without skewing measured x or y.
-    const projection=camera.projectionMatrix.elements;
-    projection[8]=view.active?0:.78*2/w*camera.zoom; projection[9]=view.active?0:-.34*2/h*camera.zoom;
-    projection[12]=camera.position.z*projection[8];
-    projection[13]=camera.position.z*projection[9];
-
     const angle=theta*Math.PI/180;
     barrel.rotation.z=angle;
     const mx=start-w/2,my=h/2-muzzleY;
@@ -213,14 +207,9 @@ function createProjectileExhibit(canvas) {
       const iw=inset.w, ih=inset.h;
       const radius=Math.min(32,ih*.095,iw*.08);
       const zoom=radius/ball.scale.x;
-      const left=ball.position.x-iw*.42/zoom;
-      portraitCamera.left=left;portraitCamera.right=left+iw/zoom;
-      portraitCamera.top=ball.position.y+ih*.5/zoom;
-      portraitCamera.bottom=portraitCamera.top-ih/zoom;
-      portraitCamera.updateProjectionMatrix();
-      const matrix=portraitCamera.projectionMatrix.elements;
-      matrix[8]=-.48*2*zoom/iw;matrix[9]=-.12*2*zoom/ih;
-      matrix[12]+=portraitCamera.position.z*matrix[8];matrix[13]+=portraitCamera.position.z*matrix[9];
+      alignSideCamera(portraitCamera,iw/zoom,ih/zoom,
+        ball.position.x+iw*.08/zoom,ball.position.y,
+        ball.position.x,ball.position.y+.55*size);
       const showTrack=track.visible, showRig=rig.visible;
       track.visible=false;rig.visible=false;
       renderer.setViewport(0,0,iw,ih);renderer.setScissor(0,0,iw,ih);renderer.setScissorTest(true);
@@ -233,10 +222,22 @@ function createProjectileExhibit(canvas) {
       track.visible=showTrack;rig.visible=showRig;
 
     }
-    renderer.render(scene,camera);
+    if(ready || view.active)renderer.render(scene,camera);
+    else{
+      alignSideCamera(flightCamera,w,h,0,0,rig.position.x-2.8*size,
+        my-flight.y0*size+2.4*size);
+      renderer.render(scene,flightCamera);
+    }
   };
-  const portraitCamera=new T.OrthographicCamera(-1,1,1,-1,1,100000);
-  portraitCamera.position.z=48000;
+  // A level camera parallel to the flight plane preserves its x/y ruler.
+  // A lens shift frames that plane while foreground and background retain perspective.
+  function alignSideCamera(cam,width,height,cx,cy,eyeX,eyeY){
+    const distance=height/(2*Math.tan(T.MathUtils.degToRad(cam.fov/2)));
+    cam.position.set(eyeX,eyeY,distance);
+    cam.setViewOffset(width,height,cx-eyeX,eyeY-cy,width,height);
+  }
+  const flightCamera=new T.PerspectiveCamera(38,1,.1,200000);
+  const portraitCamera=new T.PerspectiveCamera(34,1,.1,200000);
   render.cannonBounds=cannonBounds;
   return render;
 }
