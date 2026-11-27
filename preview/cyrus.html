@@ -51,11 +51,7 @@
         <g fill="none" stroke="#ff858a" stroke-width="2">
           <path id="incident"/><path id="reflected"/>
         </g>
-        <g fill="#ffc2bf">
-          <path id="inArrow" d="M7 0 L-6 -5 L-3 0 L-6 5 Z"/>
-          <path id="outArrow" d="M7 0 L-6 -5 L-3 0 L-6 5 Z"/>
-          <path id="nearArrow" d="M7 0 L-6 -5 L-3 0 L-6 5 Z"/>
-        </g>
+        <g id="arrows" fill="#ffc2bf"></g>
         <g id="lamp"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g>
         <text id="incomingLabel">Incident ray</text>
         <text id="outgoingLabel">Reflected ray</text>
@@ -73,30 +69,41 @@
     // Two-degree divisions span 1 mm of arc at the nominal 640 CSS pixel width.
     const radius = (96 / 25.4) / (2 * Math.PI / 180);
     const meter = document.querySelector('#meter');
-    for (let angle = -90; angle <= 90; angle += 2) {
+    for (let angle = -90; angle <= 90; angle++) {
+      if (angle % 2 !== 0 && angle % 5 !== 0) continue;
       const rad = angle * Math.PI / 180;
       const point = r => [320 + r * Math.sin(rad), 56 + r * Math.cos(rad)];
       const tick = document.createElementNS(meter.namespaceURI, 'path');
       tick.setAttribute('d', 'M' + point(radius) + ' L' + point(radius - (angle % 10 === 0 ? 8 : 4)));
       tick.setAttribute('stroke', '#8595a7');
       meter.append(tick);
-      if (angle % 30 === 0) {
+      if (angle % 5 === 0) {
         const label = document.createElementNS(meter.namespaceURI, 'text');
-        const [x, y] = point(radius + 12);
+        const [x, y] = point(radius + (angle % 10 === 0 ? 12 : 31));
         label.setAttribute('x', x);
-        label.setAttribute('y', y + (Math.abs(angle) === 90 ? 13 : 3));
+        label.setAttribute('y', y + (Math.abs(angle) === 90 ? -6 : 3));
         label.textContent = Math.abs(angle) + '°';
         meter.append(label);
       }
     }
+    const layer = document.querySelector('#arrows');
+    const arrows = Array.from({length: 2}, () => Array.from({length: 3}, () => {
+      const arrow = document.createElementNS(layer.namespaceURI, 'path');
+      arrow.setAttribute('d', 'M6 0 L-5 -4 L-3 0 L-5 4 Z');
+      layer.append(arrow);
+      return arrow;
+    }));
     let rays = [];
     let frame;
     function animate(time) {
-      const phase = motion.matches ? 0.5 : time % 1700 / 1700;
-      const fraction = 0.5 + 0.42 * phase;
-      for (const [arrow, x, y, dx, dy] of rays) {
-        arrow.setAttribute('transform', `translate(${x + dx * fraction} ${y + dy * fraction}) rotate(${Math.atan2(dy, dx) * 180 / Math.PI})`);
-      }
+      rays.forEach(([x, y, dx, dy], rayIndex) => {
+        arrows[rayIndex].forEach((arrow, index) => {
+          const age = ((motion.matches ? 500 : time) + index * 1000) % 3000;
+          const fraction = age / 3000;
+          arrow.setAttribute('opacity', Math.min(1, age / 100, (3000 - age) / 100));
+          arrow.setAttribute('transform', `translate(${x + dx * fraction} ${y + dy * fraction}) rotate(${Math.atan2(dy, dx) * 180 / Math.PI})`);
+        });
+      });
       const glow = motion.matches ? 0.65 : 0.60 - 0.38 * Math.cos(time * Math.PI / 2100);
       document.querySelector('#halo').setAttribute('opacity', glow);
       if (!motion.matches) frame = requestAnimationFrame(animate);
@@ -112,9 +119,7 @@
       const reach = Math.min(232 / Math.cos(radians), 314 / Math.abs(Math.sin(radians)));
       const rx = reach * Math.sin(radians);
       const ry = reach * Math.cos(radians);
-      rays = [[document.querySelector('#inArrow'), x, y, dx, -dy],
-              [document.querySelector('#outArrow'), 320, 56, rx, ry],
-              [document.querySelector('#nearArrow'), 320, 56, rx * 0.47, ry * 0.47]];
+      rays = [[x, y, dx, -dy], [320, 56, rx, ry]];
       document.querySelector('#reflected').setAttribute('d', `M 320 56 l ${rx * 0.7} ${ry * 0.7} L ${320 + rx} ${56 + ry}`);
       const side = degrees < 0 ? -1 : 1;
       const offset = Math.max(58, Math.abs(dx) * 0.6 + 40);
