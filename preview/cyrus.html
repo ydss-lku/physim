@@ -13,12 +13,18 @@
       background: #090c12;
     }
     main {
-      width: min(100vw, calc(100dvh * 16 / 9));
-      aspect-ratio: 16 / 9;
+      width: min(100%, 1024px);
+      padding-block: 12px;
+      gap: 8px;
       display: grid;
       place-items: center;
       background: #151b25;
     }
+    .controls {width:90%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px;color:#e8eef7;font:14px system-ui}
+    .controls label {display:grid}
+    input {width:100%;margin:0;accent-color:#6aaaff}
+    #angle {grid-column:1/-1;text-align:center}
+    #lamp {cursor:grab;touch-action:none}
     .frame {
       display: block;
       background: #05070b;
@@ -40,11 +46,13 @@
         </filter>
       </defs>
       <g fill="currentColor" text-anchor="middle">
-        <text x="320" y="32">Plane mirror</text>
+        <rect x="36" y="36" width="568" height="288" fill="none" stroke="#bac7d5" opacity=".32" stroke-dasharray="2 5"/>
+        <path id="mirror" d="M166 180 H474" stroke="#9bd8f0" stroke-width="5"/>
+        <g id="guide">
         <g id="meter" fill="#a2b2c4" font-size="10" aria-label="Protractor, zero at the normal"></g>
-        <path d="M55 53 H585" stroke="#9bd8f0" stroke-width="5"/>
-        <path d="M320 56 V263" stroke="#abbaca" stroke-dasharray="7 5"/>
-        <text x="320" y="283">Normal</text>
+        <path d="M320 56 V220" stroke="#abbaca" stroke-dasharray="7 5"/>
+        <text x="320" y="234">Normal</text>
+        </g>
         <g fill="none" stroke="#ff334b" stroke-width="14" filter="url(#rayGlow)" id="halo">
           <use href="#incident"/><use href="#reflected"/>
         </g>
@@ -56,12 +64,14 @@
         <text id="incomingLabel">Incident ray</text>
         <text id="outgoingLabel">Reflected ray</text>
       </g>
-      <foreignObject x="80" y="293" width="480" height="64">
-        <label style="display:grid;text-align:center">Rotate source · Angles to normal <output id="angle"></output>
-          <input id="rotation" aria-label="Rotate source across the normal" type="range" min="-89.9" max="89.9" step="0.1" value="0" style="width:100%;margin:0;accent-color:#6aaaff">
-        </label>
-      </foreignObject>
     </svg>
+    <section class="controls" aria-label="Simulation controls">
+      <output id="angle"></output>
+      <label>Source X<input id="sx" type="range" min="62" max="578" value="270"></label>
+      <label>Source Y<input id="sy" type="range" min="62" max="298" value="280"></label>
+      <label>Rotate source<input id="rotation" type="range" min="-89.9" max="89.9" step="0.1" value="20"></label>
+      <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
+    </section>
   </main>
   <script>
     const slider = document.querySelector('#rotation');
@@ -108,34 +118,71 @@
       document.querySelector('#halo').setAttribute('opacity', glow);
       if (!motion.matches) frame = requestAnimationFrame(animate);
     }
+    const byId = id => document.getElementById(id);
+    function edge(x, y, dx, dy) {
+      const horizontal = dx > 0 ? (640-x)/dx : dx < 0 ? -x/dx : Infinity;
+      const vertical = dy > 0 ? (360-y)/dy : dy < 0 ? -y/dy : Infinity;
+      return Math.min(horizontal, vertical);
+    }
     function draw() {
-      const degrees = Number(slider.value);
-      const radians = degrees * Math.PI / 180;
-      const dx = 176 * Math.sin(radians);
-      const dy = 176 * Math.cos(radians);
-      const x = 320 - dx;
-      const y = 56 + dy;
-      document.querySelector('#incident').setAttribute('d', `M ${x} ${y} l ${dx / 2} ${-dy / 2} L 320 56`);
-      const reach = Math.min(232 / Math.cos(radians), 314 / Math.abs(Math.sin(radians)));
-      const rx = reach * Math.sin(radians);
-      const ry = reach * Math.cos(radians);
-      rays = [[x, y, dx, -dy], [320, 56, rx, ry]];
-      document.querySelector('#reflected').setAttribute('d', `M 320 56 l ${rx * 0.7} ${ry * 0.7} L ${320 + rx} ${56 + ry}`);
-      const side = degrees < 0 ? -1 : 1;
-      const offset = Math.max(58, Math.abs(dx) * 0.6 + 40);
-      for (const [id, sign] of [['#incomingLabel', -1], ['#outgoingLabel', 1]]) {
-        const label = document.querySelector(id);
-        label.setAttribute('x', 320 + sign * side * Math.max(165, offset));
-        label.setAttribute('y', 80 + dy * 0.62);
+      const x = +byId('sx').value, y = +byId('sy').value;
+      const degrees = +slider.value, tilt = +byId('tilt').value;
+      const rad = Math.PI / 180;
+      const dx = Math.sin(degrees*rad), dy = -Math.cos(degrees*rad);
+      const nx = -Math.sin(tilt*rad), ny = Math.cos(tilt*rad);
+      const dot = dx*nx + dy*ny;
+      const distance = Math.abs(dot) > 1e-9 ? ((320-x)*nx + (180-y)*ny)/dot : Infinity;
+      const hit = distance > 1e-6 && Number.isFinite(distance) &&
+        Math.abs((x+distance*dx-320)*ny - (y+distance*dy-180)*nx) <= 154.000001;
+      const length = hit ? distance : edge(x,y,dx,dy);
+      const hx = x+dx*length, hy = y+dy*length;
+      byId('mirror').setAttribute('transform', 'rotate('+tilt+' 320 180)');
+      byId('tiltValue').textContent = tilt+'°';
+      byId('incident').setAttribute('d', 'M'+x+' '+y+' L'+hx+' '+hy);
+      byId('lamp').setAttribute('transform','translate('+x+' '+y+') rotate('+degrees+')');
+      rays = [[x,y,dx*length,dy*length]];
+      byId('guide').style.display = hit ? '' : 'none';
+      byId('outgoingLabel').style.display = hit ? '' : 'none';
+      arrows[1].forEach(arrow => arrow.style.display = hit ? '' : 'none');
+      byId('reflected').setAttribute('d','');
+      function label(id, px, py) {
+        byId(id).setAttribute('x', Math.max(52,Math.min(588,px)));
+        byId(id).setAttribute('y', Math.max(18,Math.min(350,py)));
       }
-      document.querySelector('#lamp').setAttribute('transform', `translate(${x} ${y}) rotate(${degrees})`);
-      const i = Math.abs(degrees).toFixed(1);
-      const r = (Math.atan2(Math.abs(rx), ry) * 180 / Math.PI).toFixed(1);
-      document.querySelector('#angle').textContent = `Incidence i = ${i}°　·　Reflection r = ${r}°`;
+      label('incomingLabel',x+dx*length*.35-48,y+dy*length*.35);
+      if (hit) {
+        const rx = dx-2*dot*nx, ry = dy-2*dot*ny;
+        const reach = edge(hx,hy,rx,ry);
+        rays.push([hx,hy,rx*reach,ry*reach]);
+        byId('reflected').setAttribute('d','M'+hx+' '+hy+' l'+rx*reach+' '+ry*reach);
+        byId('guide').setAttribute('transform','translate('+hx+' '+hy+') rotate('+(tilt+(dot>0?180:0))+') scale(.72) translate(-320 -56)');
+        label('outgoingLabel',hx+rx*reach*.62+48,hy+ry*reach*.62);
+        const angle = cosine => (Math.acos(Math.min(1,Math.abs(cosine)))/rad).toFixed(1);
+        byId('angle').textContent = 'Incidence i = '+angle(dot)+'° · Reflection r = '+angle(rx*nx+ry*ny)+'°';
+      } else {
+        byId('angle').textContent = 'Beam misses the mirror';
+      }
       cancelAnimationFrame(frame);
       animate(performance.now());
     }
-    slider.addEventListener('input', draw);
+    document.querySelectorAll('input').forEach(input => input.addEventListener('input',draw));
+    const lamp = byId('lamp');
+    const svg = lamp.ownerSVGElement;
+    const pointer = event => new DOMPoint(event.clientX,event.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    let drag;
+    lamp.addEventListener('pointerdown', event => {
+      const p = pointer(event);
+      drag = {id:event.pointerId,x:p.x-byId('sx').value,y:p.y-byId('sy').value};
+      lamp.setPointerCapture(event.pointerId);
+    });
+    lamp.addEventListener('pointermove', event => {
+      if (drag?.id !== event.pointerId) return;
+      const p = pointer(event);
+      byId('sx').value = Math.round(p.x-drag.x);
+      byId('sy').value = Math.round(p.y-drag.y);
+      draw();
+    });
+    lamp.addEventListener('lostpointercapture', () => { drag = null; });
     motion.addEventListener('change', draw);
     draw();
   </script>
