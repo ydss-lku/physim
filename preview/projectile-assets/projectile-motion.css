@@ -48,12 +48,12 @@ main[data-mode=analysis] .compare{margin-top:4px}
 
 /* Scientific ink shares the page palette. Direction and labels distinguish components. */
 :root {
-  --trace:#284b43; --component:#476455; --measure:#476455; --axis:#64766b;
+  --trace:#233637; --component:#476455; --measure:#476455; --axis:#64766b;
   --grid:#dce1d4; --guide:#a8b5a5; --wash:#31574712; --focus:#ad4937;
   --toggle-bg:#dce7d0; --toggle-ink:#284b43;
 }
 html[data-theme=tech] {
-  --trace:#67e5f2; --component:#c4dce3; --measure:#c4dce3; --axis:#829da4;
+  --trace:#f3f6ef; --component:#c4dce3; --measure:#c4dce3; --axis:#829da4;
   --grid:#293c42; --guide:#547078; --wash:#67e5f211; --focus:#77f5ef;
   --toggle-bg:#233b42; --toggle-ink:#96e9f1;
 }
@@ -102,12 +102,12 @@ html[data-theme=tech] main > details {
 .flight-phase{padding:12px 18px;border-bottom:1px solid currentColor;font-size:1.05rem}
 .flight-phase span,.flight-chart output{font-variant-numeric:tabular-nums}
 .flight-charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-block:1px solid #72818b66}
-.flight-chart{padding:12px 18px;min-width:0;color:#186381}
-.flight-chart+ .flight-chart{border-inline-start:1px solid #72818b66;color:#99482e}
+.flight-chart{padding:12px 18px;min-width:0;color:var(--horizontal)}
+.flight-chart+ .flight-chart{border-inline-start:1px solid #72818b66;color:var(--vertical)}
 .flight-chart h2{margin:0;font-size:1rem}
 .flight-chart svg{display:block;width:100%;max-height:165px}
-html[data-theme=tech] .flight-chart{color:#9fdff3}
-html[data-theme=tech] .flight-chart+ .flight-chart{color:#ffc09b}
+html[data-theme=tech] .flight-chart{color:#69d6ff}
+html[data-theme=tech] .flight-chart+ .flight-chart{color:#ffa1b2}
 #jumpPeak{width:auto;min-height:44px;padding-inline:10px}
 @media(max-width:620px){.flight-charts{grid-template-columns:1fr}.flight-chart+ .flight-chart{border-inline-start:0;border-top:1px solid #72818b66}}
 .observation{display:grid;grid-template-columns:minmax(0,2.5fr) minmax(260px,1fr);background:var(--field);border:1px solid var(--line)}
@@ -118,8 +118,8 @@ main .observation .viewport{height:clamp(220px,24vw,315px);width:100%;max-width:
 .dial{display:grid;justify-items:center;align-content:start;gap:3px;padding:12px 2px;border:1px solid var(--line);border-bottom:3px solid currentColor;background:var(--panel);font-variant-numeric:tabular-nums}
 .dial i{font:italic bold 25px Georgia}.dial svg{width:100%;max-width:132px}.rim,.axes{fill:none;stroke:var(--line)}.axes{stroke-dasharray:2 4}.needle{stroke:currentColor;fill:currentColor;stroke-linejoin:round}
 .dial output{font-size:clamp(16px,2vw,26px);font-weight:bold}.dial small{color:var(--muted)}
-.shell{--horizontal:#156686;--vertical:#a04820;--resultant:#73559c}.vx{color:var(--horizontal)}.vy{color:var(--vertical)}.v{color:var(--resultant)}
-html[data-theme=tech] .shell{--horizontal:#9fdff3;--vertical:#ffc09b;--resultant:#d5b6ee}
+.shell{--horizontal:#005e89;--vertical:#9b304e;--resultant:#805000}.vx{color:var(--horizontal)}.vy{color:var(--vertical)}.v{color:var(--resultant)}
+html[data-theme=tech] .shell{--horizontal:#69d6ff;--vertical:#ffa1b2;--resultant:#ffda73}
 .transport{display:flex;align-items:center;gap:15px;padding:10px 14px;background:var(--panel)}.transport .timeline{flex:1}.transport .toolbar{margin:0}
 .launch-settings{padding:14px;background:var(--field)}.launch-settings aside{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:start;gap:10px 24px}.launch-settings aside>*{grid-column:auto}.launch-settings .row{grid-column:1/-1}.launch-settings .gravity{align-self:center}
 @media(max-width:760px){.observation{grid-template-columns:1fr}.vector-panel{border-inline-start:0;border-top:1px solid var(--line)}.dial-bank{margin-top:6px}.dial svg{max-height:80px}.transport{flex-wrap:wrap}.transport .timeline{min-width:200px}.launch-settings aside{grid-template-columns:repeat(2,minmax(0,1fr))}.range-scene,.vector-panel{padding:10px}}
@@ -141,3 +141,7 @@ main .observation .viewport{height:clamp(265px,28vw,380px)}
 #ballInset canvas{width:100%;height:100%}
 
 #ballInset{background:linear-gradient(#bbcdd2,#edead9)}html[data-theme=tech] #ballInset{background:linear-gradient(#192d38,#364850)}
+
+html[data-theme=tech] .flight-chart{color:var(--horizontal)}html[data-theme=tech] .flight-chart+ .flight-chart{color:var(--vertical)}
+main .observation .viewport,#ballInset{background:#c9d7dc url("flight-sky-day.webp") center 45% / cover}
+html[data-theme=tech] main .observation .viewport,html[data-theme=tech] #ballInset{background:#263849 url("flight-sky-night.webp") center 45% / cover}

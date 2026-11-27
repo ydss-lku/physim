@@ -22,7 +22,9 @@ function createProjectileExhibit(canvas) {
   const studio = document.createElement('canvas');
   studio.width=512; studio.height=256;
   const ink=studio.getContext('2d');
-  ink.fillStyle='#48535b'; ink.fillRect(0,0,512,256);
+  const sky=ink.createLinearGradient(0,0,0,256);
+  for(const [at,color] of [[0,'#679ec7'],[.35,'#cadae2'],[.49,'#fff0d8'],[.52,'#747e61'],[1,'#252b27']])sky.addColorStop(at,color);
+  ink.fillStyle=sky;ink.fillRect(0,0,512,256);
   for(const [x,y,w,h,color] of [[25,20,145,88,'#fff5df'],[270,55,48,130,'#f0f7ff'],[360,18,120,45,'#b6d6e6'],[0,177,512,79,'#282422']]){
     ink.fillStyle=color; ink.fillRect(x,y,w,h);
   }
@@ -72,11 +74,11 @@ function createProjectileExhibit(canvas) {
     part(rig,new T.ExtrudeGeometry(plate,{depth:.13,bevelThickness:.025,bevelSize:.025,bevelSegments:3}),wood,0,0,side*.37);
     for(const x of [-1.76,-.86,.16])cylinder(rig,.052,.052,.17,brass,x,-.30+.32*x,side*.37+.065);
   }
-  const ball=part(scene,new T.SphereGeometry(1,64,48),metal(0x61707b,.82,.27));
-  const key=new T.DirectionalLight(0xffe9c9,2.3);
+  const ball=part(scene,new T.SphereGeometry(1,64,48),metal(0x728391,.91,.22));
+  const key=new T.DirectionalLight(0xffdaaa,2.55);
   key.position.set(-260,420,340); key.castShadow=true;
   Object.assign(key.shadow.camera,{left:-450,right:450,top:350,bottom:-350,near:1,far:1200});
-  key.shadow.mapSize.set(1024,1024);key.shadow.normalBias=.4;scene.add(key);
+  key.shadow.mapSize.set(2048,2048);key.shadow.normalBias=.4;scene.add(key);
   scene.add(new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
   const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
   // Two level surfaces meet at a retaining face. Neither surface tilts toward the landing point.
@@ -100,8 +102,10 @@ function createProjectileExhibit(canvas) {
   groundGeometry.setAttribute('position',new T.BufferAttribute(groundVertices,3));
   groundGeometry.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));
   const fieldOrigin={value:0}, fieldUnit={value:1};
+  const ballContact={value:new T.Vector3()};
   const turf=new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide});
   turf.onBeforeCompile=shader=>{
+    shader.uniforms.ballContact=ballContact;
     shader.uniforms.fieldOrigin=fieldOrigin;
     shader.uniforms.fieldUnit=fieldUnit;
     shader.vertexShader=shader.vertexShader.replace('#include <common>',
@@ -109,7 +113,7 @@ function createProjectileExhibit(canvas) {
       .replace('#include <begin_vertex>',
         '#include <begin_vertex>\nfieldMetres=vec2((position.x-fieldOrigin)/fieldUnit,position.z/fieldUnit);');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-      '#include <common>\nvarying vec2 fieldMetres;')
+      '#include <common>\nvarying vec2 fieldMetres; uniform vec3 ballContact;')
       .replace('#include <color_fragment>',`
         #include <color_fragment>
         vec2 q=fieldMetres;
@@ -134,6 +138,12 @@ function createProjectileExhibit(canvas) {
         float distanceArc=abs(mod(radius+5.,10.)-5.);
         paint=max(paint,(1.-smoothstep(.04,.04+aa,distanceArc))*step(2.,q.x)*step(abs(q.y),spread));
         surface=mix(surface,vec3(.84,.87,.77),paint);
+        // Soft contact darkening narrows as the ball approaches the turf.
+        vec2 separation=(q-vec2(ballContact.x,0.))/ballContact.z;
+        float clearance=ballContact.y/ballContact.z;
+        float penumbra=1.0+.30*clearance;
+        float contactShade=exp(-dot(separation,separation)/(penumbra*penumbra));
+        surface*=1.-.45*contactShade/(1.+clearance*.38);
 
         float area=abs(dFdx(q.x)*dFdy(q.y)-dFdy(q.x)*dFdx(q.y));
         diffuseColor.rgb*=mix(vec3(.37,.29,.17),surface,step(.00000001,area));
@@ -147,6 +157,9 @@ function createProjectileExhibit(canvas) {
     fieldOrigin.value=wheelX; fieldUnit.value=size;
     const field=datum-ball.scale.x;
     const edge=wheelX+(field>contact?4.2:1.12)*size;
+    const below=ball.position.x<edge?contact:field;
+    ballContact.value.set((ball.position.x-wheelX)/size,
+      Math.max(0,ball.position.y-ball.scale.x-below)/size,ball.scale.x/size);
     const xs=[wheelX-4000,wheelX-2.5*size,edge,edge,edge+size,Math.max(edge,landingX)+4000];
     // A constant depth keeps the long field edges parallel to the horizontal x axis.
     const back=-7*size, front=3.2*size;

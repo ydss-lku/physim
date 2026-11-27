@@ -167,7 +167,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.moveTo(x1, y1);
     ctx.setLineDash(dash);
     ctx.lineTo(dash.length ? x2 : lineEndX, dash.length ? y2 : lineEndY);
-    ctx.stroke();
+    ctx.strokeStyle=chartInk.field;ctx.lineWidth=lineWidth+2;ctx.stroke();
+    ctx.strokeStyle=color;ctx.lineWidth=lineWidth;ctx.stroke();
 
     ctx.setLineDash([]);
     ctx.beginPath();
@@ -373,14 +374,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.fillRect(toPxX(x),floor,1,6);
       ctx.fillText(x+" m",toPxX(x)-5,floor+21<h-2 ? floor+21 : floor-5);
     }
-    function path(model,end,color,dash){
+    function path(model,end,color,dash,startTime=0,width=2,outline=false){
       ctx.beginPath();
       for(let i=0;i<=80;i++){
-        const pos=posAtTime(end*i/80,model);
+        const pos=posAtTime(startTime+(end-startTime)*i/80,model);
         if(i===0)ctx.moveTo(toPxX(pos.x),toPxY(pos.y));
         else ctx.lineTo(toPxX(pos.x),toPxY(pos.y));
       }
-      ctx.setLineDash(dash);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+      ctx.save();ctx.lineCap="round";ctx.lineJoin="round";ctx.setLineDash(dash);
+      if(outline){ctx.strokeStyle=chartInk.field;ctx.lineWidth=width+2;ctx.stroke();}
+      ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();ctx.restore();
     }
     // The tilting launch rail ends at the ball centre at release.
     if(!renderExhibit){ctx.save();
@@ -398,7 +401,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.restore();}
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
-    path(p,state.t,chartInk.trace,[]);
+    path(p,state.t,chartInk.trace,[],0,1.8,true);
+    // A short exposure-style stroke follows only the most recently travelled arc.
+    if(state.t>0 && state.t<p.T){
+      path(p,state.t,chartInk.trace,[],Math.max(0,state.t-.055),3.4,true);
+    }
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
 
