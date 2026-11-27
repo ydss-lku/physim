@@ -132,10 +132,8 @@ html[data-theme=tech] .observation .viewport{background:radial-gradient(ellipse 
 .observation .viewport canvas{position:absolute;inset:0;background:transparent}
 #exhibitCanvas{pointer-events:none}
 main .observation .viewport{height:clamp(265px,28vw,380px)}
-#viewTools:not([hidden]){display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;font-size:.85rem;color:var(--muted)}
-#sideView{min-height:44px}.can-orbit{cursor:grab;touch-action:none}.can-orbit:active{cursor:grabbing}
+.can-orbit{cursor:grab;touch-action:none}.can-orbit:active{cursor:grabbing}
 
-#viewTools{flex-wrap:wrap}
 
 .camera-choice{display:flex;gap:4px;margin:.45rem 0}.camera-choice button{min-height:44px}.camera-choice [aria-pressed=true]{color:var(--on);background:var(--selected)}
 

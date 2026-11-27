@@ -226,12 +226,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   catch(error) { console.warn('Using the 2D flight view',error); }
   const view={active:false,yaw:0,pitch:0,zoom:1};
   const fingers=new Map();
-  const viewTools=document.getElementById('viewTools');
+  let canOrbit=false;
   function resetView(){
     Object.assign(view,{active:false,yaw:0,pitch:0,zoom:1});
     fingers.clear();
   }
-  document.getElementById('sideView').onclick=()=>{resetView();updateUI();};
   const ballInset=document.getElementById('ballInset');
   const insetCanvas=document.getElementById('insetCanvas');
   const insetToggle=document.getElementById('toggleInset');
@@ -352,8 +351,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
     const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
-    const canOrbit=Boolean(renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
-    viewTools.hidden=!canOrbit;
+    canOrbit=Boolean(renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
     trajCanvas.classList.toggle('can-orbit',canOrbit);
     if(!canOrbit && (view.active || fingers.size))resetView();
     const pos=posAtTime(state.t,p);
@@ -870,13 +868,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     return Math.hypot(a.x-b.x,a.y-b.y);
   }
   trajCanvas.addEventListener("wheel",event=>{
-    if(viewTools.hidden)return;
+    if(!canOrbit)return;
     event.preventDefault();
     zoomView(Math.exp(-Math.sign(event.deltaY)*.12));
   },{passive:false});
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
-    if(!viewTools.hidden && event.button===0){
+    if(canOrbit && event.button===0){
       fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       trajCanvas.setPointerCapture(event.pointerId);
       return;
