@@ -109,88 +109,7 @@ function createProjectileExhibit(canvas) {
   key.shadow.mapSize.set(2048,2048);key.shadow.normalBias=.4;scene.add(key);
   scene.add(new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
   const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
-  // Cross-section scenery: build each horizontal surface and each vertical soil face separately.
-  const groundGeometry=new T.BufferGeometry();
-  const groundVertices=new T.Float32BufferAttribute(new Float32Array(9*6*3),3);
-  const surfaceKinds=new T.Float32BufferAttribute(new Float32Array(9*6),1);
-  groundGeometry.setAttribute('position',groundVertices);
-  groundGeometry.setAttribute('surfaceKind',surfaceKinds);
-  [0,2,1,2,0,0,0,2,2].forEach((kind,face)=>{
-    for(let n=0;n<6;n++)surfaceKinds.setX(face*6+n,kind);
-  });
-  const nightTurf={value:1};
-  const fieldOrigin={value:0}, fieldUnit={value:1};
-  const ballContact={value:new T.Vector3()};
-  const turf=new T.MeshStandardMaterial({side:T.DoubleSide,roughness:.96,envMapIntensity:.15});
-  turf.onBeforeCompile=shader=>{
-    shader.uniforms.ballContact=ballContact;shader.uniforms.nightTurf=nightTurf;
-    shader.uniforms.fieldOrigin=fieldOrigin;
-    shader.uniforms.fieldUnit=fieldUnit;
-    shader.vertexShader=shader.vertexShader.replace('#include <common>',
-      '#include <common>\nattribute float surfaceKind;uniform float fieldOrigin, fieldUnit; varying vec2 fieldMetres;varying vec2 earthFace;varying float materialId;')
-      .replace('#include <begin_vertex>',
-        '#include <begin_vertex>\nfieldMetres=vec2((position.x-fieldOrigin)/fieldUnit,position.z/fieldUnit);earthFace=vec2(position.z+position.x,position.y)/fieldUnit;materialId=surfaceKind;');
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-      '#include <common>\nvarying vec2 fieldMetres;varying vec2 earthFace;varying float materialId; uniform vec3 ballContact;uniform float nightTurf;')
-      .replace('#include <color_fragment>',`
-        #include <color_fragment>
-        vec2 q=fieldMetres;
-        float footprint=max(fwidth(q.x),fwidth(q.y));
-        float aa=max(.009,footprint*.65);
-        float patches=.5+.23*sin(q.x*.39+sin(q.y*.66))+.17*cos(q.y*.52-q.x*.23);
-        vec3 surface=mix(vec3(.052,.098,.038),vec3(.118,.159,.066),patches);
-        if(materialId>.5 && materialId<1.5){
-          surface=mix(vec3(.125,.078,.044),vec3(.23,.159,.087),patches);
-        }else if(materialId>1.5){
-          float strata=earthFace.y*14.+.7*sin(earthFace.x*2.7)+.4*cos(earthFace.x*4.9);
-          surface=mix(vec3(.13,.077,.041),vec3(.27,.167,.088),.5+.35*sin(strata)+.15*cos(strata*2.4));
-        }
-        // Soft contact darkening narrows as the ball approaches the turf.
-        vec2 separation=(q-vec2(ballContact.x,0.))/ballContact.z;
-        float clearance=ballContact.y/ballContact.z;
-        float penumbra=1.0+.30*clearance;
-        float contactShade=exp(-dot(separation,separation)/(penumbra*penumbra));
-        surface*=1.-.45*contactShade/(1.+clearance*.38);
-
-        surface*=mix(1.,.36,nightTurf);
-        float farField=smoothstep(22.,75.,length(q*vec2(.38,1.)));
-        surface=mix(surface,mix(vec3(.18,.23,.21),vec3(.026,.042,.046),nightTurf),farField*.86);
-        float fibre=fract(sin(dot(floor(q*19.),vec2(17.1,41.7)))*1483.3);
-        surface*=1.+(fibre-.5)*.19*(1.-smoothstep(.02,.12,footprint));
-        diffuseColor.rgb*=surface;
-      `);
-  };
-  const ground=part(scene,groundGeometry,turf);
-  ground.castShadow=false;
-  ground.frustumCulled=false;
-  function groundUnderWheels(size,datum,landingX){
-    const wheelX=rig.position.x, contact=rig.position.y-1.118*size;
-    fieldOrigin.value=wheelX; fieldUnit.value=size;
-    const field=datum-ball.scale.x;
-    const left=wheelX-3.25*size,right=wheelX+2.45*size;
-    const below=ball.position.x>=left && ball.position.x<=right?contact:field;
-    ballContact.value.set((ball.position.x-wheelX)/size,
-      Math.max(0,ball.position.y-ball.scale.x-below)/size,ball.scale.x/size);
-    const extent=Math.max(400,Math.abs(landingX-wheelX)/size+80)*size;
-    const profile=[[wheelX-extent,field],[left,field],[left,contact],
-      [right,contact],[right,field],[wheelX+extent,field]];
-    let i=0;
-    function quad(a,b,c,d){
-      for(const point of [a,b,c,c,b,d])groundVertices.setXYZ(i++,...point);
-    }
-    const near=3.7*size,far=-6.4*size;
-    for(let j=0;j<5;j++){
-      const [a,b]=profile.slice(j,j+2);
-      const z0=j===0 || j===4?-extent:far,z1=j===0 || j===4?extent:near;
-      quad([...a,z0],[...a,z1],[...b,z0],[...b,z1]);
-    }
-    for(const [lo,hi] of [[-extent,far],[near,extent]])
-      quad([left,field,lo],[left,field,hi],[right,field,lo],[right,field,hi]);
-    for(const z of [far,near])
-      quad([left,field,z],[left,contact,z],[right,field,z],[right,contact,z]);
-    groundVertices.needsUpdate=true;
-    groundGeometry.computeVertexNormals();
-  }
+  const updateEarth=createEarthCut(T,scene);
   let previousWidth=0, previousHeight=0, previousRatio=0;
   let cachedAngle, bounds;
   function cannonBounds(theta){
@@ -257,8 +176,7 @@ function createProjectileExhibit(canvas) {
     rig.position.set(mx-1.86*Math.cos(angle)*size,my-1.86*Math.sin(angle)*size,0);
     ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
-    nightTurf.value=document.documentElement.dataset.theme==="tech"?1:0;
-    groundUnderWheels(size,my-flight.y0*size,mx+flight.vx*flight.T*size);
+    updateEarth(size,my-flight.y0*size-ball.scale.x,rig.position.y-1.118*size,rig.position.x,ball,document.documentElement.dataset.theme==="tech");
     updateLandscape(rig.position.x,my-flight.y0*size-ball.scale.x,size,document.documentElement.dataset.theme==="tech");
     if(view.active){
       // Frame the arc in the rotated camera's own plane, including its apex.
