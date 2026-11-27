@@ -162,7 +162,7 @@ function createProjectileExhibit(canvas) {
     camera.left=-w/2;camera.right=w/2;camera.top=h/2;camera.bottom=-h/2;camera.updateProjectionMatrix();
     // Oblique depth reveals the front rim and both wheels without skewing measured x or y.
     const projection=camera.projectionMatrix.elements;
-    projection[8]=view.active?0:-.48*2/w*camera.zoom; projection[9]=view.active?0:-.12*2/h*camera.zoom;
+    projection[8]=view.active?0:.78*2/w*camera.zoom; projection[9]=view.active?0:-.34*2/h*camera.zoom;
     projection[12]=camera.position.z*projection[8];
     projection[13]=camera.position.z*projection[9];
 
@@ -193,15 +193,18 @@ function createProjectileExhibit(canvas) {
       camera.updateProjectionMatrix();
     }
     if(ready){
-      orbit.rotation.set(-.23,-.93,0,'YXZ');
+      // Look into the open side of the cut, with the carriage as the framing subject.
+      orbit.rotation.set(-.48,-.71,0,'YXZ');
       scene.updateMatrixWorld(true);
       const box=new T.Box2(),point=new T.Vector3();
-      for(const dx of [-10,264])for(const dz of [-33,33])for(const dy of [-23,4]){
-        point.set(rig.position.x+dx*size,my-flight.y0*size+dy*size,dz*size).applyMatrix4(camera.matrixWorldInverse);
+      const bounds=new T.Box3().setFromObject(rig,true);
+      for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
+        point.set(x,y,z).applyMatrix4(camera.matrixWorldInverse);
         box.expandByPoint(point);
       }
       const span=box.getSize(new T.Vector2()),center=box.getCenter(new T.Vector2());
-      const fit=Math.max(span.x/(w*.89),span.y/(h*.83));
+      const fit=Math.max(span.x/(w*.54),span.y/(h*.57));
+      center.x+=w*fit*.08;
       camera.left=center.x-w*fit/2;camera.right=center.x+w*fit/2;
       camera.top=center.y+h*fit/2;camera.bottom=center.y-h*fit/2;
       camera.updateProjectionMatrix();
