@@ -79,7 +79,30 @@ function createProjectileExhibit(canvas) {
   const floor=part(scene,new T.PlaneGeometry(2400,1800),new T.ShadowMaterial({opacity:.25}));
   floor.rotation.x=-Math.PI/2;floor.castShadow=false;
   let previousWidth=0, previousHeight=0, previousRatio=0;
-  return function render({w,h,start,muzzleY,x,y,theta,ready}){
+  let cachedAngle, bounds;
+  function cannonBounds(theta){
+    if(theta===cachedAngle) return bounds;
+    const angle=theta*Math.PI/180;
+    barrel.rotation.z=angle;
+    rig.position.set(-1.48*Math.cos(angle),-1.48*Math.sin(angle),0);
+    rig.scale.setScalar(1);
+    rig.updateMatrixWorld(true);
+    bounds={left:Infinity,right:-Infinity,bottom:Infinity,top:-Infinity};
+    const point=new T.Vector3();
+    rig.traverse(mesh=>{
+      if(!mesh.isMesh)return;
+      const vertices=mesh.geometry.attributes.position;
+      for(let i=0;i<vertices.count;i++){
+        point.fromBufferAttribute(vertices,i).applyMatrix4(mesh.matrixWorld);
+        const x=point.x-.48*point.z, y=point.y-.28*point.z;
+        bounds.left=Math.min(bounds.left,x);bounds.right=Math.max(bounds.right,x);
+        bounds.bottom=Math.min(bounds.bottom,y);bounds.top=Math.max(bounds.top,y);
+      }
+    });
+    cachedAngle=theta;
+    return bounds;
+  }
+  function render({w,h,start,muzzleY,x,y,theta,size}){
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
@@ -92,15 +115,17 @@ function createProjectileExhibit(canvas) {
     projection[8]=-.48*2/w; projection[9]=-.28*2/h;
     projection[12]=camera.position.z*projection[8];
     projection[13]=camera.position.z*projection[9];
-    const size=ready?Math.min(w/5.8,h/4.7):Math.min(23,w/20);
+
     const angle=theta*Math.PI/180;
     barrel.rotation.z=angle;
     const mx=start-w/2,my=h/2-muzzleY;
     rig.scale.setScalar(size);
     rig.position.set(mx-1.48*Math.cos(angle)*size,my-1.48*Math.sin(angle)*size,0);
-    ball.scale.setScalar(ready?.235*size:Math.max(5,.235*size));
+    ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
     floor.position.y=rig.position.y-1.11*size;
     renderer.render(scene,camera);
   };
+  render.cannonBounds=cannonBounds;
+  return render;
 }

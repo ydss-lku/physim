@@ -230,11 +230,32 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
     const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
-    const range = Math.max(p.R,reference?.R || 0);
-    const scale = Math.min((w-105)/Math.max(1,range),(h-104)/Math.max(2,p.H,reference?.H || 0));
-    const ready = !launched && !!renderExhibit;
-    const start = ready ? w*.65 : range < .001 ? w/2 : 68;
-    const floor = ready ? h*.31 : h-54;
+    const pos=posAtTime(state.t,p);
+    const ready=!launched && !!renderExhibit;
+    const hull=renderExhibit?.cannonBounds(state.theta) || {left:-3.8,right:1,bottom:-2.7,top:1};
+    const maxSpeed=Math.hypot(p.vx,p.vy0-state.g*p.T) || 1;
+    // Fit the projected model and the current ball, including screen-sized arrow tips.
+    // The two axes share one scale; the viewport aspect ratio sets the limiting axis.
+    function frameAt(scale){
+      const radius=Math.max(5,.27*scale);
+      const dx=42*p.vx/maxSpeed, dy=42*pos.vy/maxSpeed;
+      const bx=pos.x*scale, by=pos.y*scale, origin=state.y0*scale;
+      return {
+        left:Math.min(hull.left*scale,bx-radius),
+        right:Math.max(hull.right*scale,bx+radius,bx+dx+2),
+        bottom:Math.min(origin+hull.bottom*scale,by-radius,by+dy-2),
+        top:Math.max(origin+hull.top*scale,by+radius,by+dy+2)
+      };
+    }
+    let low=0,high=Math.max(w,h)*2;
+    for(let i=0;i<24;i++){
+      const mid=(low+high)/2, box=frameAt(mid);
+      if(box.right-box.left<=w-18 && box.top-box.bottom<=h-18)low=mid;
+      else high=mid;
+    }
+    const scale=low, box=frameAt(scale);
+    const start=(w-box.right-box.left)/2;
+    const floor=(h+box.top+box.bottom)/2;
     const toPxX = x => start+x*scale;
     const toPxY = y => floor-y*scale;
     trajectoryView = {p,toPxX,toPxY};
@@ -283,10 +304,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         ctx.beginPath();ctx.arc(toPxX(pos.x),toPxY(pos.y),2.8,0,2*Math.PI);ctx.fill();
       }
     }
-    const pos=posAtTime(state.t,p);
+
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
-    const maxSpeed=Math.hypot(p.vx,p.vy0-state.g*p.T) || 1;
+
     [[p.vx,0],[0,pos.vy],[p.vx,pos.vy]].forEach(([vx,vy],i)=>{
       const length=Math.hypot(vx,vy);
       const dx=42*vx/maxSpeed, dy=-42*vy/maxSpeed;
@@ -299,7 +320,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
       if(!ready)drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
     });
-    if(renderExhibit){renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,ready});return;}
+    if(renderExhibit){renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale});return;}
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
   }
 
