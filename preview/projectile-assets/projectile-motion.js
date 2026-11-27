@@ -264,13 +264,44 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     drawArrow(ctx,x,y,x+dx,y,colors[0],3,9);
     drawArrow(ctx,x,y,x,y+dy,colors[1],3,9);
     ctx.font='bold 16px sans-serif';
-    const label=(text,px,py,color)=>{
+    const occupied=[];
+    const tips=[[x+dx,y],[x,y+dy],[x+dx,y+dy]];
+    // Intersect the shaft with a padded label rectangle, including both arrow ends.
+    function crosses(rect,tip){
+      let enter=0,exit=1;
+      for(const [origin,end,min,max] of [[x,tip[0],rect.l-3,rect.r+3],[y,tip[1],rect.t-3,rect.b+3]]){
+        const delta=end-origin;
+        if(Math.abs(delta)<1e-8){if(origin<min || origin>max)return false;continue;}
+        const a=(min-origin)/delta,b=(max-origin)/delta;
+        enter=Math.max(enter,Math.min(a,b));exit=Math.min(exit,Math.max(a,b));
+      }
+      return enter<=exit;
+    }
+    function label(text,i,preferredX,preferredY){
+      const m=ctx.measureText(text);
+      const width=Math.ceil(m.width)+4,ascent=Math.ceil(m.actualBoundingBoxAscent),height=ascent+Math.ceil(m.actualBoundingBoxDescent)+4;
+      let best,cost=Infinity;
+      function consider(l,t){
+        l=Math.max(2,Math.min(w-width-2,l));t=Math.max(2,Math.min(h-height-2,t));
+        const rect={l,t,r:l+width,b:t+height};
+        if(occupied.some(o=>rect.l<o.r+3 && rect.r>o.l-3 && rect.t<o.b+3 && rect.b>o.t-3))return;
+        const ballGap=Math.hypot(Math.max(l-x,0,x-rect.r),Math.max(t-y,0,y-rect.b));
+        const score=(l-preferredX)**2+(t-preferredY)**2+
+          (ballGap<radius+2?1e6:0)+tips.filter(tip=>crosses(rect,tip)).length*1e5;
+        if(score<cost){cost=score;best=rect;}
+      }
+      consider(preferredX,preferredY);
+      if(cost>0){
+        for(let t=2;t<=h-height;t+=5)for(let l=2;l<=w-width;l+=5)consider(l,t);
+      }
+      occupied.push(best);
+      const px=best.l+2,py=best.t+2+ascent;
       ctx.lineWidth=3;ctx.strokeStyle=chartInk.field;ctx.strokeText(text,px,py);
-      ctx.fillStyle=color;ctx.fillText(text,px,py);
-    };
-    label(sameY && vx===0?'vₓ = 0':'vₓ',x+dx+5,y+19,colors[0]);
-    label(Math.abs(vy)<1e-8?'vᵧ = 0':'vᵧ',x-47,y+dy+(dy>0?15:-6),colors[1]);
-    label('v',x+dx+7,y+dy-6,colors[2]);
+      ctx.fillStyle=colors[i];ctx.fillText(text,px,py);
+    }
+    label(vx===0?'vₓ = 0':'vₓ',0,x+dx+3,y+3);
+    label(Math.abs(vy)<1e-8?'vᵧ = 0':'vᵧ',1,x-31,y+dy-9);
+    label('v',2,x+dx+4,y+dy-19);
   }
   let trajectoryView;
   function drawTrajectory() {
