@@ -239,11 +239,17 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     insetToggle.setAttribute('aria-pressed',String(!ballInset.hidden));
     updateUI();
   });
-  function drawCloseUp(ctx,w,h,vx,vy,maxSpeed,colors){
+  function drawCloseUp(ctx,w,h,vx,vy,maxSpeed,colors,flight){
     const x=w*.42,y=h/2,radius=Math.min(32,h*.095,w*.08);
     if(!renderExhibit){
       ctx.clearRect(0,0,w,h);
       ctx.beginPath();ctx.arc(x,y,radius,0,2*Math.PI);ctx.fillStyle=chartInk.muted;ctx.fill();
+    }
+    if(flight && launched && state.t>0 && state.t<flight.model.T){
+      const metresToPixels=flight.scale*radius/flight.fieldRadius;
+      drawFireTrail(ctx,flight.model,state.t,metresToPixels,
+        px=>x+(px-flight.pos.x)*metresToPixels,
+        py=>y-(py-flight.pos.y)*metresToPixels,w,h,radius);
     }
     const scale=Math.min(w*.39,h*.38)/maxSpeed;
     const dx=vx*scale,dy=-vy*scale;
@@ -311,10 +317,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
   let trajectoryView;
   // Sample only elapsed simulation time so pausing and scrubbing reproduce the same flame.
-  function drawFireTrail(ctx,p,t,scale,toX,toY,w,h){
+  function drawFireTrail(ctx,p,t,scale,toX,toY,w,h,radius){
     const head=posAtTime(t,p);
     const speed=Math.hypot(head.vx,head.vy);
-    const radius=renderExhibit?Math.max(4,.235*scale):6;
+
     const duration=Math.min(t,.23,86/Math.max(1,speed*scale));
     const stations=[];
     for(let j=0;j<=24;j++){
@@ -426,8 +432,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
     path(p,state.t,chartInk.trace,[],0,1.8,true);
+    const fieldRadius=renderExhibit?Math.max(4,.235*scale):6;
     if(launched && state.t>0 && state.t<p.T){
-      drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h);
+      drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h,fieldRadius);
     }
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
@@ -448,7 +455,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
         view,inset,flight:{...p,y0:state.y0,g:state.g,color:chartInk.trace}});
     }
-    if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors);
+    if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors,{model:p,pos,scale,fieldRadius});
     if(renderExhibit)return;
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
   }
