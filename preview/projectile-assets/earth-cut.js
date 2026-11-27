@@ -4,40 +4,37 @@ function createEarthCut(T,scene){
   scene.add(root);
   let seed=41829;
   function random(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
-  const slices=104;
-  const outline=[];
-  for(let i=0;i<slices;i++){
-    const a=i/slices*Math.PI*2;
-    const rough=.11*Math.sin(3*a+.7)+.065*Math.sin(7*a)+.04*Math.sin(13*a)+.027*(random()-.5);
-    outline.push({x:-.35+(3.5+rough)*Math.cos(a)*(1+.13*Math.sin(2*a)),
-      z:-1.1+(5.3+rough*2)*Math.sin(a),a,chip:random()});
+  // The two arms meet beside the launch point and remain open toward negative x.
+  function edgeX(z){
+    return 3.05-.50*Math.abs(z)+.11*Math.sin(z*1.4)+.045*Math.sin(z*4.6);
   }
+  const zs=[-640,-320,-160,-80];
+  for(let i=-200;i<=200;i++)zs.push(i*.22);
+  zs.push(80,160,320,640);
   const positions=[],weights=[],offsets=[],kinds=[],indices=[];
-  // From the level floor out across broken earth, roots, an overhanging sod lip, and turf.
-  const rings=[[.001,0,0,1],[.70,0,0,1],[.83,.06,.1,1],[.90,.19,.3,2],
-    [.93,.41,.5,2],[.97,.68,.7,2],[.99,.86,.5,2],[1.008,.96,.25,3],
-    [.995,1,.15,3],[1.055,1,.12,0],[1.3,1,.04,0],[2,1,0,0],[160,1,0,0]];
-  rings.forEach(([r,weight,jitter,kind],row)=>{
-    outline.forEach((point,i)=>{
-      const d=(random()-.5)*jitter*.23;
-      const x=-.35+(point.x+.35)*(r+d),z=-1.1+(point.z+1.1)*(r+d);
-      const offset=(random()-.5)*jitter*.30+(row===8?.07*point.chip:0);
-      positions.push(x,offset,z);weights.push(weight);offsets.push(offset);kinds.push(kind);
-      if(row){const j=row*slices+i,k=row*slices+(i+1)%slices;indices.push(j-slices,k-slices,j,k-slices,k,j);}
+  const rows=[[-720,0,0,1],[-3,0,0,1],[-1.2,0,0,1],[-.66,.07,.06,1],
+    [-.43,.23,.12,2],[-.29,.51,.16,2],[-.12,.80,.10,2],[.035,.96,.06,3],
+    [0,1,.03,3],[.30,1,.02,0],[1,1,0,0],[720,1,0,0]];
+  rows.forEach(([delta,weight,jitter,kind],row)=>{
+    zs.forEach((z,i)=>{
+      const offset=(random()-.5)*jitter;
+      positions.push(edgeX(z)+delta+(random()-.5)*jitter,offset,z);
+      weights.push(weight);offsets.push(offset);kinds.push(kind);
+      if(row && i){const j=row*zs.length+i,k=j-zs.length;indices.push(k-1,k,j-1,k,j,j-1);}
     });
   });
-  for(let i=1;i<slices-1;i++)indices.push(0,i+1,i);
   const geo=new T.BufferGeometry();
   const pos=new T.Float32BufferAttribute(positions,3);
   geo.setAttribute('position',pos);geo.setAttribute('kind',new T.Float32BufferAttribute(kinds,1));geo.setIndex(indices);
   const darkness={value:0},shadow={value:new T.Vector3()};
+  const marks={value:new T.Vector3()};
   const mat=new T.MeshStandardMaterial({side:T.DoubleSide,roughness:1,envMapIntensity:.16});
   mat.onBeforeCompile=s=>{
-    s.uniforms.darkness=darkness;s.uniforms.ballShadow=shadow;
+    s.uniforms.marks=marks;s.uniforms.darkness=darkness;s.uniforms.ballShadow=shadow;
     s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nattribute float kind;varying float soilKind;varying vec3 soilPos;')
       .replace('#include <begin_vertex>','#include <begin_vertex>\nsoilKind=kind;soilPos=position;');
     s.fragmentShader=s.fragmentShader.replace('#include <common>',`#include <common>
-      varying vec3 soilPos;varying float soilKind;uniform float darkness;uniform vec3 ballShadow;
+      varying vec3 soilPos;varying float soilKind;uniform float darkness;uniform vec3 ballShadow;uniform vec3 marks;
       float earthHash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
       float soilNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
         return mix(mix(mix(earthHash(i),earthHash(i+vec3(1,0,0)),f.x),mix(earthHash(i+vec3(0,1,0)),earthHash(i+vec3(1,1,0)),f.x),f.y),
@@ -56,7 +53,16 @@ function createEarthCut(T,scene){
       earth*=1.+(fine-.5)*.42*resolution;
       float dist=length(p.xz-vec2(ballShadow.x,0.))/max(.01,ballShadow.z);
       earth*=1.-.33*exp(-dist*dist/(1.+ballShadow.y*.5))/(1.+ballShadow.y*.38);
-      diffuseColor.rgb*=earth*mix(1.,.64,darkness);`)
+      vec2 radial=p.xz-vec2(marks.x,0.);
+      float radius=length(radial), band=floor(radius/10.+.5)*10.;
+      float aa=max(fwidth(radius),.025);
+      float stroke=1.-smoothstep(.05,.05+aa,abs(radius-band));
+      float sector=1.-smoothstep(.53,.55,abs(radial.y)/max(.01,radial.x));
+      float age=marks.y-band/max(.00001,marks.z);
+      float reveal=smoothstep(0.,.35,age)*step(10.,band)*step(.01,radial.x);
+      earth*=mix(1.,.64,darkness);
+      earth=mix(earth,vec3(.86,.89,.80),stroke*sector*reveal*(1.-smoothstep(.05,.20,soilKind)));
+      diffuseColor.rgb*=earth;`)
       .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       vec3 ex=dFdx(vViewPosition),ey=dFdy(vViewPosition);
       vec3 east=cross(ey,normal),north=cross(normal,ex);
@@ -70,17 +76,21 @@ function createEarthCut(T,scene){
   // Clumps of blades with curved tips break the grass silhouette from side views.
   const blades=[],bladeColors=[];
   const greens=[0x657745,0x84905a,0x526538,0x939063].map(c=>new T.Color(c));
-  for(let j=0;j<2700;j++){
-    const i=Math.floor(random()*slices),a=outline[i],b=outline[(i+1)%slices],u=random();
-    const r=j<1550?1.025+.055*random():1.12+random()**2*4;
-    const x=-.35+((1-u)*a.x+u*b.x+.35)*r,z=-1.1+((1-u)*a.z+u*b.z+1.1)*r;
-    for(let k=0;k<5;k++){
-      const phi=random()*Math.PI*2,h=.045+random()**2*.15,w=.009+random()*.011;
-      const px=x+(random()-.5)*.095,pz=z+(random()-.5)*.095;
-      const dx=w*Math.cos(phi),dz=w*Math.sin(phi),bend=.24*h;
-      blades.push(px-dx,0,pz-dz,px+dx,0,pz+dz,px+bend*Math.sin(phi),h,pz+bend*Math.cos(phi));
+  for(let j=0;j<750;j++){
+    const z0=(random()-.5)*95,x0=edgeX(z0)+.11+random()**3*13;
+    const abundance=random()**2,spread=.07+.53*random(),height=.036+.22*random()**1.6;
+    const count=2+Math.floor(52*abundance);
+    for(let k=0;k<count;k++){
+      const z=z0+(random()-.5)*spread*2,x=x0+(random()-.5)*spread*2;
+      if(x<edgeX(z)+.06)continue;
+      const phi=random()*6.283,h=height*(.48+random()),w=.005+.008*random();
+      const dx=w*Math.cos(phi),dz=w*Math.sin(phi),lean=h*(.20+.42*random());
+      const mx=x+lean*.32,mz=z+lean*.19,tx=x+lean, tz=z+lean*Math.sin(phi);
+      blades.push(x-dx,0,z-dz,x+dx,0,z+dz,mx+dx*.55,h*.56,mz+dz*.55,
+        x-dx,0,z-dz,mx+dx*.55,h*.56,mz+dz*.55,mx-dx*.55,h*.56,mz-dz*.55,
+        mx-dx*.55,h*.56,mz-dz*.55,mx+dx*.55,h*.56,mz+dz*.55,tx,h,tz);
       const col=greens[Math.floor(random()*greens.length)];
-      for(const factor of [.46,.66,1])bladeColors.push(col.r*factor,col.g*factor,col.b*factor);
+      for(const factor of [.48,.48,.8,.48,.8,.8,.8,.8,1])bladeColors.push(col.r*factor,col.g*factor,col.b*factor);
     }
   }
   const bg=new T.BufferGeometry();bg.setAttribute('position',new T.Float32BufferAttribute(blades,3));bg.setAttribute('color',new T.Float32BufferAttribute(bladeColors,3));
@@ -88,24 +98,33 @@ function createEarthCut(T,scene){
   const toe=new T.Group();root.add(toe);
   const stones=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),new T.MeshStandardMaterial({color:0x76654e,roughness:1,envMapIntensity:.1}),220);
   const item=new T.Object3D();for(let i=0;i<stones.count;i++){
-    const a=outline[Math.floor(random()*slices)],r=.64+.17*random(),k=.026+random()**3*.105;
-    item.position.set(-.35+(a.x+.35)*r,k*.29,-1.1+(a.z+1.1)*r);item.rotation.set(random(),random()*6,random());
-    item.scale.set(k*1.6,k*.72,k);item.updateMatrix();stones.setMatrixAt(i,item.matrix);
-    stones.setColorAt(i,new T.Color().setHSL(.074+random()*.035,.12+random()*.15,.12+random()*.10));
+    const z=(random()-.5)*32,k=.03+random()**2*.13;
+    item.position.set(edgeX(z)-1.25-random()**2*2.2,-k*.025,z);
+    item.rotation.set((random()-.5)*.10,random()*6,(random()-.5)*.10);
+    item.scale.set(k*(1.2+random()),k*(.17+.09*random()),k*(.55+.4*random()));
+    item.updateMatrix();stones.setMatrixAt(i,item.matrix);
+    stones.setColorAt(i,new T.Color().setHSL(.082+random()*.035,.10+random()*.13,.28+random()*.16));
   }
   toe.add(stones);stones.castShadow=true;stones.receiveShadow=true;
   // Short branching root ends hang immediately below the broken sod.
   const roots=[];
   for(let j=0;j<215;j++){
-    const a=outline[Math.floor(random()*slices)],x=a.x,z=a.z,h=.045+random()**2*.23;
+    const z=(random()-.5)*38,x=edgeX(z),h=.045+random()**2*.23;
     const mx=x+(random()-.5)*.07,mz=z+(random()-.5)*.07;
     roots.push(x,.018,z,mx,-h*.55,mz,mx,-h*.55,mz,mx+.02,-h,mz+.025);
   }
   const rg=new T.BufferGeometry();rg.setAttribute('position',new T.Float32BufferAttribute(roots,3));
   const rootlets=new T.LineSegments(rg,new T.LineBasicMaterial({color:0x655039}));root.add(rootlets);
+  const pedestal=new T.Mesh(new T.BoxGeometry(3.35,1,2.1),new T.MeshStandardMaterial({color:0x746550,roughness:1}));
+  pedestal.castShadow=true;pedestal.receiveShadow=true;root.add(pedestal);
   let previousDepth=NaN;
-  return function update(size,field,contact,wheelX,ball,night){
-    const depth=(contact-field)/size;
+  return function update(size,field,contact,wheelX,ball,night,originX,time,vx){
+    const wheelLevel=(contact-field)/size;
+    const depth=Math.min(-.35,wheelLevel);
+    const rise=wheelLevel-depth;
+    pedestal.visible=rise>.001;pedestal.scale.y=Math.max(.001,rise);
+    pedestal.position.set(-.65,depth+rise/2,0);
+    marks.value.set((originX-wheelX)/size,time,vx);
     root.position.set(wheelX,field,0);root.scale.setScalar(size);toe.position.y=depth;
     if(Math.abs(depth-previousDepth)>.001 || !Number.isFinite(previousDepth)){
       for(let i=0;i<pos.count;i++)pos.setY(i,depth*(1-weights[i])+offsets[i]);
