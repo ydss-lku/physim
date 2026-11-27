@@ -3,7 +3,7 @@
 :root{--ink:#284b43;--muted:#476455;--line:#acb6a4;--ground:#e0dfcf;--desk:url('../../origami-assets/desk-paper.png');--sheet:url('../../origami-assets/cotton-paper.png');--panel:#faf7ec;--field:#faf7ec;--btn:#f6f4e8;--selected:#315747;--on:#fff;--head:Fraunces,serif;--type:Source,'Microsoft JhengHei',sans-serif}
 html[data-theme=tech]{--ink:#e8f0ef;--muted:#abbdbf;--line:#547078;--ground:#080f13;--desk:radial-gradient(ellipse at 10% 20%,#12303966,transparent 55%);--sheet:url('../../cyberpunk-assets/brushed-metal.png');--panel:#181f23;--field:#101e25;--btn:#192c33;--selected:#fcee0a;--on:#101719;--head:Oxanium,'Microsoft JhengHei',sans-serif;--type:Oxanium,'Microsoft JhengHei',sans-serif}
 body{margin:0;color:var(--ink);background:var(--desk),var(--ground);font:16px/1.4 var(--type)}
-main{max-width:1152px;margin:auto;padding:20px clamp(12px,3vw,30px) 30px}
+main{max-width:1520px;margin:auto;padding:20px clamp(12px,3vw,30px) 30px}
 h1,h2{margin:0;font-family:var(--head);line-height:1.15}h1{font-size:clamp(28px,4vw,44px);letter-spacing:-.025em;margin:0 0 14px}h2{font-size:19px}
 html[data-theme=tech] h1{color:#fcee0a}
 .shell,.plots>section,details{position:relative;background:var(--sheet),var(--panel);border:1px solid var(--line)}
@@ -110,7 +110,7 @@ html[data-theme=tech] .flight-chart{color:#9fdff3}
 html[data-theme=tech] .flight-chart+ .flight-chart{color:#ffc09b}
 #jumpPeak{width:auto;min-height:44px;padding-inline:10px}
 @media(max-width:620px){.flight-charts{grid-template-columns:1fr}.flight-chart+ .flight-chart{border-inline-start:0;border-top:1px solid #72818b66}}
-.observation{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(0,1fr);background:var(--field);border:1px solid var(--line)}
+.observation{display:grid;grid-template-columns:minmax(0,2.5fr) minmax(260px,1fr);background:var(--field);border:1px solid var(--line)}
 .range-scene,.vector-panel{min-width:0;padding:16px}.vector-panel{border-inline-start:1px solid var(--line)}
 .observation h2{margin-bottom:10px}.observation #livePosTag{position:static;font-size:.85rem;text-align:left}
 main .observation .viewport{height:clamp(220px,24vw,315px);width:100%;max-width:none}

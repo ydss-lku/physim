@@ -118,14 +118,14 @@ function createProjectileExhibit(canvas) {
         vec3 lawn=mix(vec3(.052,.216,.073),vec3(.083,.28,.094),stripe);
         float grain=fract(sin(dot(floor(q*85.),vec2(37.1,91.7)))*1738.3);
         lawn*=1.+(grain-.5)*.11*(1.-smoothstep(.004,.02,footprint));
-        float endLine=1.45-.095*q.y*q.y;
-        float lane=(1.-smoothstep(endLine-aa,endLine+aa,q.x))*(1.-smoothstep(1.35-aa,1.35+aa,abs(q.y)));
+        float endLine=1.8-.045*q.y*q.y;
+        float lane=(1.-smoothstep(endLine-aa,endLine+aa,q.x))*(1.-smoothstep(2.5-aa,2.5+aa,abs(q.y)));
         vec3 surface=mix(lawn,vec3(.37,.082,.05),lane);
-        float side=abs(abs(q.y)-1.29);
+        float side=abs(abs(q.y)-2.44);
         float arc=abs(q.x-endLine);
         float paint=max((1.-smoothstep(.025,.025+aa,side))*step(q.x,endLine),
-                        (1.-smoothstep(.045,.045+aa,arc))*step(abs(q.y),1.32));
-        float spread=1.29+.24*max(0.,q.x-1.3);
+                        (1.-smoothstep(.045,.045+aa,arc))*step(abs(q.y),2.48));
+        float spread=2.44+.34*max(0.,q.x-1.3);
         float boundary=abs(abs(q.y)-spread);
         paint=max(paint,(1.-smoothstep(.035,.035+aa,boundary))*step(1.3,q.x));
         float radius=length(vec2(q.x+4.,q.y));
@@ -148,14 +148,14 @@ function createProjectileExhibit(canvas) {
     const field=datum-radius;
     const run=Math.max(.3*size,Math.min((field>contact?22:2)*size,(landingX-edge)*.65));
     const xs=[wheelX-3000,wheelX-2.5*size,edge,edge+run,Math.max(edge+run+size,landingX),Math.max(edge+run,landingX)+3000];
-    const front=1.18*size;
+    const front=3.2*size;
     for(let col=0;col<columns;col++){
       const top=col<3?contact:field;
       for(let row=0;row<rows;row++){
         const i=3*(row*columns+col);
         groundVertices[i]=xs[col];
         groundVertices[i+1]=top-(row===2?.16*size:row===3?Math.max(2200,Math.abs(contact-field)+size):0);
-        groundVertices[i+2]=row===0?-Math.min(10,4+Math.max(0,(xs[col]-edge)/size)*.20)*size:front+Math.min(9*size,Math.max(0,xs[col]-edge)*.22);
+        groundVertices[i+2]=row===0?-Math.min(35,7+Math.max(0,(xs[col]-edge)/size)*.8)*size:front+Math.min(24*size,Math.max(0,xs[col]-edge)*.30);
       }
     }
     groundGeometry.attributes.position.needsUpdate=true;
