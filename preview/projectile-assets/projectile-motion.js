@@ -223,22 +223,22 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   let renderExhibit;
   try { renderExhibit=createProjectileExhibit(document.getElementById('exhibitCanvas')); }
   catch(error) { console.warn('Using the 2D flight view',error); }
-  const view={active:false,yaw:0,pitch:0,roll:0,zoom:1};
+  const view={active:false,yaw:0,pitch:0,zoom:1};
   const fingers=new Map();
   const viewTools=document.getElementById('viewTools');
-  const rollAngle=document.getElementById('rollAngle');
-  const rollValue=document.getElementById('rollValue');
-  rollAngle.addEventListener('input',()=>{
-    const degrees=Number(rollAngle.value);
-    view.roll=degrees*Math.PI/180;
-    view.active=Boolean(degrees || view.yaw || view.zoom!==1);
-    rollValue.value=degrees+'°';
+  const orbitAngle=document.getElementById('orbitAngle');
+  const orbitValue=document.getElementById('orbitValue');
+  orbitAngle.addEventListener('input',()=>{
+    const degrees=Number(orbitAngle.value);
+    view.yaw=degrees*Math.PI/180;
+    view.active=Boolean(degrees || view.zoom!==1);
+    orbitValue.value=degrees+'°';
     updateUI();
   });
   function resetView(){
-    rollAngle.value=0;
-    rollValue.value='0°';
-    Object.assign(view,{active:false,yaw:0,pitch:0,roll:0,zoom:1});
+    orbitAngle.value=0;
+    orbitValue.value='0°';
+    Object.assign(view,{active:false,yaw:0,pitch:0,zoom:1});
     fingers.clear();
   }
   document.getElementById('sideView').onclick=()=>{resetView();updateUI();};
@@ -250,6 +250,18 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     insetToggle.setAttribute('aria-pressed',String(!ballInset.hidden));
     updateUI();
   });
+  function vectorOffsets(dx,dy){
+    // Translate parallel arrows without changing their lengths or directions.
+    const shifts=[[0,0],[0,0],[0,0]];
+    if(Math.abs(dx)>=Math.abs(dy) && dx!==0){
+      const gap=(dy>0?1:-1)*Math.max(0,7-Math.abs(dy)*.35);
+      shifts[0][1]=-gap;shifts[2][1]=gap;
+    }else if(dy!==0){
+      const gap=Math.max(0,7-Math.abs(dx)*.35);
+      shifts[1][0]=-gap;shifts[2][0]=gap;
+    }
+    return shifts;
+  }
   function drawCloseUp(ctx,w,h,vx,vy,maxSpeed,colors){
     const x=w*.42,y=h/2,radius=Math.min(32,h*.095,w*.08);
     if(!renderExhibit){
@@ -258,18 +270,17 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
     const scale=Math.min(w*.39,h*.38)/maxSpeed;
     const dx=vx*scale,dy=-vy*scale;
-    const sameX=Math.abs(dy)<3,sameY=Math.abs(dx)<3;
-    // Use a wider resultant under collinear components so both colours remain visible.
-    drawArrow(ctx,x,y,x+dx,y+dy,colors[2],sameX||sameY?7:4,13);
-    drawArrow(ctx,x,y,x+dx,y,colors[0],3,9);
-    drawArrow(ctx,x,y,x,y+dy,colors[1],3,9);
+    const shifts=vectorOffsets(dx,dy);
+    const components=[[dx,0],[0,dy],[dx,dy]];
+    const starts=shifts.map(([ox,oy])=>[x+ox,y+oy]);
+    const tips=starts.map(([sx,sy],i)=>[sx+components[i][0],sy+components[i][1]]);
+    for(const i of [2,0,1])drawArrow(ctx,...starts[i],...tips[i],colors[i],i===2?4:3,i===2?13:9);
     ctx.font='bold 16px sans-serif';
     const occupied=[];
-    const tips=[[x+dx,y],[x,y+dy],[x+dx,y+dy]];
     // Intersect the shaft with a padded label rectangle, including both arrow ends.
-    function crosses(rect,tip){
+    function crosses(rect,tip,i){
       let enter=0,exit=1;
-      for(const [origin,end,min,max] of [[x,tip[0],rect.l-3,rect.r+3],[y,tip[1],rect.t-3,rect.b+3]]){
+      for(const [origin,end,min,max] of [[starts[i][0],tip[0],rect.l-3,rect.r+3],[starts[i][1],tip[1],rect.t-3,rect.b+3]]){
         const delta=end-origin;
         if(Math.abs(delta)<1e-8){if(origin<min || origin>max)return false;continue;}
         const a=(min-origin)/delta,b=(max-origin)/delta;
@@ -287,7 +298,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         if(occupied.some(o=>rect.l<o.r+3 && rect.r>o.l-3 && rect.t<o.b+3 && rect.b>o.t-3))return;
         const ballGap=Math.hypot(Math.max(l-x,0,x-rect.r),Math.max(t-y,0,y-rect.b));
         const score=(l-preferredX)**2+(t-preferredY)**2+
-          (ballGap<radius+2?1e6:0)+tips.filter(tip=>crosses(rect,tip)).length*1e5;
+          (ballGap<radius+2?1e6:0)+tips.filter((tip,i)=>crosses(rect,tip,i)).length*1e5;
         if(score<cost){cost=score;best=rect;}
       }
       consider(preferredX,preferredY);
@@ -299,9 +310,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.lineWidth=3;ctx.strokeStyle=chartInk.field;ctx.strokeText(text,px,py);
       ctx.fillStyle=colors[i];ctx.fillText(text,px,py);
     }
-    label(vx===0?'vₓ = 0':'vₓ',0,x+dx+3,y+3);
+    label(vx===0?'vₓ = 0':'vₓ',0,tips[0][0]+3,tips[0][1]+(shifts[0][1]<0?-20:4));
     label(Math.abs(vy)<1e-8?'vᵧ = 0':'vᵧ',1,x-31,y+dy-9);
-    label('v',2,x+dx+4,y+dy-19);
+    label('v',2,tips[2][0]+4,tips[2][1]+(shifts[2][1]>0?4:-20));
   }
   let trajectoryView;
   function drawTrajectory() {
@@ -386,6 +397,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
 
+    const fieldOffsets=vectorOffsets(42*p.vx/maxSpeed,-42*pos.vy/maxSpeed);
     [[p.vx,0],[0,pos.vy],[p.vx,pos.vy]].forEach(([vx,vy],i)=>{
       const length=Math.hypot(vx,vy);
       const dx=42*vx/maxSpeed, dy=-42*vy/maxSpeed;
@@ -396,7 +408,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       needle.setAttribute("transform","rotate("+Math.atan2(-vy,vx)*180/Math.PI+")");
       const reading=[vx,vy,length][i];
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
-      if(!ready)drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
+      const [ox,oy]=fieldOffsets[i];
+      if(!ready)drawArrow(ctx,x+ox,y+oy,x+ox+dx,y+oy+dy,colors[i],i===2?2:3,8);
     });
     const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
     if(renderExhibit){
@@ -852,11 +865,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       if(distance>0){zoomView(pinchDistance()/distance);return;}
       if(fingers.size===1){
         view.active=true;
-        const turnLimit=Math.PI/6;
+        const turnLimit=Math.PI;
         const deltaX=event.clientX-previous.x;
         if(!deltaX)return;
-        const radiansPerPixel=2*turnLimit/trajCanvas.clientWidth;
+        const radiansPerPixel=Math.PI/(3*trajCanvas.clientWidth);
         view.yaw=Math.max(-turnLimit,Math.min(turnLimit,view.yaw-deltaX*radiansPerPixel));
+        orbitAngle.value=Math.round(view.yaw*180/Math.PI);
+        orbitValue.value=orbitAngle.value+"°";
         updateUI();
       }
       return;

@@ -201,7 +201,7 @@ function createProjectileExhibit(canvas) {
     return arrow;
   });
   function render({w,h,start,muzzleY,x,y,theta,size,view,flight,colors,inset}){
-    orbit.rotation.set(view.pitch,view.yaw,view.roll,'ZYX');
+    orbit.rotation.set(0,view.yaw,0,'YXZ');
     camera.zoom=view.zoom;
     track.visible=view.active;
     if(view.active){
@@ -215,12 +215,13 @@ function createProjectileExhibit(canvas) {
     }
     const vy=flight.vy0-flight.g*flight.T;
     const speed=Math.hypot(flight.vx,vy)||1;
+    const offsets=vectorOffsets(42*flight.vx/speed,-42*vy/speed);
     impactArrows.forEach((arrow,i)=>{
       const vx=i===1?0:flight.vx, vertical=i===0?0:vy;
       const length=42*Math.hypot(vx,vertical)/speed;
       arrow.visible=view.active && length>.1;
       if(!arrow.visible)return;
-      arrow.position.set(x-w/2,h/2-y,0);
+      arrow.position.set(x-w/2+offsets[i][0],h/2-y-offsets[i][1],0);
       arrow.setDirection(new T.Vector3(vx,vertical,0).normalize());
       arrow.setLength(length,Math.min(7,length*.4),Math.min(4,length*.25));
       arrow.setColor(new T.Color(colors[i]));
