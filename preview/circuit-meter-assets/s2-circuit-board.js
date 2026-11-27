@@ -12,7 +12,8 @@ const tools = {
   bulb:['Bulb','燈泡','Tap a slot to fit a bulb. Use the same type of bulb for comparisons.','點選插位裝上燈泡。各燈泡的規格相同。','M0 12h7m16 0h7 M7 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0 M7 12h3a5 5 0 0 1 10 0h3'],
   switch:['Switch','開關','Tap a slot to fit an open switch. Select Use to close it.','點選插位裝上開關，再選「操作」閉合開關。','M0 15h6m2 0 15-10m1 10h6 M6 15a1 1 0 1 0 2 0a1 1 0 1 0-2 0 M22 15a1 1 0 1 0 2 0a1 1 0 1 0-2 0'],
   cell:['Cell','電池','Tap a slot to place the cell. An existing cell moves to the new slot.','點選插位放置電池。若板上已有電池，電池會移至新位置。','M0 12h12m0-5v10m5-15v20m0-10h13'],
-  erase:['Remove','移除','Tap a component or wire to remove it. Undo restores the last edit.','點選元件或導線將其移除；可按「復原」還原。','M4 14 15 3l10 9-9 9h-5z M8 10l11 10 M16 21h12']
+  erase:['Remove','移除','Tap a component or wire to remove it. Undo restores the last edit.','點選元件或導線將其移除；可按「復原」還原。','M4 14 15 3l10 9-9 9h-5z M8 10l11 10 M16 21h12'],
+  reset:['Reset','重設','Clear board','清空電路板','M5 10a10 10 0 1 1 1 9 M5 3v7h7']
 };
 const stateText = {noCell:['No cell fitted','未裝上電池'],open:['Open circuit','開路'],closed:['Current flowing','有電流通過'],short:['Short circuit. Break the direct connection between the cell terminals.','短路。請斷開直接連通電池兩極的支路。']};
 let experiment='simple', parts=preset(experiment), tool='use', schematic=false;
@@ -31,7 +32,7 @@ const x=n=>50+(n%4)*180, y=n=>65+Math.floor(n/4)*132;
 const post=n=>String.fromCharCode(65+n%4)+(1+Math.floor(n/4));
 const board=el('board');
 function save() {
-  history.push({experiment,parts:structuredClone(parts)});
+  history.push({experiment,parts:structuredClone(parts),guide:structuredClone(guide),failures,earned});
   if(history.length>80) history.shift();
 }
 const defs=`<defs>
@@ -113,8 +114,56 @@ function meterFace(type,cx,cy,value){
  const reading=value==null?'—':value.toFixed(amp?3:2)+' '+unit;
  return `<g transform="translate(${cx} ${cy})" pointer-events="none"><circle r="14" fill="var(--panel)" stroke="var(--symbol)" stroke-width="2"/>${label(0,5,unit,16)}<rect x="-32" y="16" width="64" height="19" rx="3" fill="var(--panel)"/>${label(0,30,reading,13)}</g>`;
 }
+let failures=0,guide=null,earned=false,closed=false,audio=null;
+function unlock(){
+ const Context=window.AudioContext||window.webkitAudioContext;
+ if(Context && matchMedia('(min-width:900px)').matches){audio??=new Context();audio.resume().catch(()=>{});}
+}
+board.addEventListener('pointerdown',unlock);
+board.addEventListener('keydown',unlock);
+let applause=null;
+function praise(){
+ if(!matchMedia('(min-width:900px)').matches)return;
+ document.querySelector('.great-job')?.remove();
+ const badge=document.createElement('div');
+ badge.className='great-job';badge.textContent='Great job!';board.parentElement.append(badge);
+ badge.onanimationend=()=>badge.remove();
+ if(!audio)return;
+ applause?.stop();
+ const rate=audio.sampleRate,buffer=audio.createBuffer(1,rate*6,rate),samples=buffer.getChannelData(0);
+ for(let t=0;t<6;t+=.012+Math.random()*.022){
+   const start=Math.floor(t*rate),volume=.14+Math.random()*.25;
+   for(let j=0;j<rate*.065 && start+j<samples.length;j++)
+     samples[start+j]+=(2*Math.random()-1)*volume*Math.exp(-j/(rate*.011));
+ }
+ const source=audio.createBufferSource(),gain=audio.createGain(),now=audio.currentTime;
+ source.buffer=buffer;source.connect(gain);gain.connect(audio.destination);
+ gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(.65,now+.3);
+ gain.gain.setValueAtTime(.65,now+5);gain.gain.linearRampToValueAtTime(0,now+6);
+ applause=source;source.onended=()=>{gain.disconnect();source.disconnect();if(applause===source)applause=null;};source.start();
+}
+function resetBoard(){
+ if(!Object.keys(parts).length)return;
+ save();const status=solve(parts).state;
+ failures=earned?0:failures+1;earned=false;guide=null;selectedResistor=null;experiment='empty';
+ if(failures>=2){
+   for(const {id} of slots){
+     const old=parts[id];
+     if(status!=='short' && old && !(old.type==='switch'&&!old.closed || old.type==='bulb'&&!old.fitted))continue;
+     const types=status==='short'?['resistor']:status==='noCell'?['cell']:['wire','bulb'];
+     for(const type of types){
+       const target=type==='resistor'?{type,ohms:10}:old?.type==='bulb'||type==='bulb'?{type:'bulb',fitted:true}:{type};
+       if(solve({...parts,[id]:target}).state==='closed'){delete parts[id];guide={[id]:target};choose('use');return;}
+     }
+   }
+   guide={h00:{type:'cell'},v01:{type:'wire'},h10:status==='short'?{type:'resistor',ohms:10}:{type:'bulb',fitted:true},v00:{type:'wire'}};
+ }
+ parts={};choose('use');
+}
 function render() {
  const result=solve(parts), degree=Array(12).fill(0);
+ if(result.state==='closed'){earned=true;failures=0;guide=null;if(!closed)praise();}
+ closed=result.state==='closed';
  const activeSlot=document.activeElement?.getAttribute('data-slot');
  const bulbNames=new Map(slots.filter(s=>parts[s.id]?.type==='bulb').map((s,i)=>[s.id,'L'+(i+1)]));
  let svg=defs+'<rect width="640" height="394" rx="3" fill="var(--board)"/>';
@@ -148,6 +197,11 @@ function render() {
     accessible+=' · '+readings.join(' · ');
   }
   if(!p && (tool==='use'||tool==='erase')) drawing='';
+  if(guide?.[id] && !p){
+   const target=guide[id];
+   drawing=`<g opacity=".52"><rect x="${6-half}" y="-21" width="${2*half-12}" height="42" rx="7" stroke="var(--letter)" stroke-dasharray="6 5" fill="none"/>${symbol(target,half)}</g>`;
+   accessible=pick('Suggested connection: ','建議駁法：')+pick(...tools[target.type].slice(0,2))+' · '+position;
+  }
   svg+=`<g class="slot" role="button" tabindex="0" data-slot="${id}" aria-label="${accessible}" transform="translate(${cx} ${cy})"><title>${accessible}</title><g transform="rotate(${vertical?90:0})">${drawing}</g>`;
   let instruments='';
   if(meter) instruments+=meterFace(p.type,0,0,p.type==='ammeter'?result.amps[id]:result.voltage[id]);
@@ -160,7 +214,7 @@ function render() {
   if(p?.type==='resistor') svg+=label(vertical?34:0,vertical?4:29,p.ohms+' Ω',13);
   if(p?.type==='bulb') svg+=label(vertical?32:0,vertical?4:36,bulbNames.get(id)+(p.fitted?'':' −'),12);
   if(p?.type==='switch' && !schematic) svg+=label(vertical?51:0,vertical?5:34,p.closed?pick('Closed','閉合'):pick('Open','打開'),14);
-  if(!p && tool!=='use' && tool!=='erase') svg+='<circle r="9" fill="var(--board)" stroke="var(--ring)"/><path d="M-4 0h8 M0 -4v8" stroke="var(--letter)"/>';
+  if(!p && !guide?.[id] && tool!=='use' && tool!=='erase') svg+='<circle r="9" fill="var(--board)" stroke="var(--ring)"/><path d="M-4 0h8 M0 -4v8" stroke="var(--letter)"/>';
   svg+='<rect class="slot-focus" x="-52" y="-52" width="104" height="104" rx="10"/></g>';
  }
  for(let n=0;n<12;n++) {
@@ -197,11 +251,12 @@ function choose(name) {
    if(active && document.documentElement.dataset.style==='tech') b.setAttribute('data-augmented-ui','br-clip border');
    else b.removeAttribute('data-augmented-ui');
  }
- hint=tools[tool].slice(2,4);
+ hint=guide?['Suggested connection: tap each dashed component to fit it.','建議駁法：逐一點選虛線元件，將它們接入電路。']:tools[tool].slice(2,4);
  el('hint').textContent=pick(...hint);render();
 }
 function operate(id) {
  const p=parts[id];
+ if(guide?.[id] && !p){save();parts[id]={...guide[id]};choose(tool);return;}
  if(tool==='use'){
    if(p?.type==='resistor'){selectedResistor=id;choose('resistor');return;}
    if(p?.type==='switch'){save();p.closed=!p.closed;}
@@ -230,13 +285,12 @@ for(const [id,[en,zh,,,icon]] of Object.entries(tools)){
  b.innerHTML='<svg viewBox="0 0 30 24" aria-hidden="true"><path d="'+icon+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span></span>';
  b.lastElementChild.textContent=pick(en,zh);
  b.title=pick(tools[id][2],tools[id][3]);
- b.onclick=()=>choose(id);el('tools').append(b);
+ b.onclick=id==='reset'?resetBoard:()=>choose(id);el('tools').append(b);
 }
 board.addEventListener('click',ev=>{const slot=ev.target.closest('[data-slot]');if(slot)operate(slot.dataset.slot);});
 board.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const slot=ev.target.closest('[data-slot]');if(slot){ev.preventDefault();operate(slot.dataset.slot);}}});
-el('preset').onchange=()=>{save();selectedResistor=null;experiment=el('preset').value;parts=preset(experiment);choose(experiment==='empty'?'cell':'use');};
-el('reset').onclick=()=>{save();selectedResistor=null;parts=preset(experiment);choose(experiment==='empty'?'cell':'use');};
-el('undo').onclick=()=>{const last=history.pop();if(last){parts=last.parts;experiment=last.experiment;choose(tool);}};
+el('preset').onchange=()=>{save();guide=null;earned=false;failures=0;selectedResistor=null;experiment=el('preset').value;parts=preset(experiment);choose(experiment==='empty'?'cell':'use');};
+el('undo').onclick=()=>{const last=history.pop();if(last){guide=last.guide;failures=last.failures;earned=last.earned;parts=last.parts;experiment=last.experiment;choose(tool);}};
 for(const id of ['current','electron']) el(id).onclick=()=>{
  directionMode=directionMode===id?'':id;
  render();
