@@ -380,7 +380,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     for(let i=0;i<24;i++){
       const mid=(low+high)/2, box=frameAt(mid);
       const fitsSubjects=box.right-box.left<=w-18 && box.top-box.bottom<=h-18;
-      const fitsGroundMargin=box.bottom>=-h*.22;
+      const fitsGroundMargin=ready || box.bottom>=-h*.22;
       if(fitsSubjects && fitsGroundMargin)low=mid;
       else high=mid;
     }

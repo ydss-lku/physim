@@ -12,9 +12,9 @@ function createProjectileExhibit(canvas) {
   scene.add(landscapeGroup);
   const updateLandscape=createFlightLandscape(T,landscapeGroup);
   const camera = new T.OrthographicCamera();
-  camera.position.z = 900;
+  camera.position.z = 48000;
   camera.near = 1;
-  camera.far = 2000;
+  camera.far = 100000;
   const rig = new T.Group(), barrel = new T.Group();
   scene.add(rig);
   rig.add(barrel);
@@ -29,6 +29,7 @@ function createProjectileExhibit(canvas) {
     ink.fillStyle=color; ink.fillRect(x,y,w,h);
   }
   const texture=new T.CanvasTexture(studio);
+  texture.colorSpace=T.SRGBColorSpace;
   texture.mapping=T.EquirectangularReflectionMapping;
   const generator=new T.PMREMGenerator(renderer);
   const environment=generator.fromEquirectangular(texture);
@@ -37,6 +38,18 @@ function createProjectileExhibit(canvas) {
   const metal=(color,metalness,roughness)=>new T.MeshStandardMaterial({color,metalness,roughness});
   const bronze=metal(0x926a35,.83,.34), brass=metal(0xcfaa67,.82,.24);
   const iron=metal(0x313b40,.68,.38), wood=metal(0x745039,.12,.57), dark=metal(0x171c20,.45,.48);
+  const grain=document.createElement('canvas');grain.width=512;grain.height=128;
+  const gc=grain.getContext('2d');gc.fillStyle='#bfa58b';gc.fillRect(0,0,512,128);
+  for(let i=0;i<170;i++){
+    gc.strokeStyle=i%3?'rgba(66,38,23,.15)':'rgba(255,235,207,.19)';
+    gc.beginPath();
+    for(let x=0;x<=512;x+=8){const y=i*.78+2*Math.sin(x*.017+i*.2)+Math.sin(x*.043+i);if(x)gc.lineTo(x,y);else gc.moveTo(x,y);}
+    gc.stroke();
+  }
+  wood.map=new T.CanvasTexture(grain);wood.map.wrapS=wood.map.wrapT=T.RepeatWrapping;
+  wood.map.colorSpace=T.SRGBColorSpace;wood.color.setHex(0x916340);
+  bronze.roughness=.29;brass.roughness=.25;
+  wood.bumpMap=wood.map;wood.bumpScale=.015;
   function part(parent,geometry,material,x=0,y=0,z=0){
     const obj=new T.Mesh(geometry,material);
     obj.position.set(x,y,z); obj.castShadow=true; obj.receiveShadow=true; parent.add(obj);
@@ -54,8 +67,10 @@ function createProjectileExhibit(canvas) {
   const profile=[[0,-1.85],[.14,-1.81],[.16,-1.65],[.31,-1.57],[.40,-1.36],[.415,-1.16],[.39,-.95],[.35,-.60],[.305,.05],[.285,.79],[.30,1.18],[.355,1.33],[.355,1.48],[.24,1.48],[.23,1.12],[0,1.10]];
   const tube=part(barrel,new T.LatheGeometry(profile.map(([r,y])=>new T.Vector2(r,y)),96),bronze);
   tube.rotation.z=-Math.PI/2;
+  // Offset the barrel along its own axis so its rear clears the carriage in the opening pose.
+  tube.position.x=.38;
   for(const [x,r] of [[-1.2,.42],[-.95,.40],[-.46,.356],[.73,.30],[1.36,.356]]){
-    const band=part(barrel,new T.TorusGeometry(r,.026,12,80),brass,x);band.rotation.y=Math.PI/2;
+    const band=part(barrel,new T.TorusGeometry(r,.026,12,80),brass,x+.38);band.rotation.y=Math.PI/2;
   }
   cylinder(rig,.12,.12,1.57,iron,0,-.22,0);
   for(const side of [-1,1]){
@@ -69,6 +84,19 @@ function createProjectileExhibit(canvas) {
     }
     cylinder(rig,.17,.17,.235,brass,0,y,z);
     cylinder(rig,.10,.10,.26,iron,0,y,z);
+    const boss=part(rig,new T.SphereGeometry(.092,32,18),bronze,0,y,z+side*.128);
+    boss.scale.z=.36;
+    for(const [r,t] of [[.151,.009],[.106,.006]]){
+      part(rig,new T.TorusGeometry(r,t,8,56),brass,0,y,z+side*.125);
+    }
+    for(let k=0;k<6;k++){
+      const t=k*Math.PI/3;
+      cylinder(rig,.014,.014,.026,iron,.128*Math.cos(t),y+.128*Math.sin(t),z+side*.13);
+    }
+    for(let n=0;n<8;n++){
+      const t=n*Math.PI/4;
+      cylinder(rig,.018,.018,.038,brass,.735*Math.cos(t),y+.735*Math.sin(t),z+side*.092);
+    }
     const plate=new T.Shape();
     plate.moveTo(-2.2,-.89);plate.lineTo(-2.12,-1.04);plate.lineTo(.40,-.4);plate.lineTo(.36,-.04);plate.lineTo(-.13,.08);plate.closePath();
     part(rig,new T.ExtrudeGeometry(plate,{depth:.13,bevelThickness:.025,bevelSize:.025,bevelSegments:3}),wood,0,0,side*.37);
@@ -83,29 +111,17 @@ function createProjectileExhibit(canvas) {
   const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
   // Two level surfaces meet at a retaining face. Neither surface tilts toward the landing point.
   // The flat terrace spans both wheel tracks, including their front and rear edges.
-  const groundGeometry=new T.BufferGeometry();
-  const faceColors=[],indices=[];
-  const bands=[0xffffff,0xffffff,0x665442];
-  const columns=6, rows=4;
-  const groundVertices=new Float32Array(columns*rows*3);
-  for(let row=0;row<rows;row++){
-    const tint=new T.Color(bands[Math.min(row,2)]);
-    for(let col=0;col<columns;col++){
-      faceColors.push(tint.r,tint.g,tint.b);
-      if(row<rows-1 && col<columns-1){
-        const i=row*columns+col;
-        indices.push(i,i+columns,i+1,i+1,i+columns,i+columns+1);
-      }
-    }
-  }
-  groundGeometry.setIndex(indices);
-  groundGeometry.setAttribute('position',new T.BufferAttribute(groundVertices,3));
-  groundGeometry.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));
+  // A continuous playing surface with a local level bed for the carriage.
+  const groundGeometry=new T.PlaneGeometry(1,1,112,80);
+  groundGeometry.rotateX(-Math.PI/2);
+  const groundVertices=groundGeometry.attributes.position;
+  const originalGround=groundVertices.array.slice();
+  const nightTurf={value:1};
   const fieldOrigin={value:0}, fieldUnit={value:1};
   const ballContact={value:new T.Vector3()};
-  const turf=new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide});
+  const turf=new T.MeshStandardMaterial({side:T.DoubleSide,roughness:.96,envMapIntensity:.15});
   turf.onBeforeCompile=shader=>{
-    shader.uniforms.ballContact=ballContact;
+    shader.uniforms.ballContact=ballContact;shader.uniforms.nightTurf=nightTurf;
     shader.uniforms.fieldOrigin=fieldOrigin;
     shader.uniforms.fieldUnit=fieldUnit;
     shader.vertexShader=shader.vertexShader.replace('#include <common>',
@@ -113,20 +129,20 @@ function createProjectileExhibit(canvas) {
       .replace('#include <begin_vertex>',
         '#include <begin_vertex>\nfieldMetres=vec2((position.x-fieldOrigin)/fieldUnit,position.z/fieldUnit);');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-      '#include <common>\nvarying vec2 fieldMetres; uniform vec3 ballContact;')
+      '#include <common>\nvarying vec2 fieldMetres; uniform vec3 ballContact;uniform float nightTurf;')
       .replace('#include <color_fragment>',`
         #include <color_fragment>
         vec2 q=fieldMetres;
         float footprint=max(fwidth(q.x),fwidth(q.y));
         float aa=max(.009,footprint*.65);
         // Alternating mowing passes, a red synthetic runway and painted sector markings.
-        float stripe=smoothstep(-.09,.09,sin(q.x*.57));
-        vec3 lawn=mix(vec3(.052,.216,.073),vec3(.083,.28,.094),stripe);
+        float stripe=smoothstep(-.35,.35,sin(q.x*.57));
+        vec3 lawn=mix(vec3(.036,.132,.082),vec3(.046,.157,.093),stripe);
         float grain=fract(sin(dot(floor(q*85.),vec2(37.1,91.7)))*1738.3);
         lawn*=1.+(grain-.5)*.11*(1.-smoothstep(.004,.02,footprint));
         float endLine=1.8-.045*q.y*q.y;
         float lane=(1.-smoothstep(endLine-aa,endLine+aa,q.x))*(1.-smoothstep(2.5-aa,2.5+aa,abs(q.y)));
-        vec3 surface=mix(lawn,vec3(.37,.082,.05),lane);
+        vec3 surface=mix(lawn,vec3(.26,.083,.055),lane);
         float side=abs(abs(q.y)-2.44);
         float arc=abs(q.x-endLine);
         float paint=max((1.-smoothstep(.025,.025+aa,side))*step(q.x,endLine),
@@ -137,7 +153,14 @@ function createProjectileExhibit(canvas) {
         float radius=length(vec2(q.x+4.,q.y));
         float distanceArc=abs(mod(radius+5.,10.)-5.);
         paint=max(paint,(1.-smoothstep(.04,.04+aa,distanceArc))*step(2.,q.x)*step(abs(q.y),spread));
-        surface=mix(surface,vec3(.84,.87,.77),paint);
+        vec2 oval=q-vec2(28.,0.);
+        float perimeter=(length(oval/vec2(86.,35.))-1.)*29.;
+        float trackBand=smoothstep(-.12,.12,perimeter)*(1.-smoothstep(8.,8.2,perimeter));
+        float laneLine=1.-smoothstep(.028,.028+aa,abs(fract(perimeter+.5)-.5));
+        vec3 trackColour=mix(vec3(.245,.069,.048),vec3(.79,.76,.66),laneLine);
+        surface=mix(surface,vec3(.75,.79,.73),paint);
+        surface=mix(surface,trackColour,trackBand);
+        surface=mix(surface,vec3(.095,.135,.117),smoothstep(9.,16.,perimeter));
         // Soft contact darkening narrows as the ball approaches the turf.
         vec2 separation=(q-vec2(ballContact.x,0.))/ballContact.z;
         float clearance=ballContact.y/ballContact.z;
@@ -145,6 +168,11 @@ function createProjectileExhibit(canvas) {
         float contactShade=exp(-dot(separation,separation)/(penumbra*penumbra));
         surface*=1.-.45*contactShade/(1.+clearance*.38);
 
+        surface*=mix(1.,.36,nightTurf);
+        float farField=smoothstep(22.,75.,length(q*vec2(.38,1.)));
+        surface=mix(surface,mix(vec3(.18,.23,.21),vec3(.026,.042,.046),nightTurf),farField*.86);
+        float fibre=fract(sin(dot(floor(q*19.),vec2(17.1,41.7)))*1483.3);
+        surface*=1.+(fibre-.5)*.19*(1.-smoothstep(.02,.12,footprint));
         float area=abs(dFdx(q.x)*dFdy(q.y)-dFdy(q.x)*dFdx(q.y));
         diffuseColor.rgb*=mix(vec3(.37,.29,.17),surface,step(.00000001,area));
       `);
@@ -160,19 +188,18 @@ function createProjectileExhibit(canvas) {
     const below=ball.position.x<edge?contact:field;
     ballContact.value.set((ball.position.x-wheelX)/size,
       Math.max(0,ball.position.y-ball.scale.x-below)/size,ball.scale.x/size);
-    const xs=[wheelX-4000,wheelX-2.5*size,edge,edge,edge+size,Math.max(edge,landingX)+4000];
-    // A constant depth keeps the long field edges parallel to the horizontal x axis.
-    const back=-7*size, front=3.2*size;
-    for(let col=0;col<columns;col++){
-      const top=col<3?contact:field;
-      for(let row=0;row<rows;row++){
-        const i=3*(row*columns+col);
-        groundVertices[i]=xs[col];
-        groundVertices[i+1]=top-(row===2?.16*size:row===3?Math.max(2200,Math.abs(contact-field)+size):0);
-        groundVertices[i+2]=row===0?back:front;
-      }
+    if(ground.userData.shape===size+','+wheelX+','+contact+','+field)return;
+    ground.userData.shape=size+','+wheelX+','+contact+','+field;
+    // Nonlinear sampling concentrates vertices at the wheel bed and spans the whole arena.
+    for(let i=0;i<groundVertices.count;i++){
+      const u=2*originalGround[3*i],v=2*originalGround[3*i+2];
+      const x=4*u+380*u*Math.abs(u)**2,z=3*v+300*v*Math.abs(v)**2;
+      const gap=field>=contact?Math.max(0,x-4.):Math.max(0,Math.abs(x+.75)-2.25,Math.abs(z)-2.1);
+      const t=Math.min(1,gap/(field>contact?Math.max(2.8,Math.min(18,(landingX-wheelX)/size-4)):1.8));
+      const blend=t*t*(3-2*t);
+      groundVertices.setXYZ(i,wheelX+x*size,contact+(field-contact)*blend,z*size);
     }
-    groundGeometry.attributes.position.needsUpdate=true;
+    groundVertices.needsUpdate=true;
     groundGeometry.computeVertexNormals();
   }
   let previousWidth=0, previousHeight=0, previousRatio=0;
@@ -181,7 +208,7 @@ function createProjectileExhibit(canvas) {
     if(theta===cachedAngle) return bounds;
     const angle=theta*Math.PI/180;
     barrel.rotation.z=angle;
-    rig.position.set(-1.48*Math.cos(angle),-1.48*Math.sin(angle),0);
+    rig.position.set(-1.86*Math.cos(angle),-1.86*Math.sin(angle),0);
     rig.scale.setScalar(1);
     rig.updateMatrixWorld(true);
     bounds={left:Infinity,right:-Infinity,bottom:Infinity,top:-Infinity};
@@ -191,7 +218,7 @@ function createProjectileExhibit(canvas) {
       const vertices=mesh.geometry.attributes.position;
       for(let i=0;i<vertices.count;i++){
         point.fromBufferAttribute(vertices,i).applyMatrix4(mesh.matrixWorld);
-        const x=point.x-.48*point.z, y=point.y-.28*point.z;
+        const x=point.x-.48*point.z, y=point.y-.12*point.z;
         bounds.left=Math.min(bounds.left,x);bounds.right=Math.max(bounds.right,x);
         bounds.bottom=Math.min(bounds.bottom,y);bounds.top=Math.max(bounds.top,y);
       }
@@ -209,7 +236,7 @@ function createProjectileExhibit(canvas) {
   track.frustumCulled=false;
   scene.add(track);
   function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset}){
-    orbit.rotation.set(view.pitch,view.yaw,0,'YXZ');
+    orbit.rotation.set(view.active?Math.min(-.10,view.pitch-.32):0,view.yaw,0,'YXZ');
     camera.zoom=view.zoom;
     track.visible=view.active;
     if(view.active){
@@ -230,7 +257,7 @@ function createProjectileExhibit(canvas) {
     camera.left=-w/2;camera.right=w/2;camera.top=h/2;camera.bottom=-h/2;camera.updateProjectionMatrix();
     // Oblique depth reveals the front rim and both wheels without skewing measured x or y.
     const projection=camera.projectionMatrix.elements;
-    projection[8]=-.48*2/w*camera.zoom; projection[9]=-.28*2/h*camera.zoom;
+    projection[8]=view.active?0:-.48*2/w*camera.zoom; projection[9]=view.active?0:-.12*2/h*camera.zoom;
     projection[12]=camera.position.z*projection[8];
     projection[13]=camera.position.z*projection[9];
 
@@ -238,11 +265,30 @@ function createProjectileExhibit(canvas) {
     barrel.rotation.z=angle;
     const mx=start-w/2,my=h/2-muzzleY;
     rig.scale.setScalar(size);
-    rig.position.set(mx-1.48*Math.cos(angle)*size,my-1.48*Math.sin(angle)*size,0);
+    rig.position.set(mx-1.86*Math.cos(angle)*size,my-1.86*Math.sin(angle)*size,0);
     ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
+    nightTurf.value=document.documentElement.dataset.theme==="tech"?1:0;
     groundUnderWheels(size,my-flight.y0*size,mx+flight.vx*flight.T*size);
-    updateLandscape(w,h,mx,my,size);
+    updateLandscape(rig.position.x,my-flight.y0*size-ball.scale.x,size,document.documentElement.dataset.theme==="tech");
+    if(view.active){
+      // Frame the arc in the rotated camera's own plane, including its apex.
+      scene.updateMatrixWorld(true);
+      let left=Infinity,right=-Infinity,bottom=Infinity,top=-Infinity;
+      const point=new T.Vector3();
+      function include(x,y,z,margin){
+        point.set(x,y,z).applyMatrix4(camera.matrixWorldInverse);
+        left=Math.min(left,point.x-margin);right=Math.max(right,point.x+margin);
+        bottom=Math.min(bottom,point.y-margin);top=Math.max(top,point.y+margin);
+      }
+      for(let i=0;i<=96;i++)include(vertices[3*i],vertices[3*i+1],0,ball.scale.x+3);
+      include(rig.position.x,rig.position.y,0,size*2.3);
+      const fit=Math.max((right-left)/(w*.90),(top-bottom)/(h*.86),.34);
+      const cx=(left+right)/2,cy=(top+bottom)/2;
+      camera.left=cx-w*fit*.5;camera.right=cx+w*fit*.5;
+      camera.top=cy+h*fit*.5;camera.bottom=cy-h*fit*.5;
+      camera.updateProjectionMatrix();
+    }
     if(inset){
       const iw=inset.w, ih=inset.h;
       const radius=Math.min(32,ih*.095,iw*.08);
@@ -253,12 +299,8 @@ function createProjectileExhibit(canvas) {
       portraitCamera.bottom=portraitCamera.top-ih/zoom;
       portraitCamera.updateProjectionMatrix();
       const matrix=portraitCamera.projectionMatrix.elements;
-      matrix[8]=-.48*2*zoom/iw;matrix[9]=-.28*2*zoom/ih;
-      matrix[12]+=900*matrix[8];matrix[13]+=900*matrix[9];
-      // Keep distant hills in the shot with weaker parallax than the nearby turf.
-      updateLandscape(iw/zoom,ih/zoom,mx-ball.position.x,my-ball.position.y,size);
-      const offsetX=left+iw*.5/zoom;
-      landscapeGroup.position.set(offsetX,ball.position.y,0);
+      matrix[8]=-.48*2*zoom/iw;matrix[9]=-.12*2*zoom/ih;
+      matrix[12]+=portraitCamera.position.z*matrix[8];matrix[13]+=portraitCamera.position.z*matrix[9];
       const showTrack=track.visible, showRig=rig.visible;
       track.visible=false;rig.visible=false;
       renderer.setViewport(0,0,iw,ih);renderer.setScissor(0,0,iw,ih);renderer.setScissorTest(true);
@@ -269,13 +311,12 @@ function createProjectileExhibit(canvas) {
       inset.ctx.drawImage(source,0,source.height-sh,sw,sh,0,0,iw,ih);
       renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);
       track.visible=showTrack;rig.visible=showRig;
-      landscapeGroup.position.set(0,0,0);
-      updateLandscape(w,h,mx,my,size);
+
     }
     renderer.render(scene,camera);
   };
-  const portraitCamera=new T.OrthographicCamera(-1,1,1,-1,1,2000);
-  portraitCamera.position.z=900;
+  const portraitCamera=new T.OrthographicCamera(-1,1,1,-1,1,100000);
+  portraitCamera.position.z=48000;
   render.cannonBounds=cannonBounds;
   return render;
 }

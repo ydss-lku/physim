@@ -147,3 +147,10 @@ main .observation .viewport,#ballInset{background:#c9d7dc url("flight-sky-day.we
 html[data-theme=tech] main .observation .viewport,html[data-theme=tech] #ballInset{background:#263849 url("flight-sky-night.webp") center 45% / cover}
 
 @media(max-width:520px){.dial-bank{justify-content:space-around;gap:4px}.dial{flex-direction:column;gap:0}.vector-symbol{height:25px}.vector-reading{line-height:18px}}
+
+.range-scene .stage-heading{display:flex;align-items:center;flex-wrap:wrap;gap:6px 18px;margin-bottom:10px}
+.range-scene .stage-heading h2,.stage-heading .camera-choice{margin:0}
+.stage-heading .camera-choice{order:2;margin-inline-start:auto}
+.stage-heading #livePosTag{font-variant-numeric:tabular-nums;letter-spacing:.02em;color:var(--muted)}
+main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(--line)}
+@media(max-width:650px){main .observation .viewport{height:clamp(275px,68vw,360px)}.stage-heading #livePosTag{order:3;flex-basis:100%}}
