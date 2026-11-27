@@ -11,6 +11,8 @@ function createEarthCut(T,scene){
   const zs=[];
   for(let i=-150;i<=150;i++)zs.push(i*.22);
 
+  // Keep the fine bank mesh near the carriage. The distant field needs fewer cross sections.
+  for(let z=35;z<=185;z+=2){zs.unshift(-z);zs.push(z);}
   const positions=[],weights=[],offsets=[],kinds=[],indices=[];
   const rows=[[-720,0,0,1],[-3,0,0,1],[-1.2,0,0,1],[-.91,.07,.09,1],
     [-.62,.23,.14,2],[-.29,.51,.16,2],[-.12,.80,.10,2],[.035,.96,.06,3],
@@ -148,7 +150,7 @@ function createEarthCut(T,scene){
     const map=new T.CanvasTexture(canvas);map.anisotropy=4;
     // Lay the lettering on a narrow annular strip, following the paint on the turf.
     const height=Math.min(3.1,1.35+radius*.024),width=height*4;
-    const angle=-Math.asin(Math.min(.46,24/radius));
+    const angle=-Math.asin(.46);
     const coords=[],uv=[],indices=[];
     for(let j=0;j<=16;j++){
       const u=j/16,t=angle+(u-.5)*width/radius;
@@ -166,11 +168,11 @@ function createEarthCut(T,scene){
     root.add(label);return label;
   }
   function leftEdge(z,origin){
-    const u=Math.min(1,Math.abs(z)/33);
-    return origin-9+68*Math.pow(u,3.4)+1.2*Math.sin(z*.44)+.55*Math.sin(z*1.37);
+    const az=Math.abs(z);
+    return origin-9+(Math.hypot(az,7)-7)/.85+1.2*Math.sin(z*.44)+.55*Math.sin(z*1.37);
   }
   function rightEdge(z,origin){
-    return origin+263-171*Math.pow(Math.abs(z)/33,2.6)+2.8*Math.sin(z*.49);
+    return origin+Math.sqrt(280*280-z*z)+2.8*Math.sin(z*.17);
   }
   // Both sides of the turf mesh provide the exact upper seam for the rock shell.
   const rim=[];
@@ -211,7 +213,7 @@ function createEarthCut(T,scene){
   function trimDetails(geometry,coords,stride,origin){
     const kept=[];
     for(let i=0;i<coords.length;i+=stride){
-      if(Math.abs(coords[i+2])>32.8||coords[i]<leftEdge(coords[i+2],origin)+.12)continue;
+      if(coords[i]<leftEdge(coords[i+2],origin)+.12)continue;
       for(let j=0;j<stride/3;j++)kept.push(i/3+j);
     }
     geometry.setIndex(kept);
