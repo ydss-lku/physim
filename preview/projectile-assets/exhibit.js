@@ -81,7 +81,7 @@ function createProjectileExhibit(canvas) {
   // The flat terrace spans both wheel tracks, including their front and rear edges.
   const groundGeometry=new T.BufferGeometry();
   const faceColors=[],indices=[];
-  const bands=[0x687455,0x71664f,0x514c40];
+  const bands=[0xffffff,0xffffff,0x665442];
   const columns=6, rows=4;
   const groundVertices=new Float32Array(columns*rows*3);
   for(let row=0;row<rows;row++){
@@ -97,15 +97,56 @@ function createProjectileExhibit(canvas) {
   groundGeometry.setIndex(indices);
   groundGeometry.setAttribute('position',new T.BufferAttribute(groundVertices,3));
   groundGeometry.setAttribute('color',new T.Float32BufferAttribute(faceColors,3));
-  const ground=part(scene,groundGeometry,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));
+  const fieldOrigin={value:0}, fieldUnit={value:1};
+  const turf=new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide});
+  turf.onBeforeCompile=shader=>{
+    shader.uniforms.fieldOrigin=fieldOrigin;
+    shader.uniforms.fieldUnit=fieldUnit;
+    shader.vertexShader=shader.vertexShader.replace('#include <common>',
+      '#include <common>\nuniform float fieldOrigin, fieldUnit; varying vec2 fieldMetres;')
+      .replace('#include <begin_vertex>',
+        '#include <begin_vertex>\nfieldMetres=vec2((position.x-fieldOrigin)/fieldUnit,position.z/fieldUnit);');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
+      '#include <common>\nvarying vec2 fieldMetres;')
+      .replace('#include <color_fragment>',`
+        #include <color_fragment>
+        vec2 q=fieldMetres;
+        float footprint=max(fwidth(q.x),fwidth(q.y));
+        float aa=max(.009,footprint*.65);
+        // Alternating mowing passes, a red synthetic runway and painted sector markings.
+        float stripe=smoothstep(-.09,.09,sin(q.x*.57));
+        vec3 lawn=mix(vec3(.052,.216,.073),vec3(.083,.28,.094),stripe);
+        float grain=fract(sin(dot(floor(q*85.),vec2(37.1,91.7)))*1738.3);
+        lawn*=1.+(grain-.5)*.11*(1.-smoothstep(.004,.02,footprint));
+        float endLine=1.45-.095*q.y*q.y;
+        float lane=(1.-smoothstep(endLine-aa,endLine+aa,q.x))*(1.-smoothstep(1.35-aa,1.35+aa,abs(q.y)));
+        vec3 surface=mix(lawn,vec3(.37,.082,.05),lane);
+        float side=abs(abs(q.y)-1.29);
+        float arc=abs(q.x-endLine);
+        float paint=max((1.-smoothstep(.025,.025+aa,side))*step(q.x,endLine),
+                        (1.-smoothstep(.045,.045+aa,arc))*step(abs(q.y),1.32));
+        float spread=1.29+.24*max(0.,q.x-1.3);
+        float boundary=abs(abs(q.y)-spread);
+        paint=max(paint,(1.-smoothstep(.035,.035+aa,boundary))*step(1.3,q.x));
+        float radius=length(vec2(q.x+4.,q.y));
+        float distanceArc=abs(mod(radius+5.,10.)-5.);
+        paint=max(paint,(1.-smoothstep(.04,.04+aa,distanceArc))*step(2.,q.x)*step(abs(q.y),spread));
+        surface=mix(surface,vec3(.84,.87,.77),paint);
+
+        float area=abs(dFdx(q.x)*dFdy(q.y)-dFdy(q.x)*dFdx(q.y));
+        diffuseColor.rgb*=mix(vec3(.37,.29,.17),surface,step(.00000001,area));
+      `);
+  };
+  const ground=part(scene,groundGeometry,turf);
   ground.castShadow=false;
   ground.frustumCulled=false;
   function groundUnderWheels(size,datum,landingX){
     const wheelX=rig.position.x, contact=rig.position.y-1.118*size;
+    fieldOrigin.value=wheelX; fieldUnit.value=size;
     const edge=wheelX+1.03*size;
     const radius=ball.scale.x;
     const field=datum-radius;
-    const run=Math.max(.3*size,Math.min(2*size,(landingX-edge)*.65));
+    const run=Math.max(.3*size,Math.min((field>contact?22:2)*size,(landingX-edge)*.65));
     const xs=[wheelX-3000,wheelX-2.5*size,edge,edge+run,Math.max(edge+run+size,landingX),Math.max(edge+run,landingX)+3000];
     const front=1.18*size;
     for(let col=0;col<columns;col++){
@@ -114,7 +155,7 @@ function createProjectileExhibit(canvas) {
         const i=3*(row*columns+col);
         groundVertices[i]=xs[col];
         groundVertices[i+1]=top-(row===2?.16*size:row===3?Math.max(2200,Math.abs(contact-field)+size):0);
-        groundVertices[i+2]=row===0?-3*size:front;
+        groundVertices[i+2]=row===0?-Math.min(10,4+Math.max(0,(xs[col]-edge)/size)*.20)*size:front+Math.min(9*size,Math.max(0,xs[col]-edge)*.22);
       }
     }
     groundGeometry.attributes.position.needsUpdate=true;
