@@ -225,7 +225,7 @@ function createProjectileExhibit(canvas) {
     if(ready || view.active)renderer.render(scene,camera);
     else{
       alignSideCamera(flightCamera,w,h,0,0,rig.position.x-2.8*size,
-        my-flight.y0*size+2.4*size);
+        my-flight.y0*size+4.2*size);
       renderer.render(scene,flightCamera);
     }
   };

@@ -141,13 +141,29 @@ function createEarthCut(T,scene){
   const labels=[];
   function makeLabel(radius){
     const canvas=document.createElement('canvas');
-    canvas.width=192;canvas.height=64;
+    canvas.width=512;canvas.height=128;
     const ctx=canvas.getContext('2d');
-    ctx.font='bold 44px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.lineJoin='round';ctx.lineWidth=6;ctx.strokeStyle='#364232';
-    ctx.strokeText(radius+' m',96,32);ctx.fillStyle='#fffef2';ctx.fillText(radius+' m',96,32);
-    const sprite=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(canvas),transparent:true,depthWrite:false,toneMapped:false}));
-    root.add(sprite);return sprite;
+    ctx.font='600 96px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='#fffdf0';ctx.fillText(radius+' m',256,67);
+    const map=new T.CanvasTexture(canvas);map.anisotropy=4;
+    // Lay the lettering on a narrow annular strip, following the paint on the turf.
+    const height=Math.min(3.1,1.35+radius*.024),width=height*4;
+    const angle=-Math.asin(Math.min(.46,24/radius));
+    const coords=[],uv=[],indices=[];
+    for(let j=0;j<=16;j++){
+      const u=j/16,t=angle+(u-.5)*width/radius;
+      for(let v=0;v<=1;v++){
+        const r=radius+.16+v*height;
+        coords.push(r*Math.cos(t),.012,r*Math.sin(t));uv.push(u,v);
+      }
+      if(j){const n=2*j;indices.push(n-2,n-1,n,n,n-1,n+1);}
+    }
+    const geometry=new T.BufferGeometry();
+    geometry.setAttribute('position',new T.Float32BufferAttribute(coords,3));
+    geometry.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geometry.setIndex(indices);
+    const label=new T.Mesh(geometry,new T.MeshBasicMaterial({map,transparent:true,
+      depthWrite:false,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,toneMapped:false}));
+    root.add(label);return label;
   }
   function leftEdge(z,origin){
     const u=Math.min(1,Math.abs(z)/33);
@@ -229,10 +245,7 @@ function createEarthCut(T,scene){
       if(!label.visible)return;
       const fade=Math.min(1,Math.max(0,(time-radius/vx)/.65));
       label.material.opacity=fade*fade*(3-2*fade);
-      const width=Math.min(5,Math.max(1.8,42/size));
-      const outside=radius+width*.62;
-      label.position.set(marks.value.x+outside*.94,.10+width/6,outside*.3412);
-      label.scale.set(width,width/3,1);
+      label.position.x=marks.value.x;
     });
     root.position.set(wheelX,field,0);root.scale.setScalar(size);toe.position.y=depth;
     const origin=marks.value.x;
