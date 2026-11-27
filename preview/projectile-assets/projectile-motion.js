@@ -217,312 +217,80 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 1. 繪製即時拋射軌跡圖 ======
   let trajectoryView;
   function drawTrajectory() {
-    const { ctx, w, h, strokeScale } = setupCanvas(trajCanvas);
-    ctx.clearRect(0, 0, w, h);
-
-    const pad = { left: 62, right: 42, top: 32, bottom: 48 };
-    const plotW = w - pad.left - pad.right;
-    const plotH = h - pad.top - pad.bottom;
-
-    const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    const comparison = state.mode === "analysis" && state.showCompare && state.theta !== 45
-      ? calcPhysics(45, state.v0, state.y0, state.g) : null;
-    const range = Math.max(p.R, comparison?.R ?? 0);
-    const height = Math.max(p.H, comparison?.H ?? 0);
-    const worldMaxY = height > 0 ? height * 1.18 : 1;
-    const verticalFlight = range === 0 && height > 0;
-    const worldWidth = range > 0 ? range * 1.15 : worldMaxY * plotW / plotH;
-    const worldMinX = verticalFlight ? -worldWidth / 2 : 0;
-    const worldMaxX = worldMinX + worldWidth;
-    const scaleX = plotW / worldWidth;
-    const scaleY = plotH / worldMaxY;
-
-    const toPxX = x => pad.left + (x - worldMinX) * scaleX;
-    const toPxY = y => pad.top + plotH - y * scaleY;
-
-    trajectoryView = { p, toPxX, toPxY };
-    // 格線
-    const xStep = niceStep(worldWidth, Math.max(2, Math.min(6, Math.floor(plotW / 72))));
-    const yStep = niceStep(worldMaxY, Math.max(2, Math.min(5, Math.floor(plotH / 38))));
-
-    ctx.strokeStyle = chartInk.grid;
-    ctx.lineWidth = 1.5 * strokeScale;
-    ctx.font = "bold 13px sans-serif";
-    ctx.fillStyle = chartInk.muted;
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    for (let x = Math.ceil(worldMinX / xStep) * xStep; x <= worldMaxX; x += xStep) {
-      const px = toPxX(x);
-      ctx.beginPath();
-      ctx.moveTo(px, pad.top);
-      ctx.lineTo(px, pad.top + plotH);
-      ctx.stroke();
-      ctx.fillText(axisLabel(x, xStep), px, pad.top + plotH + 8);
+    const {ctx,w,h} = setupCanvas(trajCanvas);
+    const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
+    const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
+    const range = Math.max(p.R,reference?.R || 0);
+    const scale = Math.min((w-105)/Math.max(1,range),(h-104)/Math.max(2,p.H,reference?.H || 0));
+    const start = range < .001 ? w/2 : 42;
+    const floor = h-54;
+    const toPxX = x => start+x*scale;
+    const toPxY = y => floor-y*scale;
+    trajectoryView = {p,toPxX,toPxY};
+    ctx.clearRect(0,0,w,h);
+    const styles = getComputedStyle(document.querySelector(".shell"));
+    const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());
+    ctx.fillStyle=chartInk.grid;
+    ctx.fillRect(0,floor,w,2);
+    ctx.font="12px sans-serif";
+    ctx.fillStyle=chartInk.muted;
+    const step=niceStep((w-start)/scale,5);
+    for(let x=0;toPxX(x)<w-22;x+=step){
+      ctx.fillRect(toPxX(x),floor,1,6);
+      ctx.fillText(x+" m",toPxX(x)-5,floor+21);
     }
-
-    ctx.textAlign = "right";
-    ctx.textBaseline = "middle";
-    for (let y = 0; y <= worldMaxY; y += yStep) {
-      const py = toPxY(y);
+    function path(model,end,color,dash){
       ctx.beginPath();
-      ctx.moveTo(pad.left, py);
-      ctx.lineTo(pad.left + plotW, py);
-      ctx.stroke();
-      ctx.fillText(axisLabel(y, yStep), pad.left - 10, py);
-    }
-
-    ctx.fillStyle = chartInk.grid;
-    ctx.fillRect(pad.left, toPxY(0), plotW, 8);
-
-    // 主軸
-    ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 3 * strokeScale;
-    ctx.beginPath();
-    ctx.moveTo(toPxX(0), pad.top);
-    ctx.lineTo(toPxX(0), pad.top + plotH);
-    ctx.moveTo(pad.left, pad.top + plotH);
-    ctx.lineTo(pad.left + plotW, pad.top + plotH);
-    ctx.stroke();
-
-    ctx.fillStyle = chartInk.ink;
-    ctx.font = "bold 14px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText("x (m)", pad.left + plotW, pad.top + plotH + 30);
-    ctx.textAlign = "left";
-    ctx.fillText("y (m)", pad.left - 50, pad.top - 16);
-
-    // 高台
-    if (state.y0 > 0) {
-      const platTop = toPxY(state.y0);
-      const platBot = toPxY(0);
-      ctx.fillStyle = chartInk.grid;
-      ctx.strokeStyle = chartInk.axis;
-      ctx.lineWidth = 2 * strokeScale;
-      ctx.fillRect(toPxX(0) - 22, platTop, 22, platBot - platTop);
-      ctx.strokeRect(toPxX(0) - 22, platTop, 22, platBot - platTop);
-    }
-
-    // 對照線 (+45° 參考軌跡)
-    if (comparison) {
-      const p45 = comparison;
-      ctx.save();
-      ctx.strokeStyle = chartInk.guide;
-      ctx.lineWidth = 3 * strokeScale;
-      ctx.setLineDash([8, 6]);
-      ctx.beginPath();
-      for (let i = 0; i <= 80; i++) {
-        const tt = (p45.T * i) / 80;
-        const pt45 = posAtTime(tt, p45);
-        if (i === 0) ctx.moveTo(toPxX(pt45.x), toPxY(pt45.y));
-        else ctx.lineTo(toPxX(pt45.x), toPxY(pt45.y));
+      for(let i=0;i<=80;i++){
+        const pos=posAtTime(end*i/80,model);
+        if(i===0)ctx.moveTo(toPxX(pos.x),toPxY(pos.y));
+        else ctx.lineTo(toPxX(pos.x),toPxY(pos.y));
       }
-      ctx.stroke();
-      ctx.restore();
+      ctx.setLineDash(dash);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
     }
-
-    // 拋射軌跡線
-    if (p.T > 0) {
-      ctx.save();
-      ctx.strokeStyle = state.mode === "velocity" ? chartInk.axis : chartInk.trace;
-      ctx.lineWidth = (state.mode === "velocity" ? 1.5 : 4.5) * strokeScale;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      const steps = 120;
-      for (let i = 0; i <= steps; i++) {
-        const tt = (p.T * i) / steps;
-        const pt = posAtTime(tt, p);
-        const px = toPxX(pt.x);
-        const py = toPxY(pt.y);
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // 等時距閃光點
-    if (state.mode === "trajectory" && state.showStrobe && p.T > 0) {
-      const dt = p.T / 10;
-      for (let i = 0; i <= 10; i++) {
-        const tt = i * dt;
-        const pt = posAtTime(tt, p);
-        const px = toPxX(pt.x);
-        const py = toPxY(pt.y);
-
-        if (i > 0 && p.vx > 0) {
-          ctx.save();
-          ctx.strokeStyle = chartInk.guide;
-          ctx.lineWidth = 1.8 * strokeScale;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath();
-          ctx.moveTo(px, py);
-          ctx.lineTo(px, toPxY(0));
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        ctx.beginPath();
-        ctx.arc(px, py, 5 * strokeScale, 0, Math.PI * 2);
-        ctx.fillStyle = chartInk.field;
-        ctx.fill();
-        ctx.lineWidth = 2.8 * strokeScale;
-        ctx.strokeStyle = chartInk.trace;
-        ctx.stroke();
-      }
-    }
-
-    // 最大高度 H 標記
-    if (state.mode !== "velocity" && p.H > 0) {
-      const peakX = state.theta > 0 ? p.vx * p.tPeak : 0;
-      const pxPeak = toPxX(peakX);
-      const pyPeak = toPxY(p.H);
-      const pyGround = toPxY(0);
-
-      ctx.save();
-      ctx.strokeStyle = chartInk.measure;
-      ctx.lineWidth = 2.5 * strokeScale;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath();
-      ctx.moveTo(pxPeak, pyPeak);
-      ctx.lineTo(pxPeak, pyGround);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(pxPeak, pyPeak, 6 * strokeScale, 0, Math.PI * 2);
-      ctx.fillStyle = chartInk.measure;
-      ctx.fill();
-
-      ctx.fillStyle = chartInk.measure;
-      ctx.font = "bold 14px sans-serif";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "bottom";
-      const labelX = Math.min(pxPeak + 8, pad.left + plotW - 110);
-      ctx.fillText(`H = ${p.H.toFixed(1)} m`, labelX, Math.max(pad.top + 16, pyPeak - 6));
-    }
-
-    // 水平射程 R 標記
-    if (state.mode !== "velocity" && p.R > 0.1) {
-      const pxEnd = toPxX(p.R);
-      const pyGround = toPxY(0);
-
-      ctx.beginPath();
-      ctx.arc(pxEnd, pyGround, 6.5 * strokeScale, 0, Math.PI * 2);
-      ctx.fillStyle = chartInk.measure;
-      ctx.fill();
-
-      ctx.fillStyle = chartInk.measure;
-      ctx.font = "bold 14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillText(`R = ${p.R.toFixed(1)} m`, Math.min(pxEnd, pad.left + plotW - 48), pyGround - 10);
-    }
-
-    // Project the initial velocity through the same axes as the trajectory.
-    const startX = toPxX(0);
-    const startY = toPxY(state.y0);
-    const tangentAngle = Math.atan2(-p.vy0 * scaleY, p.vx * scaleX);
-    const dx = Math.cos(tangentAngle);
-    const dy = Math.sin(tangentAngle);
-    const reach = Math.min(125, plotW * 0.42);
-    const verticalRoom = dy < 0 ? startY - 4 : h - 4 - startY;
-    const tangentLength = Math.min(reach, verticalRoom / Math.max(Math.abs(dy), 1e-9));
-    const radius = Math.min(30, tangentLength * 0.35);
-
+    // The tilting launch rail ends at the ball centre at release.
     ctx.save();
-    ctx.strokeStyle = chartInk.axis;
-    ctx.lineWidth = 1.8 * strokeScale;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(startX + (state.theta === 0 ? reach : radius + 20), startY);
-    if (state.theta !== 0) {
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(startX + tangentLength * dx, startY + tangentLength * dy);
-    }
-    ctx.stroke();
-    if (state.theta !== 0) {
-      ctx.setLineDash([]);
-      ctx.strokeStyle = chartInk.component;
-      ctx.beginPath();
-      ctx.arc(startX, startY, radius, 0, tangentAngle, tangentAngle < 0);
-      ctx.stroke();
+    ctx.translate(start,toPxY(state.y0));
+    ctx.fillStyle=chartInk.muted;
+    ctx.fillRect(-17,8,20,4);
+    ctx.fillRect(-10,4,4,7);
+    ctx.rotate(-state.theta*Math.PI/180);
+    ctx.strokeStyle=chartInk.muted;
+    ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(-27,5);ctx.lineTo(2,5);ctx.stroke();
+    for(let n=0;n<2;n++){
+      ctx.beginPath();ctx.arc(-20+n*10,0,4,0,2*Math.PI);ctx.stroke();
     }
     ctx.restore();
-    // 目前球體位置與加長速度向量
-    const curT = Math.min(state.t, p.T);
-    const cur = posAtTime(curT, p);
-    const ballPxX = toPxX(cur.x);
-    const ballPxY = toPxY(cur.y);
-
-    if (state.mode === "velocity") {
-      // Express both velocity components with the same time multiplier, then
-      // project through the position axes so the resultant follows the tangent.
-      const impactVy = Math.sqrt(p.vy0 ** 2 + 2 * state.g * state.y0);
-      const longest = Math.hypot(p.vx * scaleX, impactVy * scaleY);
-      const arrowTime = Math.min(plotW, plotH) * 0.36 / (longest || 1);
-      const tipX = ballPxX + cur.vx * scaleX * arrowTime;
-      const tipY = ballPxY - cur.vy * scaleY * arrowTime;
-      const horizontalOnly = Math.abs(cur.vy) < 1e-9;
-      const verticalOnly = Math.abs(cur.vx) < 1e-9;
-      if (Math.abs(cur.vx) > 0.2 && Math.abs(cur.vy) > 0.2) {
-        ctx.save();
-        ctx.strokeStyle = chartInk.guide;
-        ctx.lineWidth = 2 * strokeScale;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(tipX, ballPxY);
-        ctx.lineTo(tipX, tipY);
-        ctx.lineTo(ballPxX, tipY);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      if (!horizontalOnly && Math.abs(cur.vx) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, tipX, ballPxY, chartInk.component, 2.5 * strokeScale, 12 * strokeScale, [9, 5]);
-        const lblY = cur.vy >= 0 ? ballPxY + 20 : ballPxY - 20;
-        drawVectorLabel(ctx, `vₓ=${cur.vx.toFixed(1)}`, (ballPxX + tipX) / 2, lblY, chartInk.component, w, h, strokeScale);
-      }
-
-      if (!verticalOnly && Math.abs(cur.vy) > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, ballPxX, tipY, chartInk.component, 2.5 * strokeScale, 12 * strokeScale, [2, 4]);
-        drawVectorLabel(ctx, `vᵧ=${cur.vy.toFixed(1)}`, ballPxX - 42, (ballPxY + tipY) / 2, chartInk.component, w, h, strokeScale);
-      }
-
-      const vTotal = Math.hypot(cur.vx, cur.vy);
-      if (vTotal > 0.1) {
-        drawArrow(ctx, ballPxX, ballPxY, tipX, tipY, chartInk.trace, 5.5 * strokeScale, 17 * strokeScale);
-        const offsetX = cur.vx >= 0 ? 18 : -18;
-        const offsetY = cur.vy >= 0 ? -16 : 16;
-        const name = horizontalOnly ? "v = vₓ" : verticalOnly ? (cur.vy < 0 ? "v = |vᵧ|" : "v = vᵧ") : "v";
-        drawVectorLabel(ctx, `${name}=${vTotal.toFixed(1)}`, tipX + offsetX, tipY + offsetY, chartInk.trace, w, h, strokeScale);
-      }
-      if (horizontalOnly || verticalOnly) {
-        const zero = horizontalOnly && verticalOnly ? "vₓ = vᵧ = 0" : horizontalOnly ? "vᵧ = 0" : "vₓ = 0";
-        drawVectorLabel(ctx, zero, ballPxX - 40, ballPxY + 19, chartInk.component, w, h, strokeScale);
+    if(reference)path(reference,reference.T,chartInk.guide,[6,5]);
+    path(p,p.T,chartInk.muted,[2,6]);
+    path(p,state.t,chartInk.trace,[]);
+    if(state.showStrobe){
+      ctx.fillStyle=chartInk.trace;
+      for(let t=0;t<=state.t;t+=.25){
+        const pos=posAtTime(t,p);
+        ctx.beginPath();ctx.arc(toPxX(pos.x),toPxY(pos.y),2.8,0,2*Math.PI);ctx.fill();
       }
     }
-
-    // 拋體球本體
-    ctx.beginPath();
-    ctx.arc(ballPxX, ballPxY, 10.5 * strokeScale, 0, Math.PI * 2);
-    ctx.fillStyle = chartInk.ink;
-    ctx.fill();
-    ctx.lineWidth = 3.2 * strokeScale;
-    ctx.strokeStyle = chartInk.ink;
-    ctx.stroke();
-
-    if (state.mode === "velocity") {
-      ctx.font = "bold 13px sans-serif";
-      ctx.textAlign = "right";
-      ctx.textBaseline = "top";
-      ctx.fillStyle = chartInk.component;
-      ctx.fillText("m/s", w - 16, 10);
-    }
+    const pos=posAtTime(state.t,p);
+    const x=toPxX(pos.x), y=toPxY(pos.y);
+    // A common speed scale makes all three vectors comparable throughout the flight.
+    const maxSpeed=Math.hypot(p.vx,p.vy0-state.g*p.T) || 1;
+    [[p.vx,0],[0,pos.vy],[p.vx,pos.vy]].forEach(([vx,vy],i)=>{
+      const length=Math.hypot(vx,vy);
+      const dx=42*vx/maxSpeed, dy=-42*vy/maxSpeed;
+      const dial=document.querySelectorAll(".dial")[i];
+      const needle=dial.querySelector(".needle");
+      const tip=46*length/maxSpeed, head=Math.min(7,tip*.45);
+      needle.setAttribute("d",length<1e-8?"":"M0 1.5 L"+(tip-head)+" 1.5 v3 l"+head+" -4.5 -"+head+" -4.5 v3 H0 Z");
+      needle.setAttribute("transform","rotate("+Math.atan2(-vy,vx)*180/Math.PI+")");
+      const reading=[vx,vy,length][i];
+      dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
+      drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
+    });
+    ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
   }
 
-  // ====== 2. 繪製 H(θ) 與 R(θ) 圖表 ======
   function drawAngleChart(canvas, type) {
     const { ctx, w, h, strokeScale } = setupCanvas(canvas);
     ctx.clearRect(0, 0, w, h);

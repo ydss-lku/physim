@@ -110,3 +110,16 @@ html[data-theme=tech] .flight-chart{color:#9fdff3}
 html[data-theme=tech] .flight-chart+ .flight-chart{color:#ffc09b}
 #jumpPeak{width:auto;min-height:44px;padding-inline:10px}
 @media(max-width:620px){.flight-charts{grid-template-columns:1fr}.flight-chart+ .flight-chart{border-inline-start:0;border-top:1px solid #72818b66}}
+.observation{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(0,1fr);background:var(--field);border:1px solid var(--line)}
+.range-scene,.vector-panel{min-width:0;padding:16px}.vector-panel{border-inline-start:1px solid var(--line)}
+.observation h2{margin-bottom:10px}.observation #livePosTag{position:static;font-size:.85rem;text-align:left}
+main .observation .viewport{height:clamp(220px,24vw,315px);width:100%;max-width:none}
+.dial-bank{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:18px}
+.dial{display:grid;justify-items:center;align-content:start;gap:3px;padding:12px 2px;border:1px solid var(--line);border-bottom:3px solid currentColor;background:var(--panel);font-variant-numeric:tabular-nums}
+.dial i{font:italic bold 25px Georgia}.dial svg{width:100%;max-width:132px}.rim,.axes{fill:none;stroke:var(--line)}.axes{stroke-dasharray:2 4}.needle{stroke:currentColor;fill:currentColor;stroke-linejoin:round}
+.dial output{font-size:clamp(16px,2vw,26px);font-weight:bold}.dial small{color:var(--muted)}
+.shell{--horizontal:#156686;--vertical:#a04820;--resultant:#73559c}.vx{color:var(--horizontal)}.vy{color:var(--vertical)}.v{color:var(--resultant)}
+html[data-theme=tech] .shell{--horizontal:#9fdff3;--vertical:#ffc09b;--resultant:#d5b6ee}
+.transport{display:flex;align-items:center;gap:15px;padding:10px 14px;background:var(--panel)}.transport .timeline{flex:1}.transport .toolbar{margin:0}
+.launch-settings{padding:14px;background:var(--field)}.launch-settings aside{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:start;gap:10px 24px}.launch-settings aside>*{grid-column:auto}.launch-settings .row{grid-column:1/-1}.launch-settings .gravity{align-self:center}
+@media(max-width:760px){.observation{grid-template-columns:1fr}.vector-panel{border-inline-start:0;border-top:1px solid var(--line)}.dial-bank{margin-top:6px}.dial svg{max-height:80px}.transport{flex-wrap:wrap}.transport .timeline{min-width:200px}.launch-settings aside{grid-template-columns:repeat(2,minmax(0,1fr))}.range-scene,.vector-panel{padding:10px}}
