@@ -209,7 +209,7 @@ function createProjectileExhibit(canvas) {
   track.frustumCulled=false;
   scene.add(track);
   function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset}){
-    orbit.rotation.set(0,view.yaw,0,'YXZ');
+    orbit.rotation.set(view.pitch,view.yaw,0,'YXZ');
     camera.zoom=view.zoom;
     track.visible=view.active;
     if(view.active){
