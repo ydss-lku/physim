@@ -270,17 +270,23 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
     const scale=Math.min(w*.39,h*.38)/maxSpeed;
     const dx=vx*scale,dy=-vy*scale;
-    const shifts=vectorOffsets(dx,dy);
-    const components=[[dx,0],[0,dy],[dx,dy]];
-    const starts=shifts.map(([ox,oy])=>[x+ox,y+oy]);
-    const tips=starts.map(([sx,sy],i)=>[sx+components[i][0],sy+components[i][1]]);
-    for(const i of [2,0,1])drawArrow(ctx,...starts[i],...tips[i],colors[i],i===2?4:3,i===2?13:9);
+    const horizontal=Math.abs(vy)<1e-8,vertical=Math.abs(vx)<1e-8;
+    const tips=[[x+dx,y],[x,y+dy],[x+dx,y+dy]];
+    if(!horizontal && !vertical){
+      ctx.save();
+      ctx.strokeStyle=chartInk.muted;ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(...tips[0]);ctx.lineTo(...tips[2]);ctx.lineTo(...tips[1]);ctx.stroke();
+      ctx.restore();
+      drawArrow(ctx,x,y,...tips[0],colors[0],3,9);
+      drawArrow(ctx,x,y,...tips[1],colors[1],3,9);
+    }
+    drawArrow(ctx,x,y,...tips[2],colors[2],3,11);
     ctx.font='bold 16px sans-serif';
     const occupied=[];
     // Intersect the shaft with a padded label rectangle, including both arrow ends.
-    function crosses(rect,tip,i){
+    function crosses(rect,tip){
       let enter=0,exit=1;
-      for(const [origin,end,min,max] of [[starts[i][0],tip[0],rect.l-3,rect.r+3],[starts[i][1],tip[1],rect.t-3,rect.b+3]]){
+      for(const [origin,end,min,max] of [[x,tip[0],rect.l-3,rect.r+3],[y,tip[1],rect.t-3,rect.b+3]]){
         const delta=end-origin;
         if(Math.abs(delta)<1e-8){if(origin<min || origin>max)return false;continue;}
         const a=(min-origin)/delta,b=(max-origin)/delta;
@@ -298,7 +304,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         if(occupied.some(o=>rect.l<o.r+3 && rect.r>o.l-3 && rect.t<o.b+3 && rect.b>o.t-3))return;
         const ballGap=Math.hypot(Math.max(l-x,0,x-rect.r),Math.max(t-y,0,y-rect.b));
         const score=(l-preferredX)**2+(t-preferredY)**2+
-          (ballGap<radius+2?1e6:0)+tips.filter((tip,i)=>crosses(rect,tip,i)).length*1e5;
+          (ballGap<radius+2?1e6:0)+tips.filter(tip=>crosses(rect,tip)).length*1e5;
         if(score<cost){cost=score;best=rect;}
       }
       consider(preferredX,preferredY);
@@ -310,9 +316,19 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.lineWidth=3;ctx.strokeStyle=chartInk.field;ctx.strokeText(text,px,py);
       ctx.fillStyle=colors[i];ctx.fillText(text,px,py);
     }
-    label(vx===0?'vₓ = 0':'vₓ',0,tips[0][0]+3,tips[0][1]+(shifts[0][1]<0?-20:4));
-    label(Math.abs(vy)<1e-8?'vᵧ = 0':'vᵧ',1,x-31,y+dy-9);
-    label('v',2,tips[2][0]+4,tips[2][1]+(shifts[2][1]>0?4:-20));
+    if(horizontal && vertical){
+      label('v = 0',2,x+radius+5,y-8);
+    }else if(horizontal){
+      label('v = vₓ',2,x+dx+5,y-8);
+      label('vᵧ = 0',1,x-24,y+radius+5);
+    }else if(vertical){
+      label('v = vᵧ',2,x+5,y+dy-9);
+      label('vₓ = 0',0,x+radius+5,y+5);
+    }else{
+      label('vₓ',0,x+dx+4,y+4);
+      label('vᵧ',1,x-25,y+dy-9);
+      label('v',2,x+dx+4,y+dy-17);
+    }
   }
   let trajectoryView;
   function drawTrajectory() {
