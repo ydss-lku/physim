@@ -664,7 +664,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function updateUI() {
     valTheta.textContent = `${draft.theta > 0 ? "+" : ""}${draft.theta}°`;
     valV0.textContent = `${draft.v0} m/s`;
-    valY0.textContent = `${draft.y0} m`;
+    valY0.textContent = draft.y0;
 
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
 
