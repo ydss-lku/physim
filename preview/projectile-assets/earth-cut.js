@@ -8,9 +8,9 @@ function createEarthCut(T,scene){
   function edgeX(z){
     return 3.05-.43*(Math.sqrt(z*z+6.)-2.45)+.78*Math.sin(z*.46)+.25*Math.sin(z*1.17)+.09*Math.sin(z*2.8);
   }
-  const zs=[-210,-160,-80];
-  for(let i=-200;i<=200;i++)zs.push(i*.22);
-  zs.push(80,160,210);
+  const zs=[];
+  for(let i=-150;i<=150;i++)zs.push(i*.22);
+
   const positions=[],weights=[],offsets=[],kinds=[],indices=[];
   const rows=[[-720,0,0,1],[-3,0,0,1],[-1.2,0,0,1],[-.91,.07,.09,1],
     [-.62,.23,.14,2],[-.29,.51,.16,2],[-.12,.80,.10,2],[.035,.96,.06,3],
@@ -76,7 +76,7 @@ function createEarthCut(T,scene){
       float side=radial.x < -1.8 ? length(radial+vec2(1.8,0.))-2.5 : (abs(radial.y)-2.5-.85*(radial.x+1.8))*.762;
       float edgeAA=max(.018,fwidth(side));
       float sector=1.-smoothstep(-edgeAA,edgeAA,side);
-      if(side>.035)discard;
+      earth*=mix(.84,1.,sector);
       float rim=1.-smoothstep(.028,.028+edgeAA,abs(side));
       earth=mix(earth,vec3(.76,.79,.68),rim*.8);
       float age=marks.y-band/max(.00001,marks.z);
@@ -150,13 +150,52 @@ function createEarthCut(T,scene){
     root.add(sprite);return sprite;
   }
   function leftEdge(z,origin){
-    const az=Math.abs(z);
-    return origin-1.8+(az<=2.5?-Math.sqrt(6.25-az*az):(az-2.5)/.85);
+    const u=Math.min(1,Math.abs(z)/33);
+    return origin-9+68*Math.pow(u,3.4)+1.2*Math.sin(z*.44)+.55*Math.sin(z*1.37);
+  }
+  function rightEdge(z,origin){
+    return origin+263-171*Math.pow(Math.abs(z)/33,2.6)+2.8*Math.sin(z*.49);
+  }
+  // Both sides of the turf mesh provide the exact upper seam for the rock shell.
+  const rim=[];
+  for(let i=0;i<zs.length;i++)rim.push(i);
+  for(let row=1;row<rows.length;row++)rim.push((row+1)*zs.length-1);
+  for(let i=zs.length-2;i>=0;i--)rim.push((rows.length-1)*zs.length+i);
+  for(let row=rows.length-2;row>0;row--)rim.push(row*zs.length);
+  const cliffGeometry=new T.BufferGeometry(),cliffPoints=[],cliffColors=[],cliffUV=[];
+  const levels=[[0,0,0x776746],[.065,.012,0x57493c],[.25,.032,0x998675],[.38,.09,0x655e58],[.64,.17,0x827e77],[.86,.28,0x645e60],[1,.47,0x46434b]];
+  const rock=new T.MeshStandardMaterial({map:bank.value,vertexColors:true,roughness:1,flatShading:true,side:T.DoubleSide});
+  const cliff=new T.Mesh(cliffGeometry,rock);root.add(cliff);cliff.receiveShadow=true;
+  function buildCliff(){
+    cliffPoints.length=cliffColors.length=cliffUV.length=0;
+    function vertex(index,level){
+      const j=rim[index%rim.length],x=pos.getX(j),z=pos.getZ(j);
+      const [drop,inset,tint]=levels[level];
+      const seam=Math.sin(x*.49+z*.52)+.48*Math.sin(x*1.14-z*.7);
+      const depth=7+4*Math.cos(z*.21+x*.08)+4*(1+Math.sin(x*.14-z*.31));
+      const shift=inset*(1+.18*seam);
+      const xx=x+(86-x)*shift,zz=z*(1-shift);
+      const yy=pos.getY(j)-drop*depth;
+      cliffPoints.push(xx,yy,zz);
+      const color=new T.Color(tint).multiplyScalar(1.8+.22*seam);
+      cliffColors.push(color.r,color.g,color.b);
+      cliffUV.push((xx*.71+zz*.53)*.37,yy*.37);
+    }
+    for(let i=0;i<rim.length;i++){
+      for(let k=1;k<levels.length;k++){
+        vertex(i,k-1);vertex(i+1,k);vertex(i+1,k-1);
+        vertex(i,k-1);vertex(i,k);vertex(i+1,k);
+      }
+      vertex(i,levels.length-1);vertex(i+1,levels.length-1);
+      cliffPoints.push(86,-22,0);cliffColors.push(.18,.16,.15);cliffUV.push(0,0);
+    }
+    for(const [key,data,n] of [['position',cliffPoints,3],['color',cliffColors,3],['uv',cliffUV,2]])cliffGeometry.setAttribute(key,new T.Float32BufferAttribute(data,n));
+    cliffGeometry.computeVertexNormals();cliffGeometry.computeBoundingSphere();
   }
   function trimDetails(geometry,coords,stride,origin){
     const kept=[];
     for(let i=0;i<coords.length;i+=stride){
-      if(coords[i]<leftEdge(coords[i+2],origin)+.12)continue;
+      if(Math.abs(coords[i+2])>32.8||coords[i]<leftEdge(coords[i+2],origin)+.12)continue;
       for(let j=0;j<stride/3;j++)kept.push(i/3+j);
     }
     geometry.setIndex(kept);
@@ -210,11 +249,11 @@ function createEarthCut(T,scene){
             rimHeight=py+(y-py)*(boundary-px)/(x-px);
             for(let n=i;n<j;n+=zs.length)pos.setY(n,rimHeight);
           }
-          pos.setX(j,Math.max(boundary,x));pos.setY(j,y);
+          pos.setX(j,Math.min(rightEdge(zs[i],origin),Math.max(boundary,x)));pos.setY(j,y);
         }
       }
       pos.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();
-      previousOrigin=origin;previousDepth=depth;
+      buildCliff();previousOrigin=origin;previousDepth=depth;
     }
     darkness.value=night;grass.material.color.setScalar(night?.73:1);
     shadow.value.set((ball.position.x-wheelX)/size,Math.max(0,(ball.position.y-field)/ball.scale.x-1),ball.scale.x/size);
