@@ -77,7 +77,7 @@ function createProjectileExhibit(canvas) {
   key.shadow.mapSize.set(1024,1024);key.shadow.normalBias=.4;scene.add(key);
   scene.add(new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
   const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
-  // A solid cross-section joins the carriage terrace to the lower field.
+  // Two level surfaces meet at a retaining face. Neither surface tilts toward the landing point.
   // The flat terrace spans both wheel tracks, including their front and rear edges.
   const groundGeometry=new T.BufferGeometry();
   const faceColors=[],indices=[];
@@ -143,19 +143,18 @@ function createProjectileExhibit(canvas) {
   function groundUnderWheels(size,datum,landingX){
     const wheelX=rig.position.x, contact=rig.position.y-1.118*size;
     fieldOrigin.value=wheelX; fieldUnit.value=size;
-    const edge=wheelX+1.03*size;
-    const radius=ball.scale.x;
-    const field=datum-radius;
-    const run=Math.max(.3*size,Math.min((field>contact?22:2)*size,(landingX-edge)*.65));
-    const xs=[wheelX-3000,wheelX-2.5*size,edge,edge+run,Math.max(edge+run+size,landingX),Math.max(edge+run,landingX)+3000];
-    const front=3.2*size;
+    const field=datum-ball.scale.x;
+    const edge=wheelX+(field>contact?4.2:1.12)*size;
+    const xs=[wheelX-4000,wheelX-2.5*size,edge,edge,edge+size,Math.max(edge,landingX)+4000];
+    // A constant depth keeps the long field edges parallel to the horizontal x axis.
+    const back=-7*size, front=3.2*size;
     for(let col=0;col<columns;col++){
       const top=col<3?contact:field;
       for(let row=0;row<rows;row++){
         const i=3*(row*columns+col);
         groundVertices[i]=xs[col];
         groundVertices[i+1]=top-(row===2?.16*size:row===3?Math.max(2200,Math.abs(contact-field)+size):0);
-        groundVertices[i+2]=row===0?-Math.min(35,7+Math.max(0,(xs[col]-edge)/size)*.8)*size:front+Math.min(24*size,Math.max(0,xs[col]-edge)*.30);
+        groundVertices[i+2]=row===0?back:front;
       }
     }
     groundGeometry.attributes.position.needsUpdate=true;
