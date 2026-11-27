@@ -247,6 +247,25 @@ function createProjectileExhibit(canvas) {
     updateLandscape(w,h,mx,my,size);
     renderer.render(scene,camera);
   };
+  const portraitScene=new T.Scene();
+  portraitScene.environment=scene.environment;
+  const portraitBall=ball.clone();
+  portraitScene.add(portraitBall,key.clone(),rim.clone(),new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
+  const portraitCamera=new T.OrthographicCamera(-1,1,1,-1,1,2000);
+  portraitCamera.position.z=900;
+  render.portrait=(w,h,x,y,radius)=>{
+    const ratio=Math.min(devicePixelRatio||1,2);
+    if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
+      renderer.setPixelRatio(ratio); renderer.setSize(w,h,false);
+      previousWidth=w;previousHeight=h;previousRatio=ratio;
+    }
+    portraitCamera.left=-w/2;portraitCamera.right=w/2;
+    portraitCamera.top=h/2;portraitCamera.bottom=-h/2;
+    portraitCamera.updateProjectionMatrix();
+    portraitBall.position.set(x-w/2,h/2-y,0);
+    portraitBall.scale.setScalar(radius);
+    renderer.render(portraitScene,portraitCamera);
+  };
   render.cannonBounds=cannonBounds;
   return render;
 }

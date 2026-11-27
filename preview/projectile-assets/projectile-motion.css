@@ -134,3 +134,5 @@ main .observation .viewport{height:clamp(265px,28vw,380px)}
 #sideView{min-height:44px}.can-orbit{cursor:grab;touch-action:none}.can-orbit:active{cursor:grabbing}
 
 #viewTools{flex-wrap:wrap}.roll-control{display:flex;align-items:center;gap:7px}.roll-control input{width:clamp(85px,15vw,155px);min-height:44px}.roll-control output{min-width:4ch;text-align:right;font-variant-numeric:tabular-nums}
+
+.camera-choice{display:flex;gap:4px;margin:.45rem 0}.camera-choice button{min-height:44px}.camera-choice [aria-pressed=true]{color:var(--on);background:var(--selected)}

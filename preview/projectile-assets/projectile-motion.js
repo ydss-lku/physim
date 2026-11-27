@@ -242,12 +242,42 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     fingers.clear();
   }
   document.getElementById('sideView').onclick=()=>{resetView();updateUI();};
+  let closeUp=false;
+  const cameraChoices=[...document.querySelectorAll('[data-camera]')];
+  cameraChoices.forEach(button=>button.addEventListener('click',()=>{
+    closeUp=button.dataset.camera==='ball';
+    cameraChoices.forEach(choice=>choice.setAttribute('aria-pressed',String(choice===button)));
+    updateUI();
+  }));
+  function drawCloseUp(ctx,w,h,vx,vy,maxSpeed,colors){
+    ctx.clearRect(0,0,w,h);
+    const x=w*.42,y=h/2,radius=Math.min(32,h*.095,w*.08);
+    if(renderExhibit)renderExhibit.portrait(w,h,x,y,radius);
+    else {
+      ctx.beginPath();ctx.arc(x,y,radius,0,2*Math.PI);ctx.fillStyle=chartInk.muted;ctx.fill();
+    }
+    const scale=Math.min(w*.39,h*.38)/maxSpeed;
+    const dx=vx*scale,dy=-vy*scale;
+    const sameX=Math.abs(dy)<3,sameY=Math.abs(dx)<3;
+    // Use a wider resultant under collinear components so both colours remain visible.
+    drawArrow(ctx,x,y,x+dx,y+dy,colors[2],sameX||sameY?7:4,13);
+    drawArrow(ctx,x,y,x+dx,y,colors[0],3,9);
+    drawArrow(ctx,x,y,x,y+dy,colors[1],3,9);
+    ctx.font='bold 16px sans-serif';
+    const label=(text,px,py,color)=>{
+      ctx.lineWidth=3;ctx.strokeStyle=chartInk.field;ctx.strokeText(text,px,py);
+      ctx.fillStyle=color;ctx.fillText(text,px,py);
+    };
+    label(sameY && vx===0?'vₓ = 0':'vₓ',x+dx+5,y+19,colors[0]);
+    label(Math.abs(vy)<1e-8?'vᵧ = 0':'vᵧ',x-47,y+dy+(dy>0?15:-6),colors[1]);
+    label('v',x+dx+7,y+dy-6,colors[2]);
+  }
   let trajectoryView;
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
     const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
-    const canOrbit=Boolean(renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
+    const canOrbit=Boolean(!closeUp && renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
     viewTools.hidden=!canOrbit;
     trajCanvas.classList.toggle('can-orbit',canOrbit);
     if(!canOrbit && (view.active || fingers.size))resetView();
@@ -337,6 +367,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
       if(!ready)drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
     });
+    if(closeUp){
+      drawCloseUp(ctx,w,h,p.vx,pos.vy,maxSpeed,colors);
+      return;
+    }
     if(renderExhibit){
       if(view.active)ctx.clearRect(0,0,w,h);
       renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
@@ -767,6 +801,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   },{passive:false});
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
+    if(closeUp)return;
     if(!viewTools.hidden && event.button===0){
       fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       trajCanvas.setPointerCapture(event.pointerId);
@@ -782,6 +817,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     } else seekTrajectory(event);
   });
   trajCanvas.addEventListener("pointermove", event => {
+    if(closeUp)return;
     const previous=fingers.get(event.pointerId);
     if(previous){
       const distance=fingers.size===2?pinchDistance():0;
