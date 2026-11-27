@@ -8,10 +8,6 @@ function createProjectileExhibit(canvas) {
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.22;
   const scene = new T.Scene();
-  const camera = new T.OrthographicCamera();
-  camera.position.z = 48000;
-  camera.near = 1;
-  camera.far = 100000;
   const rig = new T.Group(), barrel = new T.Group();
   scene.add(rig);
   rig.add(barrel);
@@ -131,35 +127,15 @@ function createProjectileExhibit(canvas) {
     cachedAngle=theta;
     return bounds;
   }
-  const orbit=new T.Group();
-  orbit.rotation.order='YXZ';
-  orbit.add(camera);
-  scene.add(orbit);
-  const track=new T.Line(new T.BufferGeometry(),new T.LineBasicMaterial());
-  const vertices=new Float32Array(97*3);
-  track.geometry.setAttribute('position',new T.BufferAttribute(vertices,3));
-  track.frustumCulled=false;
-  scene.add(track);
+  function ease(t){t=Math.max(0,Math.min(1,t));return t*t*t*(10+t*(-15+6*t));}
   function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready}){
-    orbit.rotation.set(view.active?Math.min(-.10,view.pitch-.32):0,view.yaw,0,'YXZ');
-    camera.zoom=view.zoom;
-    track.visible=view.active;
-    if(view.active){
-      for(let i=0;i<97;i++){
-        const t=flight.T*i/96;
-        vertices[i*3]=start-w/2+flight.vx*t*size;
-        vertices[i*3+1]=h/2-muzzleY+(flight.vy0*t-flight.g*t*t/2)*size;
-      }
-      track.geometry.attributes.position.needsUpdate=true;
-      track.material.color.set(flight.color);
-    }
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
       renderer.setSize(w,h,false);
       previousWidth=w; previousHeight=h; previousRatio=ratio;
     }
-    camera.left=-w/2;camera.right=w/2;camera.top=h/2;camera.bottom=-h/2;camera.updateProjectionMatrix();
+
     const angle=theta*Math.PI/180;
     barrel.rotation.z=angle;
     const mx=start-w/2,my=h/2-muzzleY;
@@ -168,41 +144,32 @@ function createProjectileExhibit(canvas) {
     ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
     updateEarth(size,my-flight.y0*size-ball.scale.x,rig.position.y-1.118*size,rig.position.x,ball,document.documentElement.dataset.theme==="tech",mx,flight.time,flight.vx);
-    if(view.active){
-      // Frame the arc in the rotated camera's own plane, including its apex.
-      scene.updateMatrixWorld(true);
-      let left=Infinity,right=-Infinity,bottom=Infinity,top=-Infinity;
-      const point=new T.Vector3();
-      function include(x,y,z,margin){
-        point.set(x,y,z).applyMatrix4(camera.matrixWorldInverse);
-        left=Math.min(left,point.x-margin);right=Math.max(right,point.x+margin);
-        bottom=Math.min(bottom,point.y-margin);top=Math.max(top,point.y+margin);
-      }
-      for(let i=0;i<=96;i++)include(vertices[3*i],vertices[3*i+1],0,ball.scale.x+3);
-      include(rig.position.x,rig.position.y,0,size*2.3);
-      const fit=Math.max((right-left)/(w*.90),(top-bottom)/(h*.86),.34);
-      const cx=(left+right)/2,cy=(top+bottom)/2;
-      camera.left=cx-w*fit*.5;camera.right=cx+w*fit*.5;
-      camera.top=cy+h*fit*.5;camera.bottom=cy-h*fit*.5;
-      camera.updateProjectionMatrix();
+    const phase=ready?0:Math.min(1,flight.time/Math.max(.001,flight.T));
+    const sweep=ease(phase/.62),settle=ease((phase-.56)/.44);
+    const yaw=-.71+.36*sweep+.35*settle+view.yaw;
+    const pitch=.48-.18*sweep+(25*Math.PI/180-.30)*settle-view.pitch;
+    flightCamera.rotation.set(-pitch,yaw,0,'YXZ');
+    flightCamera.aspect=w/h;
+    const inverse=flightCamera.quaternion.clone().invert();
+    const points=[],bounds=new T.Box3(),v=new T.Vector3();
+    function include(x,y,z){
+      const q=new T.Vector3(x,y,z).sub(rig.position).applyQuaternion(inverse);
+      points.push(q);bounds.expandByPoint(q);
     }
-    if(ready){
-      // Look into the open side of the cut, with the carriage as the framing subject.
-      orbit.rotation.set(-.48,-.71,0,'YXZ');
-      scene.updateMatrixWorld(true);
-      const box=new T.Box2(),point=new T.Vector3();
-      const bounds=new T.Box3().setFromObject(rig,true);
-      for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z]){
-        point.set(x,y,z).applyMatrix4(camera.matrixWorldInverse);
-        box.expandByPoint(point);
-      }
-      const span=box.getSize(new T.Vector2()),center=box.getCenter(new T.Vector2());
-      const fit=Math.max(span.x/(w*.54),span.y/(h*.57));
-      center.x+=w*fit*.08;
-      camera.left=center.x-w*fit/2;camera.right=center.x+w*fit/2;
-      camera.top=center.y+h*fit/2;camera.bottom=center.y-h*fit/2;
-      camera.updateProjectionMatrix();
+    const carriage=new T.Box3().setFromObject(rig,true);
+    for(const x of [carriage.min.x,carriage.max.x])for(const y of [carriage.min.y,carriage.max.y])for(const z of [carriage.min.z,carriage.max.z])include(x,y,z);
+    for(let i=0;i<=32;i++){
+      const t=flight.time*i/32;
+      include(mx+flight.vx*t*size,my+(flight.vy0*t-flight.g*t*t/2)*size,0);
     }
+    const aim=bounds.getCenter(v);
+    const spread=.57+.29*ease(phase/.35),tan=Math.tan(flightCamera.fov*Math.PI/360);
+    let distance=0;
+    for(const q of points)distance=Math.max(distance,q.z+Math.max(
+      (Math.abs(q.x-aim.x)+.24*size)/(tan*spread*w/h),
+      (Math.abs(q.y-aim.y)+.24*size)/(tan*spread)));
+    flightCamera.position.set(aim.x,aim.y,distance).applyQuaternion(flightCamera.quaternion).add(rig.position);
+    flightCamera.zoom=view.zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
     if(inset){
       const iw=inset.w, ih=inset.h;
       const radius=Math.min(32,ih*.095,iw*.08);
@@ -210,8 +177,8 @@ function createProjectileExhibit(canvas) {
       alignSideCamera(portraitCamera,iw/zoom,ih/zoom,
         ball.position.x+iw*.08/zoom,ball.position.y,
         ball.position.x,ball.position.y+.55*size);
-      const showTrack=track.visible, showRig=rig.visible;
-      track.visible=false;rig.visible=false;
+      const showRig=rig.visible;
+      rig.visible=false;
       renderer.setViewport(0,0,iw,ih);renderer.setScissor(0,0,iw,ih);renderer.setScissorTest(true);
       renderer.render(scene,portraitCamera);
       const source=renderer.domElement;
@@ -219,15 +186,14 @@ function createProjectileExhibit(canvas) {
       inset.ctx.clearRect(0,0,iw,ih);
       inset.ctx.drawImage(source,0,source.height-sh,sw,sh,0,0,iw,ih);
       renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);
-      track.visible=showTrack;rig.visible=showRig;
+      rig.visible=showRig;
 
     }
-    if(ready || view.active)renderer.render(scene,camera);
-    else{
-      alignSideCamera(flightCamera,w,h,0,0,rig.position.x-2.8*size,
-        my-flight.y0*size+4.2*size);
-      renderer.render(scene,flightCamera);
-    }
+    renderer.render(scene,flightCamera);
+    return function project(horizontal,height){
+      v.set(mx+horizontal*size,my+(height-flight.y0)*size,0).project(flightCamera);
+      return {x:(v.x+1)*w/2,y:(1-v.y)*h/2};
+    };
   };
   // A level camera parallel to the flight plane preserves its x/y ruler.
   // A lens shift frames that plane while foreground and background retain perspective.

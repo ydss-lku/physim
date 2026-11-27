@@ -317,7 +317,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
   let trajectoryView;
   // Sample only elapsed simulation time so pausing and scrubbing reproduce the same flame.
-  function drawFireTrail(ctx,p,t,scale,toX,toY,w,h,radius){
+  function drawFireTrail(ctx,p,t,scale,toX,toY,w,h,radius,project){
     const head=posAtTime(t,p);
     const speed=Math.hypot(head.vx,head.vy);
 
@@ -326,7 +326,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     for(let j=0;j<=24;j++){
       const u=j/24,point=posAtTime(t-duration*u,p);
       const magnitude=Math.hypot(point.vx,point.vy)||1;
-      stations.push({x:toX(point.x),y:toY(point.y),nx:point.vy/magnitude,ny:point.vx/magnitude,u});
+      const screen=project?project(point.x,point.y):{x:toX(point.x),y:toY(point.y)};
+      stations.push({...screen,nx:point.vy/magnitude,ny:point.vx/magnitude,u});
     }
     const first=stations[0],last=stations[24];
     if(Math.hypot(last.x-first.x,last.y-first.y)<radius+2)return;
@@ -391,25 +392,29 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const floor=h-9+box.bottom;
     const toPxX = x => start+x*scale;
     const toPxY = y => floor-y*scale;
-    trajectoryView = {p,toPxX,toPxY};
+    const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
+    const project=renderExhibit?renderExhibit({ready,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
+      (x,y)=>({x:toPxX(x),y:toPxY(y)});
+    trajectoryView = {p,project};
     ctx.clearRect(0,0,w,h);
     const styles = getComputedStyle(document.querySelector(".shell"));
     const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());
     ctx.fillStyle=chartInk.grid;
-    if(!ready)ctx.fillRect(0,floor,w,2);
-    ctx.font="12px sans-serif";
-    ctx.fillStyle=chartInk.muted;
-    const step=niceStep((w-start)/scale,5);
-    for(let x=0;!ready && toPxX(x)<w-22;x+=step){
-      ctx.fillRect(toPxX(x),floor,1,6);
-      ctx.fillText(x+" m",toPxX(x)-5,floor+21<h-2 ? floor+21 : floor-5);
+    if(!ready && !view.active){
+      const step=niceStep(Math.max(4,pos.x),5),limit=Math.max(step*2,pos.x+step);
+      const origin=project(0,0),end=project(limit,0);
+      ctx.strokeStyle=chartInk.grid;ctx.beginPath();ctx.moveTo(origin.x,origin.y);ctx.lineTo(end.x,end.y);ctx.stroke();
+      ctx.font="12px sans-serif";ctx.fillStyle=chartInk.muted;
+      for(let x=0;x<=limit;x+=step){
+        const mark=project(x,0);ctx.fillRect(mark.x,mark.y,1,5);ctx.fillText(x+" m",mark.x-4,mark.y+18);
+      }
     }
     function path(model,end,color,dash,startTime=0,width=2,outline=false){
       ctx.beginPath();
       for(let i=0;i<=80;i++){
         const pos=posAtTime(startTime+(end-startTime)*i/80,model);
-        if(i===0)ctx.moveTo(toPxX(pos.x),toPxY(pos.y));
-        else ctx.lineTo(toPxX(pos.x),toPxY(pos.y));
+        const pt=project(pos.x,pos.y);
+        if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);
       }
       ctx.save();ctx.lineCap="round";ctx.lineJoin="round";ctx.setLineDash(dash);
       if(outline){ctx.strokeStyle=chartInk.field;ctx.lineWidth=width+2;ctx.stroke();}
@@ -434,7 +439,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     path(p,state.t,chartInk.trace,[],0,1.8,true);
     const fieldRadius=renderExhibit?Math.max(4,.235*scale):6;
     if(launched && state.t>0 && state.t<p.T){
-      drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h,fieldRadius);
+      drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h,fieldRadius,project);
     }
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
@@ -449,12 +454,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const reading=[vx,vy,length][i];
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
     });
-    const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
-    if(renderExhibit){
-      if(view.active)ctx.clearRect(0,0,w,h);
-      renderExhibit({ready,w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
-        view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g,color:chartInk.trace}});
-    }
     if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors,{model:p,pos,scale,fieldRadius});
     if(renderExhibit)return;
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
@@ -845,7 +844,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   chkCompare.addEventListener("change", (e) => { state.showCompare = e.target.checked; updateUI(); });
 
   function seekTrajectory(event) {
-    const { p, toPxX, toPxY } = trajectoryView;
+    const { p, project } = trajectoryView;
     const bounds = trajCanvas.getBoundingClientRect();
     const x = event.clientX - bounds.left;
     const y = event.clientY - bounds.top;
@@ -855,7 +854,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     for (let step = 0; step <= 500; step++) {
       const t = observedTime * step / 500;
       const point = posAtTime(t, p);
-      const d = (toPxX(point.x) - x) ** 2 + (toPxY(point.y) - y) ** 2;
+      const screen=project(point.x,point.y);
+      const d=(screen.x-x)**2+(screen.y-y)**2;
       if (d < distance - 0.000001 || (Math.abs(d - distance) <= 0.000001 && Math.abs(t - state.t) < Math.abs(best - state.t))) {
         distance = d;
         best = t;
