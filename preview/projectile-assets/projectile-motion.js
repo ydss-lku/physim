@@ -242,17 +242,25 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     fingers.clear();
   }
   document.getElementById('sideView').onclick=()=>{resetView();updateUI();};
-  let closeUp=false;
-  const cameraChoices=[...document.querySelectorAll('[data-camera]')];
-  cameraChoices.forEach(button=>button.addEventListener('click',()=>{
-    closeUp=button.dataset.camera==='ball';
-    cameraChoices.forEach(choice=>choice.setAttribute('aria-pressed',String(choice===button)));
+  const ballInset=document.getElementById('ballInset');
+  const insetCanvas=document.getElementById('insetCanvas');
+  const insetToggle=document.getElementById('toggleInset');
+  insetToggle.addEventListener('click',()=>{
+    ballInset.hidden=!ballInset.hidden;
+    insetToggle.setAttribute('aria-pressed',String(!ballInset.hidden));
     updateUI();
-  }));
+  });
+  // Lighting on the spherical ball is constant. Cache its portrait and redraw only the vectors.
+  const portrait=document.createElement('canvas');
+  portrait.width=portrait.height=128;
+  if(renderExhibit){
+    renderExhibit.portrait(128,128,64,64,54);
+    portrait.getContext('2d').drawImage(document.getElementById('exhibitCanvas'),0,0,128,128);
+  }
   function drawCloseUp(ctx,w,h,vx,vy,maxSpeed,colors){
     ctx.clearRect(0,0,w,h);
     const x=w*.42,y=h/2,radius=Math.min(32,h*.095,w*.08);
-    if(renderExhibit)renderExhibit.portrait(w,h,x,y,radius);
+    if(renderExhibit)ctx.drawImage(portrait,x-radius*64/54,y-radius*64/54,radius*128/54,radius*128/54);
     else {
       ctx.beginPath();ctx.arc(x,y,radius,0,2*Math.PI);ctx.fillStyle=chartInk.muted;ctx.fill();
     }
@@ -277,7 +285,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
     const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
-    const canOrbit=Boolean(!closeUp && renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
+    const canOrbit=Boolean(renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
     viewTools.hidden=!canOrbit;
     trajCanvas.classList.toggle('can-orbit',canOrbit);
     if(!canOrbit && (view.active || fingers.size))resetView();
@@ -367,9 +375,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
       if(!ready)drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
     });
-    if(closeUp){
-      drawCloseUp(ctx,w,h,p.vx,pos.vy,maxSpeed,colors);
-      return;
+    if(!ballInset.hidden){
+      const inset=setupCanvas(insetCanvas);
+      drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors);
     }
     if(renderExhibit){
       if(view.active)ctx.clearRect(0,0,w,h);
@@ -801,7 +809,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   },{passive:false});
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
-    if(closeUp)return;
     if(!viewTools.hidden && event.button===0){
       fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       trajCanvas.setPointerCapture(event.pointerId);
@@ -817,7 +824,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     } else seekTrajectory(event);
   });
   trajCanvas.addEventListener("pointermove", event => {
-    if(closeUp)return;
     const previous=fingers.get(event.pointerId);
     if(previous){
       const distance=fingers.size===2?pinchDistance():0;

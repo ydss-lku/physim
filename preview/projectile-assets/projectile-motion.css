@@ -136,3 +136,6 @@ main .observation .viewport{height:clamp(265px,28vw,380px)}
 #viewTools{flex-wrap:wrap}.roll-control{display:flex;align-items:center;gap:7px}.roll-control input{width:clamp(85px,15vw,155px);min-height:44px}.roll-control output{min-width:4ch;text-align:right;font-variant-numeric:tabular-nums}
 
 .camera-choice{display:flex;gap:4px;margin:.45rem 0}.camera-choice button{min-height:44px}.camera-choice [aria-pressed=true]{color:var(--on);background:var(--selected)}
+
+#ballInset{position:absolute;top:8px;left:8px;width:clamp(136px,29%,230px);height:clamp(108px,39%,162px);border:1px solid var(--line);background:var(--field);border-radius:4px;pointer-events:none;overflow:hidden}
+#ballInset canvas{width:100%;height:100%}
