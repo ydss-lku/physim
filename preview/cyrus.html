@@ -20,6 +20,10 @@
       background: #151b25;
     }
     .frame {
+      display: block;
+      background: #101722;
+      color: #e8eef7;
+      font: 15px system-ui, sans-serif;
       box-sizing: border-box;
       width: 90%;
       aspect-ratio: 16 / 9;
@@ -29,7 +33,45 @@
 </head>
 <body>
   <main aria-label="Simulation area">
-    <div class="frame" aria-hidden="true"></div>
+    <svg class="frame" viewBox="0 0 640 360" aria-label="Reflection at a plane mirror">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#ff676d"/></marker>
+      </defs>
+      <g fill="currentColor" text-anchor="middle">
+        <text x="320" y="32">Plane mirror</text>
+        <path d="M55 53 H585" stroke="#9bd8f0" stroke-width="5"/>
+        <path d="M320 56 V263" stroke="#abbaca" stroke-dasharray="7 5"/>
+        <text x="320" y="283">Normal</text>
+        <g fill="none" stroke="#ff676d" stroke-width="3" marker-mid="url(#arrow)">
+          <path id="incident"/><path id="reflected"/>
+        </g>
+        <g id="lamp"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g>
+        <text x="128" y="252">Incident ray</text>
+        <text x="512" y="252">Reflected ray</text>
+      </g>
+      <foreignObject x="80" y="293" width="480" height="64">
+        <label style="display:grid;text-align:center">Rotate source · Angle to normal <output id="angle"></output>
+          <input id="rotation" aria-label="Angle of incidence in degrees" type="range" min="0" max="80" value="34" style="width:100%;margin:0;accent-color:#6aaaff">
+        </label>
+      </foreignObject>
+    </svg>
   </main>
+  <script>
+    const slider = document.querySelector('#rotation');
+    function draw() {
+      const degrees = Number(slider.value);
+      const radians = degrees * Math.PI / 180;
+      const dx = 176 * Math.sin(radians);
+      const dy = 176 * Math.cos(radians);
+      const x = 320 - dx;
+      const y = 56 + dy;
+      document.querySelector('#incident').setAttribute('d', `M ${x} ${y} l ${dx / 2} ${-dy / 2} L 320 56`);
+      document.querySelector('#reflected').setAttribute('d', `M 320 56 l ${dx / 2} ${dy / 2} L ${320 + dx} ${y}`);
+      document.querySelector('#lamp').setAttribute('transform', `translate(${x} ${y}) rotate(${degrees})`);
+      document.querySelector('#angle').textContent = degrees + '°';
+    }
+    slider.addEventListener('input', draw);
+    draw();
+  </script>
 </body>
 </html>
