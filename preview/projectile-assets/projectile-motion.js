@@ -222,6 +222,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
 
   // ====== 1. 繪製即時拋射軌跡圖 ======
+  let renderExhibit;
+  try { renderExhibit=createProjectileExhibit(document.getElementById('exhibitCanvas')); }
+  catch(error) { console.warn('Using the 2D flight view',error); }
   let trajectoryView;
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
@@ -229,8 +232,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
     const range = Math.max(p.R,reference?.R || 0);
     const scale = Math.min((w-105)/Math.max(1,range),(h-104)/Math.max(2,p.H,reference?.H || 0));
-    const start = range < .001 ? w/2 : 42;
-    const floor = h-54;
+    const ready = !launched && !!renderExhibit;
+    const start = ready ? w*.65 : range < .001 ? w/2 : 68;
+    const floor = ready ? h*.31 : h-54;
     const toPxX = x => start+x*scale;
     const toPxY = y => floor-y*scale;
     trajectoryView = {p,toPxX,toPxY};
@@ -238,11 +242,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const styles = getComputedStyle(document.querySelector(".shell"));
     const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());
     ctx.fillStyle=chartInk.grid;
-    ctx.fillRect(0,floor,w,2);
+    if(!ready)ctx.fillRect(0,floor,w,2);
     ctx.font="12px sans-serif";
     ctx.fillStyle=chartInk.muted;
     const step=niceStep((w-start)/scale,5);
-    for(let x=0;toPxX(x)<w-22;x+=step){
+    for(let x=0;!ready && toPxX(x)<w-22;x+=step){
       ctx.fillRect(toPxX(x),floor,1,6);
       ctx.fillText(x+" m",toPxX(x)-5,floor+21);
     }
@@ -256,7 +260,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.setLineDash(dash);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
     }
     // The tilting launch rail ends at the ball centre at release.
-    ctx.save();
+    if(!renderExhibit){ctx.save();
     ctx.translate(start,toPxY(state.y0));
     ctx.fillStyle=chartInk.muted;
     ctx.fillRect(-17,8,20,4);
@@ -268,11 +272,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     for(let n=0;n<2;n++){
       ctx.beginPath();ctx.arc(-20+n*10,0,4,0,2*Math.PI);ctx.stroke();
     }
-    ctx.restore();
+    ctx.restore();}
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
     path(p,state.t,chartInk.trace,[]);
-    if(state.showStrobe){
+    if(launched && state.showStrobe){
       ctx.fillStyle=chartInk.trace;
       for(let t=0;t<=state.t;t+=.25){
         const pos=posAtTime(t,p);
@@ -293,8 +297,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       needle.setAttribute("transform","rotate("+Math.atan2(-vy,vx)*180/Math.PI+")");
       const reading=[vx,vy,length][i];
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
-      drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
+      if(!ready)drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
     });
+    if(renderExhibit){renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,ready});return;}
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
   }
 
