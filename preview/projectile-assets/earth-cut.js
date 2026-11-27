@@ -72,9 +72,15 @@ function createEarthCut(T,scene){
       float aa=max(fwidth(radius),.025);
       float major=1.-step(1.,mod(band,20.));
       float stroke=1.-smoothstep(.034+.026*major,.034+.026*major+aa,abs(radius-band));
-      float sector=1.-smoothstep(.53,.55,abs(radial.y)/max(.01,radial.x));
+      // Rounded launch end joins two straight sector sidelines.
+      float side=radial.x < -1.8 ? length(radial+vec2(1.8,0.))-2.5 : (abs(radial.y)-2.5-.85*(radial.x+1.8))*.762;
+      float edgeAA=max(.018,fwidth(side));
+      float sector=1.-smoothstep(-edgeAA,edgeAA,side);
+      earth*=mix(.62,1.,sector);
+      float rim=1.-smoothstep(.028,.028+edgeAA,abs(side));
+      earth=mix(earth,vec3(.76,.79,.68),rim*.8);
       float age=marks.y-band/max(.00001,marks.z);
-      float reveal=smoothstep(0.,.35,age)*step(10.,band)*step(.01,radial.x);
+      float reveal=smoothstep(0.,.65,age)*step(10.,band)*step(.01,radial.x);
       earth*=mix(1.,.64,darkness);
       earth=mix(earth,vec3(.86,.89,.80),stroke*(.64+.3*major)*sector*reveal*(1.-smoothstep(.05,.20,soilKind)));
       diffuseColor.rgb*=earth;`)
@@ -132,6 +138,17 @@ function createEarthCut(T,scene){
   const rootlets=new T.LineSegments(rg,new T.LineBasicMaterial({color:0x655039}));root.add(rootlets);
   const pedestal=new T.Mesh(new T.BoxGeometry(3.35,1,2.1),new T.MeshStandardMaterial({color:0x746550,roughness:1}));
   pedestal.castShadow=true;pedestal.receiveShadow=true;root.add(pedestal);
+  const labels=[];
+  function makeLabel(radius){
+    const canvas=document.createElement('canvas');
+    canvas.width=192;canvas.height=64;
+    const ctx=canvas.getContext('2d');
+    ctx.font='bold 44px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.lineJoin='round';ctx.lineWidth=6;ctx.strokeStyle='#364232';
+    ctx.strokeText(radius+' m',96,32);ctx.fillStyle='#fffef2';ctx.fillText(radius+' m',96,32);
+    const sprite=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(canvas),transparent:true,depthWrite:false,toneMapped:false}));
+    root.add(sprite);return sprite;
+  }
   let previousDepth=NaN;
   return function update(size,field,contact,wheelX,ball,night,originX,time,vx){
     const wheelLevel=(contact-field)/size;
@@ -140,6 +157,19 @@ function createEarthCut(T,scene){
     pedestal.visible=rise>.001;pedestal.scale.y=Math.max(.001,rise);
     pedestal.position.set(-.65,depth+rise/2,0);
     marks.value.set((originX-wheelX)/size,time,vx);
+    const reached=Math.floor(time*vx/10);
+    while(labels.length<reached)labels.push(makeLabel((labels.length+1)*10));
+    labels.forEach((label,index)=>{
+      const radius=(index+1)*10;
+      label.visible=index<reached;
+      if(!label.visible)return;
+      const fade=Math.min(1,Math.max(0,(time-radius/vx)/.65));
+      label.material.opacity=fade*fade*(3-2*fade);
+      const width=Math.min(5,Math.max(1.8,42/size));
+      const outside=radius+width*.62;
+      label.position.set(marks.value.x+outside*.94,.10+width/6,outside*.3412);
+      label.scale.set(width,width/3,1);
+    });
     root.position.set(wheelX,field,0);root.scale.setScalar(size);toe.position.y=depth;
     if(Math.abs(depth-previousDepth)>.001 || !Number.isFinite(previousDepth)){
       for(let i=0;i<pos.count;i++)pos.setY(i,depth*(1-weights[i])+offsets[i]);
