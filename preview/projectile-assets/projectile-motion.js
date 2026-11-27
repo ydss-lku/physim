@@ -294,13 +294,14 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       }
       return enter<=exit;
     }
-    function label(text,i,preferredX,preferredY){
+    function label(text,i,preferredX,preferredY,side=0){
       const m=ctx.measureText(text);
       const width=Math.ceil(m.width)+4,ascent=Math.ceil(m.actualBoundingBoxAscent),height=ascent+Math.ceil(m.actualBoundingBoxDescent)+4;
       let best,cost=Infinity;
       function consider(l,t){
         l=Math.max(2,Math.min(w-width-2,l));t=Math.max(2,Math.min(h-height-2,t));
         const rect={l,t,r:l+width,b:t+height};
+        if((side<0 && rect.b>y-2) || (side>0 && rect.t<y+2))return;
         if(occupied.some(o=>rect.l<o.r+3 && rect.r>o.l-3 && rect.t<o.b+3 && rect.b>o.t-3))return;
         const ballGap=Math.hypot(Math.max(l-x,0,x-rect.r),Math.max(t-y,0,y-rect.b));
         const score=(l-preferredX)**2+(t-preferredY)**2+
@@ -325,9 +326,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       label('v = vᵧ',2,x+5,y+dy-9);
       label('vₓ = 0',0,x+radius+5,y+5);
     }else{
-      label('vₓ',0,x+dx+4,y+4);
+      const rising=vy>0;
+      label('vₓ',0,x+dx+4,y+(rising?4:-21),rising?1:-1);
       label('vᵧ',1,x-25,y+dy-9);
-      label('v',2,x+dx+4,y+dy-17);
+      label('v',2,x+dx+4,y+dy+(rising?-17:4),rising?-1:1);
     }
   }
   let trajectoryView;
