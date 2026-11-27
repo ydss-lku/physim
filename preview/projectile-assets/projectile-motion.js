@@ -227,18 +227,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const view={active:false,yaw:0,pitch:0,zoom:1};
   const fingers=new Map();
   const viewTools=document.getElementById('viewTools');
-  const orbitAngle=document.getElementById('orbitAngle');
-  const orbitValue=document.getElementById('orbitValue');
-  orbitAngle.addEventListener('input',()=>{
-    const degrees=Number(orbitAngle.value);
-    view.yaw=degrees*Math.PI/180;
-    view.active=Boolean(degrees || view.zoom!==1);
-    orbitValue.value=degrees+'°';
-    updateUI();
-  });
   function resetView(){
-    orbitAngle.value=0;
-    orbitValue.value='0°';
     Object.assign(view,{active:false,yaw:0,pitch:0,zoom:1});
     fingers.clear();
   }
@@ -878,8 +867,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         if(!deltaX)return;
         const radiansPerPixel=Math.PI/(3*trajCanvas.clientWidth);
         view.yaw=Math.max(-turnLimit,Math.min(turnLimit,view.yaw-deltaX*radiansPerPixel));
-        orbitAngle.value=Math.round(view.yaw*180/Math.PI);
-        orbitValue.value=orbitAngle.value+"°";
         updateUI();
       }
       return;
