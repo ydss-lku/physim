@@ -73,7 +73,7 @@ function createEarthCut(T,scene){
       float radius=length(radial), band=floor(radius/10.+.5)*10.;
       float aa=max(fwidth(radius),.025);
       float major=1.-step(1.,mod(band,20.));
-      float stroke=1.-smoothstep(.034+.026*major,.034+.026*major+aa,abs(radius-band));
+      float stroke=1.-smoothstep(.045+.03*major,.045+.03*major+aa,abs(radius-band));
       // Rounded launch end joins two straight sector sidelines.
       float side=radial.x < -1.8 ? length(radial+vec2(1.8,0.))-2.5 : (abs(radial.y)-2.5-.85*(radial.x+1.8))*.762;
       float edgeAA=max(.018,fwidth(side));
@@ -149,11 +149,11 @@ function createEarthCut(T,scene){
     ctx.fillStyle='#fffdf0';ctx.fillText(radius+' m',256,67);
     const map=new T.CanvasTexture(canvas);map.anisotropy=4;
     // Lay the lettering on a narrow annular strip, following the paint on the turf.
-    const height=Math.min(3.1,1.35+radius*.024),width=height*4;
-    const angle=-Math.asin(.46);
+    const height=1.22*Math.min(3.1,1.35+radius*.024),width=height*4;
+    // Centre the inscription on the sector bisector.
     const coords=[],uv=[],indices=[];
     for(let j=0;j<=16;j++){
-      const u=j/16,t=angle+(u-.5)*width/radius;
+      const u=j/16,t=(u-.5)*width/radius;
       for(let v=0;v<=1;v++){
         const r=radius+.16+v*height;
         coords.push(r*Math.cos(t),.012,r*Math.sin(t));uv.push(u,v);
