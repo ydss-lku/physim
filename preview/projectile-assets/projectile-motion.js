@@ -452,7 +452,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
     if(renderExhibit){
       if(view.active)ctx.clearRect(0,0,w,h);
-      renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
+      renderExhibit({ready,w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
         view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g,color:chartInk.trace}});
     }
     if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors,{model:p,pos,scale,fieldRadius});

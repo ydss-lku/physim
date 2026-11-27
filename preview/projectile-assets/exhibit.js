@@ -140,7 +140,7 @@ function createProjectileExhibit(canvas) {
   track.geometry.setAttribute('position',new T.BufferAttribute(vertices,3));
   track.frustumCulled=false;
   scene.add(track);
-  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset}){
+  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready}){
     orbit.rotation.set(view.active?Math.min(-.10,view.pitch-.32):0,view.yaw,0,'YXZ');
     camera.zoom=view.zoom;
     track.visible=view.active;
@@ -190,6 +190,20 @@ function createProjectileExhibit(canvas) {
       const cx=(left+right)/2,cy=(top+bottom)/2;
       camera.left=cx-w*fit*.5;camera.right=cx+w*fit*.5;
       camera.top=cy+h*fit*.5;camera.bottom=cy-h*fit*.5;
+      camera.updateProjectionMatrix();
+    }
+    if(ready){
+      orbit.rotation.set(-.23,-.93,0,'YXZ');
+      scene.updateMatrixWorld(true);
+      const box=new T.Box2(),point=new T.Vector3();
+      for(const dx of [-10,264])for(const dz of [-33,33])for(const dy of [-23,4]){
+        point.set(rig.position.x+dx*size,my-flight.y0*size+dy*size,dz*size).applyMatrix4(camera.matrixWorldInverse);
+        box.expandByPoint(point);
+      }
+      const span=box.getSize(new T.Vector2()),center=box.getCenter(new T.Vector2());
+      const fit=Math.max(span.x/(w*.89),span.y/(h*.83));
+      camera.left=center.x-w*fit/2;camera.right=center.x+w*fit/2;
+      camera.top=center.y+h*fit/2;camera.bottom=center.y-h*fit/2;
       camera.updateProjectionMatrix();
     }
     if(inset){
