@@ -123,3 +123,5 @@ html[data-theme=tech] .shell{--horizontal:#9fdff3;--vertical:#ffc09b;--resultant
 .transport{display:flex;align-items:center;gap:15px;padding:10px 14px;background:var(--panel)}.transport .timeline{flex:1}.transport .toolbar{margin:0}
 .launch-settings{padding:14px;background:var(--field)}.launch-settings aside{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:start;gap:10px 24px}.launch-settings aside>*{grid-column:auto}.launch-settings .row{grid-column:1/-1}.launch-settings .gravity{align-self:center}
 @media(max-width:760px){.observation{grid-template-columns:1fr}.vector-panel{border-inline-start:0;border-top:1px solid var(--line)}.dial-bank{margin-top:6px}.dial svg{max-height:80px}.transport{flex-wrap:wrap}.transport .timeline{min-width:200px}.launch-settings aside{grid-template-columns:repeat(2,minmax(0,1fr))}.range-scene,.vector-panel{padding:10px}}
+.transport #btnLaunch{width:auto;display:inline-flex;align-items:center;gap:6px;padding-inline:10px}
+main[data-mode=analysis] .transport .toolbar{display:flex}

@@ -25,6 +25,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     showCompare: false
   };
 
+  const draft = {theta: state.theta, v0: state.v0, y0: state.y0, g: state.g};
+  let launched = false;
+  let observedTime = 0;
+  function needsLaunch() {
+    return !launched || Object.keys(draft).some(key => draft[key] !== state[key]);
+  }
+
   let animFrameId = null;
   let lastTimestamp = null;
 
@@ -262,8 +269,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.beginPath();ctx.arc(-20+n*10,0,4,0,2*Math.PI);ctx.stroke();
     }
     ctx.restore();
-    if(reference)path(reference,reference.T,chartInk.guide,[6,5]);
-    path(p,p.T,chartInk.muted,[2,6]);
+    if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
+
     path(p,state.t,chartInk.trace,[]);
     if(state.showStrobe){
       ctx.fillStyle=chartInk.trace;
@@ -457,13 +464,15 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 更新按鈕狀態 ======
   function updatePlayButtons() {
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    btnLaunch.disabled = p.T <= 0;
-    const label = state.playing ? labLanguage.pick("Pause","暫停")
+    const next = calcPhysics(draft.theta,draft.v0,draft.y0,draft.g);
+    btnLaunch.disabled = needsLaunch() ? next.T <= 0 : p.T <= 0;
+    const label = needsLaunch() ? labLanguage.pick("Launch","發射") : state.playing ? labLanguage.pick("Pause","暫停")
       : state.t >= p.T && p.T > 0 ? labLanguage.pick("Replay","重播")
       : state.t > 0 ? labLanguage.pick("Resume","繼續") : labLanguage.pick("Play","播放");
+    btnLaunch.querySelector(".action-label").textContent = label;
     btnLaunch.title = label;
     btnLaunch.setAttribute("aria-label", label);
-    btnLaunch.querySelector("path").setAttribute("d", state.playing ? "M8 5v14 M16 5v14" : "M6 4l14 8-14 8z");
+    btnLaunch.querySelector("path").setAttribute("d", state.playing && !needsLaunch() ? "M8 5v14 M16 5v14" : "M6 4l14 8-14 8z");
 
   }
 
@@ -479,7 +488,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
   function updateFlightPanels(p,t,vy){
   if(!flightPhase) return;
-  const stage = !p.T ? ['No flight','沒有飛行階段'] : !t ? ['Launch','發射一刻'] : t>=p.T ? ['At impact','觸地一刻'] : Math.abs(vy)<1e-8 ? ['Highest point','最高點'] : vy>0 ? ['Rising','上升中'] : ['Falling','下降中'];
+  const stage = !launched ? ["Ready to launch","準備發射"] : !p.T ? ['No flight','沒有飛行階段'] : !t ? ['Launch','發射一刻'] : t>=p.T ? ['At impact','觸地一刻'] : Math.abs(vy)<1e-8 ? ['Highest point','最高點'] : vy>0 ? ['Rising','上升中'] : ['Falling','下降中'];
   flightPhase.textContent=labLanguage.pick(...stage);
   const limit=Math.max(5,5*Math.ceil(Math.max(p.vx,Math.abs(p.vy0),Math.abs(p.vy0-state.g*p.T))/5));
   const x=49+278*(p.T?t/p.T:0);
@@ -498,9 +507,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
 }
   function updateUI() {
-    valTheta.textContent = `${state.theta > 0 ? "+" : ""}${state.theta}°`;
-    valV0.textContent = `${state.v0} m/s`;
-    valY0.textContent = `${state.y0} m`;
+    valTheta.textContent = `${draft.theta > 0 ? "+" : ""}${draft.theta}°`;
+    valV0.textContent = `${draft.v0} m/s`;
+    valY0.textContent = `${draft.y0} m`;
 
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
 
@@ -515,6 +524,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ? "H = y₀ + (v₀ sin θ)² / (2g)"
       : "H = y₀";
     const ratio = p.T > 0 ? Math.min(1, state.t / p.T) : 0;
+
+    sliderTime.disabled = !observedTime;
+    document.getElementById('jumpPeak').disabled = !launched || observedTime < p.tPeak;
     sliderTime.value = ratio;
     const curT = p.T > 0 ? Math.min(state.t, p.T) : 0;
     const cur = posAtTime(curT, p);
@@ -559,6 +571,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
     state.t += dt;
+    observedTime = Math.max(observedTime,Math.min(state.t,p.T));
 
     if (state.t >= p.T) {
       state.t = p.T;
@@ -576,6 +589,15 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
 
   function togglePauseResume() {
+    if (needsLaunch() || (!state.playing && state.t >= calcPhysics(state.theta,state.v0,state.y0,state.g).T)) {
+      stopAnimationLoop();
+      Object.assign(state,draft);
+      state.minTheta = state.y0 > 0 ? -90 : 0;
+      state.t = 0;
+      observedTime = 0;
+      launched = true;
+      state.playing = false;
+    }
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
     if (p.T <= 0) return;
 
@@ -592,39 +614,37 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
 
   function syncAngleRange() {
-    state.minTheta = state.y0 > 0 ? -90 : 0;
-    sliderTheta.min = state.minTheta;
-    state.theta = Math.max(state.theta, state.minTheta);
-    sliderTheta.value = state.theta;
+    const minAngle = draft.y0 > 0 ? -90 : 0;
+    sliderTheta.min = minAngle;
+    draft.theta = Math.max(draft.theta, minAngle);
+    sliderTheta.value = draft.theta;
     for (const tick of document.querySelectorAll('[data-slider="sliderTheta"] button')) {
       const angle = Number(tick.value);
-      tick.hidden = angle < state.minTheta;
+      tick.hidden = angle < minAngle;
       tick.disabled = tick.hidden;
-      tick.style.left = (100 * (angle - state.minTheta) / (state.maxTheta - state.minTheta)) + "%";
+      tick.style.left = (100 * (angle - minAngle) / (state.maxTheta - minAngle)) + "%";
     }
   }
 
   function onParamChanged() {
-    state.playing = false;
-    stopAnimationLoop();
-    state.t = 0;
+
     updatePlayButtons();
     updateUI();
   }
 
   // ====== 事件綁定 ======
   sliderTheta.addEventListener("input", (e) => {
-    state.theta = parseInt(e.target.value, 10);
+    draft.theta = parseInt(e.target.value, 10);
     onParamChanged();
   });
 
   sliderV0.addEventListener("input", (e) => {
-    state.v0 = parseInt(e.target.value, 10);
+    draft.v0 = parseInt(e.target.value, 10);
     onParamChanged();
   });
 
   sliderY0.addEventListener("input", (e) => {
-    state.y0 = parseInt(e.target.value, 10);
+    draft.y0 = parseInt(e.target.value, 10);
     syncAngleRange();
     onParamChanged();
   });
@@ -633,7 +653,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     state.playing = false;
     stopAnimationLoop();
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    state.t = parseFloat(e.target.value) * p.T;
+    state.t = Math.min(observedTime, parseFloat(e.target.value) * p.T);
     updatePlayButtons();
     updateUI();
   });
@@ -648,7 +668,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     });
   }
   document.getElementById("gravityValue").addEventListener("change", event => {
-    state.g = Number(event.target.value);
+    draft.g = Number(event.target.value);
     onParamChanged();
   });
 
@@ -672,7 +692,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     let distance = Infinity;
     // A vertical launch visits the same height twice. Keep the nearest time branch.
     for (let step = 0; step <= 500; step++) {
-      const t = p.T * step / 500;
+      const t = observedTime * step / 500;
       const point = posAtTime(t, p);
       const d = (toPxX(point.x) - x) ** 2 + (toPxY(point.y) - y) ** 2;
       if (d < distance - 0.000001 || (Math.abs(d - distance) <= 0.000001 && Math.abs(t - state.t) < Math.abs(best - state.t))) {
@@ -710,9 +730,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const padRight = 20;
       const plotW = rect.width - padLeft - padRight;
       const frac = Math.max(0, Math.min(1, (clientX - rect.left - padLeft) / plotW));
-      const newTheta = Math.round(state.minTheta + frac * (state.maxTheta - state.minTheta));
-      if (newTheta !== state.theta) {
-        state.theta = newTheta;
+      const newTheta = Math.round(Number(sliderTheta.min) + frac * (state.maxTheta - Number(sliderTheta.min)));
+      if (newTheta !== draft.theta) {
+        draft.theta = newTheta;
         sliderTheta.value = newTheta;
         onParamChanged();
       }
