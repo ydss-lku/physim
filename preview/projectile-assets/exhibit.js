@@ -195,12 +195,7 @@ function createProjectileExhibit(canvas) {
   track.geometry.setAttribute('position',new T.BufferAttribute(vertices,3));
   track.frustumCulled=false;
   scene.add(track);
-  const impactArrows=Array.from({length:3},()=>{
-    const arrow=new T.ArrowHelper();
-    scene.add(arrow);
-    return arrow;
-  });
-  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,colors,inset}){
+  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset}){
     orbit.rotation.set(0,view.yaw,0,'YXZ');
     camera.zoom=view.zoom;
     track.visible=view.active;
@@ -213,19 +208,6 @@ function createProjectileExhibit(canvas) {
       track.geometry.attributes.position.needsUpdate=true;
       track.material.color.set(flight.color);
     }
-    const vy=flight.vy0-flight.g*flight.T;
-    const speed=Math.hypot(flight.vx,vy)||1;
-    const offsets=vectorOffsets(42*flight.vx/speed,-42*vy/speed);
-    impactArrows.forEach((arrow,i)=>{
-      const vx=i===1?0:flight.vx, vertical=i===0?0:vy;
-      const length=42*Math.hypot(vx,vertical)/speed;
-      arrow.visible=view.active && length>.1;
-      if(!arrow.visible)return;
-      arrow.position.set(x-w/2+offsets[i][0],h/2-y-offsets[i][1],0);
-      arrow.setDirection(new T.Vector3(vx,vertical,0).normalize());
-      arrow.setLength(length,Math.min(7,length*.4),Math.min(4,length*.25));
-      arrow.setColor(new T.Color(colors[i]));
-    });
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
@@ -265,9 +247,7 @@ function createProjectileExhibit(canvas) {
       const offsetX=left+iw*.5/zoom;
       landscapeGroup.position.set(offsetX,ball.position.y,0);
       const showTrack=track.visible, showRig=rig.visible;
-      const arrows=impactArrows.map(arrow=>arrow.visible);
       track.visible=false;rig.visible=false;
-      impactArrows.forEach(arrow=>arrow.visible=false);
       renderer.setViewport(0,0,iw,ih);renderer.setScissor(0,0,iw,ih);renderer.setScissorTest(true);
       renderer.render(scene,portraitCamera);
       const source=renderer.domElement;
@@ -276,7 +256,6 @@ function createProjectileExhibit(canvas) {
       inset.ctx.drawImage(source,0,source.height-sh,sw,sh,0,0,iw,ih);
       renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);
       track.visible=showTrack;rig.visible=showRig;
-      impactArrows.forEach((arrow,i)=>arrow.visible=arrows[i]);
       landscapeGroup.position.set(0,0,0);
       updateLandscape(w,h,mx,my,size);
     }

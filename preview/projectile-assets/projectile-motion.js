@@ -250,18 +250,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     insetToggle.setAttribute('aria-pressed',String(!ballInset.hidden));
     updateUI();
   });
-  function vectorOffsets(dx,dy){
-    // Translate parallel arrows without changing their lengths or directions.
-    const shifts=[[0,0],[0,0],[0,0]];
-    if(Math.abs(dx)>=Math.abs(dy) && dx!==0){
-      const gap=(dy>0?1:-1)*Math.max(0,7-Math.abs(dy)*.35);
-      shifts[0][1]=-gap;shifts[2][1]=gap;
-    }else if(dy!==0){
-      const gap=Math.max(0,7-Math.abs(dx)*.35);
-      shifts[1][0]=-gap;shifts[2][0]=gap;
-    }
-    return shifts;
-  }
   function drawCloseUp(ctx,w,h,vx,vy,maxSpeed,colors){
     const x=w*.42,y=h/2,radius=Math.min(32,h*.095,w*.08);
     if(!renderExhibit){
@@ -345,17 +333,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const ready=!launched && !!renderExhibit;
     const hull=renderExhibit?.cannonBounds(state.theta) || {left:-3.8,right:1,bottom:-2.7,top:1};
     const maxSpeed=Math.hypot(p.vx,p.vy0-state.g*p.T) || 1;
-    // Fit the projected model and the current ball, including screen-sized arrow tips.
+    // Fit the projected model and the current ball.
     // The two axes share one scale; the viewport aspect ratio sets the limiting axis.
     function frameAt(scale){
       const radius=Math.max(5,.27*scale);
-      const dx=42*p.vx/maxSpeed, dy=42*pos.vy/maxSpeed;
       const bx=pos.x*scale, by=pos.y*scale, origin=state.y0*scale;
       return {
         left:Math.min(hull.left*scale,bx-radius),
-        right:Math.max(hull.right*scale,bx+radius,bx+dx+2),
-        bottom:Math.min(origin+hull.bottom*scale,by-radius,by+dy-2),
-        top:Math.max(origin+hull.top*scale,by+radius,by+dy+2)
+        right:Math.max(hull.right*scale,bx+radius),
+        bottom:Math.min(origin+hull.bottom*scale,by-radius),
+        top:Math.max(origin+hull.top*scale,by+radius)
       };
     }
     let low=0,high=Math.max(w,h)*2;
@@ -415,10 +402,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
 
-    const fieldOffsets=vectorOffsets(42*p.vx/maxSpeed,-42*pos.vy/maxSpeed);
     [[p.vx,0],[0,pos.vy],[p.vx,pos.vy]].forEach(([vx,vy],i)=>{
       const length=Math.hypot(vx,vy);
-      const dx=42*vx/maxSpeed, dy=-42*vy/maxSpeed;
       const dial=document.querySelectorAll(".dial")[i];
       const needle=dial.querySelector(".needle");
       const tip=46*length/maxSpeed, head=Math.min(7,tip*.45);
@@ -426,14 +411,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       needle.setAttribute("transform","rotate("+Math.atan2(-vy,vx)*180/Math.PI+")");
       const reading=[vx,vy,length][i];
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
-      const [ox,oy]=fieldOffsets[i];
-      if(!ready)drawArrow(ctx,x+ox,y+oy,x+ox+dx,y+oy+dy,colors[i],i===2?2:3,8);
     });
     const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
     if(renderExhibit){
       if(view.active)ctx.clearRect(0,0,w,h);
       renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
-        view,colors,inset,flight:{...p,y0:state.y0,g:state.g,color:chartInk.trace}});
+        view,inset,flight:{...p,y0:state.y0,g:state.g,color:chartInk.trace}});
     }
     if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors);
     if(renderExhibit)return;
