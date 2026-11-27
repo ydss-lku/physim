@@ -102,7 +102,45 @@ function createProjectileExhibit(canvas) {
     cachedAngle=theta;
     return bounds;
   }
-  function render({w,h,start,muzzleY,x,y,theta,size}){
+  const orbit=new T.Group();
+  orbit.rotation.order='YXZ';
+  orbit.add(camera);
+  scene.add(orbit);
+  const track=new T.Line(new T.BufferGeometry(),new T.LineBasicMaterial());
+  const vertices=new Float32Array(97*3);
+  track.geometry.setAttribute('position',new T.BufferAttribute(vertices,3));
+  track.frustumCulled=false;
+  scene.add(track);
+  const impactArrows=Array.from({length:3},()=>{
+    const arrow=new T.ArrowHelper();
+    scene.add(arrow);
+    return arrow;
+  });
+  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,colors}){
+    orbit.rotation.set(view.pitch,view.yaw,0,'YXZ');
+    camera.zoom=view.zoom;
+    track.visible=view.active;
+    if(view.active){
+      for(let i=0;i<97;i++){
+        const t=flight.T*i/96;
+        vertices[i*3]=start-w/2+flight.vx*t*size;
+        vertices[i*3+1]=h/2-muzzleY+(flight.vy0*t-flight.g*t*t/2)*size;
+      }
+      track.geometry.attributes.position.needsUpdate=true;
+      track.material.color.set(flight.color);
+    }
+    const vy=flight.vy0-flight.g*flight.T;
+    const speed=Math.hypot(flight.vx,vy)||1;
+    impactArrows.forEach((arrow,i)=>{
+      const vx=i===1?0:flight.vx, vertical=i===0?0:vy;
+      const length=42*Math.hypot(vx,vertical)/speed;
+      arrow.visible=view.active && length>.1;
+      if(!arrow.visible)return;
+      arrow.position.set(x-w/2,h/2-y,0);
+      arrow.setDirection(new T.Vector3(vx,vertical,0).normalize());
+      arrow.setLength(length,Math.min(7,length*.4),Math.min(4,length*.25));
+      arrow.setColor(new T.Color(colors[i]));
+    });
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
@@ -112,7 +150,7 @@ function createProjectileExhibit(canvas) {
     camera.left=-w/2;camera.right=w/2;camera.top=h/2;camera.bottom=-h/2;camera.updateProjectionMatrix();
     // Oblique depth reveals the front rim and both wheels without skewing measured x or y.
     const projection=camera.projectionMatrix.elements;
-    projection[8]=-.48*2/w; projection[9]=-.28*2/h;
+    projection[8]=-.48*2/w*camera.zoom; projection[9]=-.28*2/h*camera.zoom;
     projection[12]=camera.position.z*projection[8];
     projection[13]=camera.position.z*projection[9];
 

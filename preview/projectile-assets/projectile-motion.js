@@ -223,11 +223,23 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   let renderExhibit;
   try { renderExhibit=createProjectileExhibit(document.getElementById('exhibitCanvas')); }
   catch(error) { console.warn('Using the 2D flight view',error); }
+  const view={active:false,yaw:0,pitch:0,zoom:1};
+  const fingers=new Map();
+  const viewTools=document.getElementById('viewTools');
+  function resetView(){
+    Object.assign(view,{active:false,yaw:0,pitch:0,zoom:1});
+    fingers.clear();
+  }
+  document.getElementById('sideView').onclick=()=>{resetView();updateUI();};
   let trajectoryView;
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
     const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
+    const canOrbit=Boolean(renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
+    viewTools.hidden=!canOrbit;
+    trajCanvas.classList.toggle('can-orbit',canOrbit);
+    if(!canOrbit && (view.active || fingers.size))resetView();
     const pos=posAtTime(state.t,p);
     const ready=!launched && !!renderExhibit;
     const hull=renderExhibit?.cannonBounds(state.theta) || {left:-3.8,right:1,bottom:-2.7,top:1};
@@ -310,7 +322,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
       if(!ready)drawArrow(ctx,x,y,x+dx,y+dy,colors[i],i===2?2:3,8);
     });
-    if(renderExhibit){renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale});return;}
+    if(renderExhibit){
+      if(view.active)ctx.clearRect(0,0,w,h);
+      renderExhibit({w,h,start,muzzleY:toPxY(state.y0),x,y,theta:state.theta,size:scale,
+        view,colors,flight:{...p,g:state.g,color:chartInk.trace}});
+      return;
+    }
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
   }
 
@@ -719,8 +736,27 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     updatePlayButtons();
     updateUI();
   }
+  function zoomView(factor){
+    view.active=true;
+    view.zoom=Math.min(6,Math.max(.35,view.zoom*factor));
+    updateUI();
+  }
+  function pinchDistance(){
+    const [a,b]=fingers.values();
+    return Math.hypot(a.x-b.x,a.y-b.y);
+  }
+  trajCanvas.addEventListener("wheel",event=>{
+    if(viewTools.hidden)return;
+    event.preventDefault();
+    zoomView(Math.exp(-Math.sign(event.deltaY)*.12));
+  },{passive:false});
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
+    if(!viewTools.hidden && event.button===0){
+      fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      trajCanvas.setPointerCapture(event.pointerId);
+      return;
+    }
     if (!event.isPrimary || event.button !== 0) return;
     graphPress = { id: event.pointerId, x: event.clientX, y: event.clientY, dragging: false };
     trajCanvas.setPointerCapture(event.pointerId);
@@ -731,11 +767,24 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     } else seekTrajectory(event);
   });
   trajCanvas.addEventListener("pointermove", event => {
+    const previous=fingers.get(event.pointerId);
+    if(previous){
+      const distance=fingers.size===2?pinchDistance():0;
+      fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(distance>0){zoomView(pinchDistance()/distance);return;}
+      if(fingers.size===1){
+        view.active=true;
+        view.yaw-=(event.clientX-previous.x)*.009;
+        view.pitch=Math.max(-1.48,Math.min(1.48,view.pitch-(event.clientY-previous.y)*.009));
+        updateUI();
+      }
+      return;
+    }
     if (graphPress?.id !== event.pointerId) return;
     if (Math.hypot(event.clientX - graphPress.x, event.clientY - graphPress.y) >= 3) graphPress.dragging = true;
     if (graphPress.dragging) seekTrajectory(event);
   });
-  trajCanvas.addEventListener("lostpointercapture", () => { graphPress = null; });
+  trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId); graphPress = null; });
 
   function bindAngleChartScrub(canvas) {
     let dragging = false;
