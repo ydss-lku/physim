@@ -311,6 +311,43 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
   }
   let trajectoryView;
+  // Sample only elapsed simulation time so pausing and scrubbing reproduce the same flame.
+  function drawFireTrail(ctx,p,t,scale,toX,toY,w,h){
+    const head=posAtTime(t,p);
+    const speed=Math.hypot(head.vx,head.vy);
+    const radius=renderExhibit?Math.max(4,.235*scale):6;
+    const duration=Math.min(t,.23,86/Math.max(1,speed*scale));
+    const stations=[];
+    for(let j=0;j<=24;j++){
+      const u=j/24,point=posAtTime(t-duration*u,p);
+      const magnitude=Math.hypot(point.vx,point.vy)||1;
+      stations.push({x:toX(point.x),y:toY(point.y),nx:point.vy/magnitude,ny:point.vx/magnitude,u});
+    }
+    const first=stations[0],last=stations[24];
+    if(Math.hypot(last.x-first.x,last.y-first.y)<radius+2)return;
+    ctx.save();
+    ctx.beginPath();ctx.rect(0,0,w,h);ctx.moveTo(first.x+radius,first.y);
+    ctx.arc(first.x,first.y,radius,0,2*Math.PI);ctx.clip('evenodd');
+    function ribbon(reach,width,phase,stops){
+      const end=Math.max(2,Math.round(24*reach)),tail=stations[end];
+      const fill=ctx.createLinearGradient(first.x,first.y,tail.x,tail.y);
+      stops.forEach(([at,color])=>fill.addColorStop(at,color));
+      const edge=(j,side)=>{
+        const q=stations[j],f=j/end;
+        const wave=Math.sin(phase+f*9-t*21)+.4*Math.sin(f*17+t*13);
+        const offset=radius*(wave*.32*f+side*width*(1-f)**.65*(1+.19*wave));
+        return [q.x+q.nx*offset,q.y+q.ny*offset];
+      };
+      ctx.beginPath();ctx.moveTo(...edge(0,1));
+      for(let j=1;j<=end;j++)ctx.lineTo(...edge(j,1));
+      for(let j=end;j>=0;j--)ctx.lineTo(...edge(j,-1));
+      ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+    }
+    ribbon(1,1.3,.8,[[0,'#ff9b25'],[.38,'#ff641ad9'],[.76,'#de431381'],[1,'#bb351000']]);
+    ribbon(.82,.82,2,[[0,'#fff4ab'],[.42,'#ffbc32'],[1,'#ff781000']]);
+    ribbon(.52,.44,4,[[0,'#fffde5'],[.68,'#ffe484'],[1,'#ffbf3800']]);
+    ctx.restore();
+  }
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
@@ -391,9 +428,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
     path(p,state.t,chartInk.trace,[],0,1.8,true);
-    // A short exposure-style stroke follows only the most recently travelled arc.
-    if(state.t>0 && state.t<p.T){
-      path(p,state.t,chartInk.trace,[],Math.max(0,state.t-.055),3.4,true);
+    if(launched && state.t>0 && state.t<p.T){
+      drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h);
     }
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
