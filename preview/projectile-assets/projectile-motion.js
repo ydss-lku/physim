@@ -21,7 +21,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     speedFactor: 1.0,
     mode: "trajectory",
     chart: "r",
-    showStrobe: true,
     showCompare: false
   };
 
@@ -61,7 +60,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const btnLaunch = document.getElementById("btnLaunch");
   const btnSlow = document.getElementById("btnSlow");
 
-  const chkStrobe = document.getElementById("chkStrobe");
   const chkCompare = document.getElementById("chkCompare");
 
   const trajCanvas = document.getElementById("trajCanvas");
@@ -297,14 +295,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
     path(p,state.t,chartInk.trace,[]);
-    if(launched && state.showStrobe){
-      ctx.fillStyle=chartInk.trace;
-      for(let t=0;t<=state.t;t+=.25){
-        const pos=posAtTime(t,p);
-        ctx.beginPath();ctx.arc(toPxX(pos.x),toPxY(pos.y),2.8,0,2*Math.PI);ctx.fill();
-      }
-    }
-
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
 
@@ -706,7 +696,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     btnSlow.textContent = state.speedFactor === 1.0 ? "1×" : "½×";
   });
 
-  chkStrobe.addEventListener("change", (e) => { state.showStrobe = e.target.checked; updateUI(); });
   chkCompare.addEventListener("change", (e) => { state.showCompare = e.target.checked; updateUI(); });
 
   function seekTrajectory(event) {
