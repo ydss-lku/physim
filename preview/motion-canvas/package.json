@@ -1,0 +1,13 @@
+{
+  "name": "projectile-motion-canvas",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "node build.cjs"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@motion-canvas/2d": "^3.17.2",
+    "@motion-canvas/core": "^3.17.2",
+    "esbuild": "^0.28.2"
+  }
+}

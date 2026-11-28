@@ -541,7 +541,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const preview=draft.theta!==state.theta || draft.v0!==state.v0 || draft.y0!==state.y0 ? draft : null;
     previewLabel.hidden=!preview;
     if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽")+"  ·  θ "+preview.theta+"°   ·   v₀ "+preview.v0+" m/s   ·   y₀ "+preview.y0+" m";
-    const project=renderExhibit?renderExhibit({editable:!state.playing,editSpeed:draft.v0,ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
+    const project=renderExhibit?renderExhibit({reference,editable:!state.playing,editSpeed:draft.v0,ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
     trajectoryView = {p,project};
@@ -584,6 +584,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.beginPath();ctx.moveTo(-scale*1.86,0);ctx.lineTo(len,0);ctx.stroke();
       ctx.beginPath();ctx.moveTo(len,0);ctx.lineTo(len-7,-4);ctx.lineTo(len-7,4);ctx.fill();ctx.restore();
     }
+    if(!renderExhibit?.drawsFlight){
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
     path(p,state.t,chartInk.trace,[],0,1.8,true);
@@ -596,8 +597,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       }
       ctx.restore();
     }
+    }
     const fieldRadius=renderExhibit?Math.max(4,.235*scale):6;
-    if(launched && state.t>0 && state.t<p.T){
+    if(!renderExhibit?.drawsFlight && launched && state.t>0 && state.t<p.T){
       drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h,fieldRadius,project);
     }
     const x=toPxX(pos.x), y=toPxY(pos.y);
@@ -613,7 +615,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const reading=[vx,vy,length][i];
       dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
     });
-    if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors,{model:p,pos,scale,fieldRadius});
+    if(inset && !renderExhibit?.drawsFlight)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors,{model:p,pos,scale,fieldRadius});
     if(renderExhibit)return;
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
   }
