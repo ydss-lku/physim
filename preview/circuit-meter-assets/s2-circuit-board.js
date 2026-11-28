@@ -164,6 +164,11 @@ function matchesChallenge(){
  }
  return node===root(cell.a) && degree.every((d,n)=>!d||visited.has(root(n)));
 }
+const raceSounds=['challenge-launch.mp3','challenge-finish.mp3'].map(file=>new Audio(new URL(file,document.currentScript.src)));
+function cue(index){
+ for(const sound of raceSounds){sound.pause();sound.currentTime=0;}
+ const sound=raceSounds[index];sound.volume=.45;sound.play().catch(()=>{});
+}
 let attempt=null, frame;
 const recordPrefix='s2-circuit-card-v1:';
 function raceTime(ms){
@@ -176,28 +181,46 @@ function tick(){
 }
 el('challenge-start').onsubmit=e=>{
  e.preventDefault();
- const input=el('player-name'),name=input.value.trim();
- if(!name){input.value='';input.reportValidity();return;}
- attempt={name,start:performance.now(),ms:null};
+ attempt={start:performance.now(),ms:null,key:recordPrefix+crypto.randomUUID()};
+ cue(0);
+ if(!matchMedia('(prefers-reduced-motion: reduce)').matches)
+   el('race-clock').animate([{transform:'scale(1.35)'},{transform:'scale(1)'}],{duration:450});
  render();tick();board.querySelector('[data-slot]')?.focus();
 };
 function finishRace(){
  attempt.ms=Math.floor(performance.now()-attempt.start);
  cancelAnimationFrame(frame);
  el('race-clock').textContent=raceTime(attempt.ms);
- el('finish-time').textContent=attempt.name+' · '+raceTime(attempt.ms);
- el('ranking-title').textContent=pick('Local leaderboard','本機龍虎榜');
- const record={name:attempt.name,ms:attempt.ms},rows=[record];
+ cue(1);
+ el('finish-time').textContent=raceTime(attempt.ms);
+ el('ranking-title').textContent=pick('Leaderboard','龍虎榜');
+ el('entry').hidden=false;
+ el('save-score').textContent=pick('Save time','登記成績');
+ el('storage-status').hidden=true;
+ showRanking();
+}
+el('entry').onsubmit=e=>{
+ e.preventDefault();
+ const input=el('player-name'),name=input.value.trim();
+ if(!name){input.value='';input.reportValidity();return;}
+ try{
+   localStorage.setItem(attempt.key,JSON.stringify({name,ms:attempt.ms}));
+   el('entry').hidden=true;el('storage-status').hidden=true;
+   showRanking();el('challenge-ok').focus();
+ }catch{el('storage-status').hidden=false;el('storage-status').textContent=pick('Could not save on this browser.','此瀏覽器未能儲存紀錄。');}
+};
+function showRanking(){
+ const rows=[];
  const warning=el('storage-status');warning.hidden=true;
  try{
    for(const key of Object.keys(localStorage).filter(k=>k.startsWith(recordPrefix))){
      let row;try{row=JSON.parse(localStorage.getItem(key));}catch{continue;}
-     if(typeof row?.name==='string' && Number.isSafeInteger(row.ms) && row.ms>=0)rows.push(row);
+     if(typeof row?.name==='string' && Number.isSafeInteger(row.ms) && row.ms>=0)rows.push({...row,key});
    }
-   localStorage.setItem(recordPrefix+crypto.randomUUID(),JSON.stringify(record));
+
  }catch{warning.hidden=false;warning.textContent=pick('Could not save on this browser.','此瀏覽器未能儲存紀錄。');}
  el('rankings').replaceChildren(...rows.sort((a,b)=>a.ms-b.ms).map(row=>{
-   const item=document.createElement('li');item.textContent=row.name+' · '+raceTime(row.ms);return item;
+   const item=document.createElement('li');const name=document.createElement('span'),time=document.createElement('b');name.textContent=row.name;time.textContent=raceTime(row.ms);item.append(name,time);if(row.key===attempt.key)item.className='your-result';return item;
  }));
 }
 el('challenge').onclick=()=>{
@@ -266,7 +289,6 @@ function render() {
  const challenge=Boolean(freeBoard);
  el('challenge').textContent=pick('Challenge Mode','挑戰模式');
  el('challenge').setAttribute('aria-pressed',String(challenge));
- el('preset').disabled=challenge;
  el('challenge-task').hidden=!challenge;
  el('challenge-task').textContent=pick('Build the circuit shown on the printed card.','請按現場圖卡砌出電路。');
  const waiting=challenge && !attempt;
@@ -368,7 +390,6 @@ function render() {
    ?pick('Cell removed. Rewire the circuit before refitting it.','電芯已拔出。請先改駁電路，再裝回電芯。')
    :pick(...stateText[result.state]);
  el('indicator').dataset.state=result.state;el('count').textContent=result.lit+' / '+result.total;
- el('preset').value=experiment;
  el('real').setAttribute('aria-pressed',String(!schematic));el('diagram').setAttribute('aria-pressed',String(schematic));
  el('undo').disabled=!history.length;
 }
@@ -437,7 +458,6 @@ for(const [id,[en,zh,,,icon]] of Object.entries(tools)){
 }
 board.addEventListener('click',ev=>{const slot=ev.target.closest('[data-slot]');if(slot)operate(slot.dataset.slot);});
 board.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const slot=ev.target.closest('[data-slot]');if(slot){ev.preventDefault();operate(slot.dataset.slot);}}});
-el('preset').onchange=()=>{save();cellRemovedForRepair=false;guide=null;earned=false;failures=0;selectedResistor=null;experiment=el('preset').value;parts=preset(experiment);choose(experiment==='empty'?'cell':'use');};
 el('undo').onclick=()=>{const last=history.pop();if(last){cellRemovedForRepair=last.cellRemovedForRepair;guide=last.guide;failures=last.failures;earned=last.earned;parts=last.parts;experiment=last.experiment;choose(tool);}};
 for(const id of ['current','electron']) el(id).onclick=()=>{
  directionMode=directionMode===id?'':id;
@@ -446,6 +466,7 @@ for(const id of ['current','electron']) el(id).onclick=()=>{
 el('real').onclick=()=>{schematic=false;render();};el('diagram').onclick=()=>{schematic=true;render();};
 function theme(){
  const night=document.documentElement.dataset.style==='tech';
+ for(const id of ['challenge-win','start-button']){if(night)el(id).setAttribute('data-augmented-ui','tl-clip br-clip border');else el(id).removeAttribute('data-augmented-ui');}
  if(night)el('frame').setAttribute('data-augmented-ui','tl-clip tr-clip br-clip bl-clip border');
  else el('frame').removeAttribute('data-augmented-ui');
  choose(tool);

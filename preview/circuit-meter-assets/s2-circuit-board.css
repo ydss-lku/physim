@@ -69,3 +69,22 @@ footer[data-author-credit]{margin-top:16px;color:var(--soft);font-size:13px}
 #challenge-start label{display:grid;gap:.35rem}
 #race-clock,#finish-time,#rankings{font-variant-numeric:tabular-nums}
 #rankings{max-height:40vh;overflow:auto;text-align:start;overflow-wrap:anywhere}
+#challenge-start:not([hidden]){padding:0;background:none;border:0}
+#start-button{padding:.35em 1.1em;font:750 clamp(1.8rem,5vw,3.5rem)/1.2 Oxanium,system-ui;letter-spacing:-.04em}
+#challenge-win{width:min(32rem,92vw);max-height:88dvh;overflow:auto;box-sizing:border-box;text-align:left;padding:clamp(1rem,4vw,2rem)}
+#challenge-message{font:650 1.1rem Oxanium,system-ui}
+#finish-time{font:750 clamp(2.4rem,9vw,4.5rem)/1 Oxanium,system-ui;margin:.18em 0 .4em;letter-spacing:-.055em}
+#entry:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.35rem .5rem}
+#entry label{grid-column:1/-1}
+#entry input{font:inherit;padding:.45em;min-width:0}
+#entry button,#challenge-ok{margin:0}
+#ranking-title{font:700 1.6rem Oxanium,system-ui;margin:1rem 0 .35rem}
+#rankings{counter-reset:place;list-style:none;margin:.25em 0 1em;padding:0;max-height:28dvh}
+#rankings li{counter-increment:place;display:grid;grid-template-columns:2ch minmax(0,1fr) auto;align-items:baseline;gap:.65em;padding:.4em .2em;border-bottom:1px solid var(--line);font:600 clamp(1rem,3vw,1.4rem) Oxanium,system-ui}
+#rankings li::before{content:counter(place,decimal-leading-zero);opacity:.8}
+#rankings .your-result{background:var(--button);font-weight:800}
+html[data-style=tech] #challenge-win{background:#182024 url('../../cyberpunk-assets/brushed-metal.png');color:#e8f0ef;border:0;--aug-border-all:2px;--aug-border-bg:#77f5ef;--aug-tl:22px;--aug-br:24px;box-shadow:inset 0 0 16px #2fe9ef44}
+html[data-style=tech] :is(#start-button,#save-score){background:#fcee0a;color:#121817;--aug-border-bg:#fff79a;--aug-border-all:1px}
+html[data-style=tech] #finish-time{color:#77f5ef;text-shadow:0 0 12px #2fe9ef55}
+html[data-style=tech] #rankings .your-result{color:#fcee0a}
+@media(prefers-reduced-motion:no-preference){#challenge-win[open] #finish-time,#challenge-start:not([hidden]) button{animation:score-reveal .4s ease-out both}@keyframes score-reveal{from{opacity:.2;transform:translateY(.2em) scale(.92)}to{opacity:1;transform:none}}}
