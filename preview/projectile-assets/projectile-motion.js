@@ -350,52 +350,31 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     probe.style.left=Math.max(2,Math.min(rect.width-width-2,anchor.x+width+15<rect.width?anchor.x+12:anchor.x-width-12))+'px';
     probe.style.top=Math.max(2,Math.min(rect.height-height-2,anchor.y-height/2))+'px';
   }
-  const sceneSettings=document.createElement('details');
-  sceneSettings.className='scene-settings';sceneSettings.open=true;
-  sceneSettings.innerHTML=`<summary><span lang="en">Launch settings</span><span lang="zh-HK">發射設定</span></summary>
-    <div class="scene-gestures">
-      <label class="height-gesture"><output></output><input type="range" aria-label="Launch height / 發射高度"></label>
-      <div class="angle-gesture"><output></output><svg viewBox="0 0 68 88" role="slider" tabindex="0" aria-label="Launch angle / 發射角度">
-        <path class="dial-track" d="M16 8 A36 36 0 0 1 16 80"/><path class="dial-active"/>
-        <path class="dial-base" d="M9 44H59"/><g class="dial-arm"><path d="M16 44H52"/><circle cx="52" cy="44" r="5"/></g>
-        <circle cx="16" cy="44" r="2.5" fill="currentColor"/></svg></div>
-    </div><label class="speed-gesture"><output></output><input type="range" aria-label="Initial speed / 初速"></label>`;
-  trajCanvas.parentElement.append(sceneSettings);
-  const sceneHeight=sceneSettings.querySelector('.height-gesture input'),sceneSpeed=sceneSettings.querySelector('.speed-gesture input');
-  const sceneAngle=sceneSettings.querySelector('svg');
+  const speedTag=document.createElement('label');
+  speedTag.className='rig-speed';
+  speedTag.innerHTML='<output></output><input type="range" aria-label="Initial speed / 初速">';
+  trajCanvas.parentElement.append(speedTag);
+  const sceneSpeed=speedTag.querySelector('input');
+  sceneSpeed.min=sliderV0.min;sceneSpeed.max=sliderV0.max;
   function changeSetting(source,value){
     source.value=String(value);source.dispatchEvent(new Event('input',{bubbles:true}));
   }
-  for(const [control,source] of [[sceneHeight,sliderY0],[sceneSpeed,sliderV0]]){
-    control.min=source.min;control.max=source.max;control.step=source.step||'1';
-    control.addEventListener('input',()=>changeSetting(source,control.value));
-  }
-  function dragAngle(event){
-    const cursor=new DOMPoint(event.clientX,event.clientY).matrixTransform(sceneAngle.getScreenCTM().inverse());
-    const degrees=Math.atan2(44-cursor.y,Math.max(.01,cursor.x-16))*180/Math.PI;
-    changeSetting(sliderTheta,Math.round(degrees));
-  }
-  let dialPointer=null;
-  sceneAngle.addEventListener('pointerdown',e=>{
-    if(e.button!==0||dialPointer!==null)return;
-    e.preventDefault();sceneAngle.focus();dialPointer=e.pointerId;sceneAngle.setPointerCapture(e.pointerId);dragAngle(e);
-  });
-  sceneAngle.addEventListener('pointermove',e=>{if(e.pointerId===dialPointer)dragAngle(e);});
-  sceneAngle.addEventListener('lostpointercapture',()=>{dialPointer=null;});
-  sceneAngle.addEventListener('keydown',e=>{
-    const delta={ArrowUp:1,ArrowRight:1,ArrowDown:-1,ArrowLeft:-1,PageUp:10,PageDown:-10}[e.key];
-    if(delta===undefined && e.key!=='Home' && e.key!=='End')return;
-    e.preventDefault();changeSetting(sliderTheta,e.key==='Home'?sliderTheta.min:e.key==='End'?sliderTheta.max:draft.theta+delta);
-  });
-  function syncSceneSettings(){
-    sceneHeight.value=draft.y0;sceneSpeed.value=draft.v0;
-    sceneSettings.querySelector('.height-gesture output').textContent='y₀ '+draft.y0+' m';
-    sceneSettings.querySelector('.angle-gesture output').textContent='θ '+draft.theta+'°';
-    sceneSettings.querySelector('.speed-gesture output').textContent='v₀ '+draft.v0+' m/s';
-    sceneAngle.querySelector('.dial-arm').setAttribute('transform','rotate('+(-draft.theta)+' 16 44)');
-    sceneAngle.querySelector('.dial-active').setAttribute('d',Number(sliderTheta.min)<0?'M16 8 A36 36 0 0 1 16 80':'M16 8 A36 36 0 0 1 52 44');
-    for(const [key,value] of [['min',sliderTheta.min],['max',sliderTheta.max],['now',draft.theta]])sceneAngle.setAttribute('aria-value'+key,value);
-    sceneAngle.setAttribute('aria-valuetext',draft.theta+'°');
+  sceneSpeed.addEventListener('input',()=>changeSetting(sliderV0,sceneSpeed.value));
+  let speedDragging=false,modelDrag=null;
+  sceneSpeed.addEventListener('pointerdown',()=>{speedDragging=true;});
+  sceneSpeed.addEventListener('lostpointercapture',()=>{speedDragging=false;});
+  window.addEventListener('pointerup',()=>{speedDragging=false;});
+  function placeSpeedBar(w,h){
+    speedTag.hidden=!renderExhibit || state.playing;
+    if(speedTag.hidden)return;
+    sceneSpeed.value=draft.v0;
+    speedTag.querySelector('output').textContent='v₀ '+draft.v0+' m/s';
+    if(speedDragging)return;
+    const {speed}=renderExhibit.controlAnchor();
+    const width=speedTag.offsetWidth,height=speedTag.offsetHeight;
+    if(speed.x<0||speed.x>w||speed.y<0||speed.y>h){speedTag.hidden=true;return;}
+    speedTag.style.left=Math.max(4,Math.min(w-width-4,speed.x+width+14<w?speed.x+12:speed.x-width-14))+'px';
+    speedTag.style.top=Math.max(4,Math.min(h-height-4,speed.y-height/2))+'px';
   }
   const previewLabel=document.createElement('output');
   previewLabel.className='launch-preview';previewLabel.hidden=true;
@@ -526,6 +505,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     hideProbe();
     trajectoryView = {p,project};
     placeRange(p,project,w,h);
+    placeSpeedBar(w,h);
     ctx.clearRect(0,0,w,h);
     const styles = getComputedStyle(document.querySelector(".shell"));
     const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());
@@ -805,7 +785,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
 }
   function updateUI() {
-    syncSceneSettings();
+
     valTheta.textContent = `${draft.theta > 0 ? "+" : ""}${draft.theta}°`;
     valV0.textContent = `${draft.v0} m/s`;
     valY0.textContent = draft.y0;
@@ -1080,6 +1060,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
     hideProbe();
+    if(event.button===0 && event.isPrimary && renderExhibit && !state.playing){
+      const key=renderExhibit.pickControl(event.clientX,event.clientY);
+      if(key){
+        const coords=renderExhibit.dragCoordinates(),start=coords(event.clientX,event.clientY);
+        if(start){
+          modelDrag={id:event.pointerId,key,coords,start,value:draft[key]};
+          trajCanvas.setPointerCapture(event.pointerId);event.preventDefault();return;
+        }
+      }
+    }
     if(canOrbit && event.button===0){
       fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       trajCanvas.setPointerCapture(event.pointerId);
@@ -1095,6 +1085,18 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     } else seekTrajectory(event);
   });
   trajCanvas.addEventListener("pointermove", event => {
+    if(modelDrag && event.pointerId===modelDrag.id){
+      const {key,coords,start,value}=modelDrag,pt=coords(event.clientX,event.clientY);
+      if(pt){
+        const delta=key==='y0'?pt.height-start.height:((pt.angle-start.angle+540)%360)-180;
+        changeSetting(key==='y0'?sliderY0:sliderTheta,Math.round(value+delta));
+      }
+      return;
+    }
+    if(!event.buttons && renderExhibit && !state.playing){
+      const hit=renderExhibit.pickControl(event.clientX,event.clientY);
+      trajCanvas.style.cursor=hit==='y0'?'ns-resize':hit==='theta'?'grab':'';
+    }
     const previous=fingers.get(event.pointerId);
     if(previous){
       const distance=fingers.size===2?pinchDistance():0;
@@ -1121,7 +1123,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if (Math.hypot(event.clientX - graphPress.x, event.clientY - graphPress.y) >= 3) graphPress.dragging = true;
     if (graphPress.dragging) seekTrajectory(event);
   });
-  trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId); graphPress = null; });
+  trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId);if(modelDrag?.id===event.pointerId)modelDrag=null;graphPress=null; });
 
   trajCanvas.addEventListener("pointerleave",hideProbe);
 

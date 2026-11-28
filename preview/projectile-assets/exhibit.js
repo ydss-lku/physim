@@ -362,6 +362,44 @@ function createProjectileExhibit(canvas) {
   }
   const flightCamera=new T.PerspectiveCamera(38,1,.1,200000);
   const portraitCamera=new T.PerspectiveCamera(34,1,.1,200000);
+  const platform=scene.getObjectByName('Launch platform');
+  const picker=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,0,1),0);
+  function aimRay(x,y,cam){
+    const r=canvas.getBoundingClientRect();
+    picker.setFromCamera(new T.Vector2(2*(x-r.left)/r.width-1,1-2*(y-r.top)/r.height),cam);
+  }
+  render.pickControl=function(x,y){
+    aimRay(x,y,flightCamera);
+    const parts=[[barrel,'theta'],[platform,'y0']];
+    if(pendingSetup.visible)parts.unshift([pendingBarrel,'theta'],[pendingPlatform,'y0']);
+    for(const [object,key] of parts){
+      if(picker.intersectObject(object,true).length)return key;
+    }
+    // The floor can cover the sides of a fully lowered platform.
+    const guide=render.controlAnchor();
+    const r=canvas.getBoundingClientRect();
+    if(Math.hypot(x-r.left-guide.base.x,y-r.top-guide.base.y)<11)return 'y0';
+    return null;
+  };
+  render.controlAnchor=function(){
+    const root=pendingSetup.visible?pendingSetup:rig,rect=canvas.getBoundingClientRect();
+    function screen(x,y,z){
+      const pt=root.localToWorld(new T.Vector3(x,y,z)).project(flightCamera);
+      return {x:(pt.x+1)*rect.width/2,y:(1-pt.y)*rect.height/2};
+    }
+    return {base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
+  };
+  render.dragCoordinates=function(){
+    const cam=flightCamera.clone(),root=pendingSetup.visible?pendingSetup:rig;
+    const centre=root.position.clone(),scale=root.scale.x;
+    return (x,y)=>{
+      aimRay(x,y,cam);
+      const pt=picker.ray.intersectPlane(plane,new T.Vector3());
+      if(!pt)return null;
+      pt.sub(centre).divideScalar(scale);
+      return {height:pt.y,angle:Math.atan2(pt.y,pt.x)*180/Math.PI};
+    };
+  };
   render.cannonBounds=cannonBounds;
   return render;
 }

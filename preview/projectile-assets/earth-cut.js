@@ -164,7 +164,7 @@ function createEarthCut(T,scene){
   const rg=new T.BufferGeometry();rg.setAttribute('position',new T.Float32BufferAttribute(roots,3));
   const rootlets=new T.LineSegments(rg,new T.LineBasicMaterial({color:0x655039}));rootlets.visible=false;root.add(rootlets);
   const pedestal=new T.Mesh(new T.BoxGeometry(3.35,1,2.1),new T.MeshStandardMaterial({color:0x384852,roughness:1}));
-  pedestal.castShadow=true;pedestal.receiveShadow=true;root.add(pedestal);
+  pedestal.name='Launch platform';pedestal.castShadow=true;pedestal.receiveShadow=true;root.add(pedestal);
   const labels=[];
   function makeLabel(radius){
     const canvas=document.createElement('canvas');
@@ -263,8 +263,8 @@ function createEarthCut(T,scene){
     const wheelLevel=(contact-field)/size;
     const depth=Math.min(-.35,wheelLevel);
     const rise=wheelLevel-depth;
-    pedestal.visible=rise>.001;pedestal.scale.y=Math.max(.001,rise);
-    pedestal.position.set(-.65,depth+rise/2,0);
+    pedestal.scale.y=Math.max(.16,rise);
+    pedestal.position.set(-.65,wheelLevel-pedestal.scale.y/2+.012,0);
     // The final range gates eligibility; only the paint animation advances after impact.
     const reached=Math.floor((time*vx+1e-9)/10);
     const revealTime=time+Math.min(revealDuration,Math.max(0,landedAge));
