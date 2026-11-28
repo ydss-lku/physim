@@ -60,7 +60,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const outVy = document.getElementById("outVy");
   const hrFormulaBox = document.getElementById("hrFormulaBox");
 
-  const livePosTag = document.getElementById("livePosTag");
+  const [timeReading,xReading,yReading] = document.querySelectorAll("#livePosTag output");
   const timeLabel = document.getElementById("timeLabel");
 
   const btnLaunch = document.getElementById("btnLaunch");
@@ -892,7 +892,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     updateFlightPanels(p,curT,cur.vy);
     drawSpeedChart(p,curT);
     timeLabel.textContent = `${curT.toFixed(2)} / ${p.T.toFixed(2)} s`;
-    livePosTag.textContent = `t = ${curT.toFixed(2)} s ｜ x = ${cur.x.toFixed(1)} m, y = ${cur.y.toFixed(1)} m`;
+    timeReading.value = curT.toFixed(2) + " s";
+    xReading.value = cur.x.toFixed(1) + " m";
+    yReading.value = cur.y.toFixed(1) + " m";
 
     drawTrajectory();
     if (angleAnalysis.open) {
