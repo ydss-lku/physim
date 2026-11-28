@@ -63,6 +63,7 @@
         <g fill="none" stroke="#ff858a" stroke-width="2">
           <path id="incident"/><path id="reflected"/>
         </g>
+        <path id="filament" display="none" fill="none" stroke-width="1.2" stroke-linejoin="round"/>
         <g id="arrows" fill="#ffc2bf"></g>
         <path id="mirrorTouch" fill="none" stroke="transparent" stroke-width="24" pointer-events="stroke" style="touch-action:none;cursor:ns-resize"/><g id="lamp"><circle r="22" fill="transparent"/><g id="standardSource"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g><g id="gauntlet" display="none" stroke="#41242a" stroke-width="1.1" stroke-linejoin="round"><g fill="#b73839"><path d="M-10 -4 L-15 -14 Q-16 -18 -13 -18 L-6 -9 L-9 -22 Q-9 -25 -6 -24 L-2 -11 L-3 -25 Q-2 -28 1 -25 L3 -11 L4 -23 Q6 -26 8 -22 L7 -7 L11 -13 Q15 -15 14 -10 L10 2 L8 9 L6 21 L-6 21 L-8 9 Z"/></g><path fill="#d6a657" d="M-9 -4 L-3 -8 L6 -6 L9 0 L5 8 L-5 9 L-9 3 Z M-6 12 L6 11 L5 18 L-5 19 Z"/><path fill="none" d="M-12 -13 l3 -2 M-8 -17 l4 -1 M-3 -19 h4 M4 -17 h4 M-6 14 l11 -1"/><circle r="4.8" fill="#272932"/><circle id="core" r="3.4" stroke="none"/></g></g>
         <text pointer-events="none" id="incomingLabel">Incident ray</text>
@@ -115,6 +116,21 @@
     let rays = [];
     let frame;
     function animate(time) {
+      if (byId('secret').getAttribute('aria-pressed') === 'true') {
+        const phase = motion.matches ? 0 : time * .005;
+        const strands = [];
+        for (const [x,y,dx,dy] of rays) {
+          const length = Math.hypot(dx,dy);
+          if (length < 1) continue;
+          const steps = Math.max(2,Math.ceil(length/5));
+          for (let k=0;k<=steps;k++) {
+            const t=k/steps, s=t*length;
+            const bend=Math.sin(Math.PI*t)*(2.5*Math.sin(s*.24-phase)+1.1*Math.sin(s*.69+phase*1.6));
+            strands.push((k?'L':'M')+(x+dx*t-dy*bend/length).toFixed(2)+' '+(y+dy*t+dx*bend/length).toFixed(2));
+          }
+        }
+        byId('filament').setAttribute('d',strands.join(' '));
+      }
       rays.forEach(([x, y, dx, dy], rayIndex) => {
         arrows[rayIndex].forEach((arrow, index) => {
           const age = ((motion.matches ? 500 : time) + index * 1000) % 3000;
@@ -248,9 +264,11 @@
     function initialCamera(){return new DOMMatrix().translate(324,90).scale(minZoom).translate(-320,-180);}
     let camera=initialCamera(); applyCamera();
     function setGlove(active){
+      byId('filament').setAttribute('display',active?'inline':'none');
       byId("gauntlet").setAttribute("display",active?"inline":"none");
       byId("standardSource").setAttribute("display",active?"none":"inline");
       byId("secret").setAttribute("aria-pressed",String(active));
+      draw();
     }
     byId("secret").onclick=()=>setGlove(byId("secret").getAttribute("aria-pressed")!=="true");
     function applyCamera(){world.setAttribute('transform',camera.toString().replace(/,/g,' '));}
@@ -285,6 +303,7 @@
       const channel=n=>{const k=(n+h/60)%6;return Math.round(255*(1-s*Math.max(0,Math.min(k,4-k,1))));};
       const rgb=[channel(5),channel(3),channel(1)];
       const hex='#'+rgb.map(c=>c.toString(16).padStart(2,'0')).join('').toUpperCase();
+      byId('filament').setAttribute('stroke',hex);
       byId('incident').parentElement.setAttribute('stroke',hex);
       byId('core').setAttribute('fill',hex); byId('core').style.filter='drop-shadow(0 0 2px '+hex+')'; byId('halo').setAttribute('stroke',hex);byId('arrows').setAttribute('fill',hex);
       byId('colourValue').textContent='RGB '+rgb.join(', ')+' · '+hex;
