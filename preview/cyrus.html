@@ -53,6 +53,10 @@
       .stage {aspect-ratio:378/263}
       main:fullscreen,main.expanded {align-content:start;overflow:auto}
     }
+    main:is(:fullscreen,.expanded) {display:block;padding:0;overflow:hidden;background:#05070b}
+    main:is(:fullscreen,.expanded) .stage {width:100%;height:100%;aspect-ratio:auto}
+    main:is(:fullscreen,.expanded) .controls {display:none}
+    main:is(:fullscreen,.expanded) .frame {border:0}
     </style>
 </head>
 <body>
