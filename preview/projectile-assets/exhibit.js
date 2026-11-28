@@ -85,14 +85,14 @@ function createProjectileExhibit(canvas) {
   });
   const pendingPlatform=createLaunchLift(T,true);
   const pendingSetup=new T.Group();pendingSetup.add(pendingRig,pendingPlatform);scene.add(pendingSetup);
-  const initialVector=new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(1.86,0,0),1,0x70ebe0);
+  const initialVector=new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(1.86,0,0),1,0x20e3cc);
   initialVector.line.material.transparent=initialVector.cone.material.transparent=true;
   initialVector.line.material.opacity=initialVector.cone.material.opacity=.85;
   pendingBarrel.add(initialVector);
-  const arcMaterial=new T.MeshBasicMaterial({color:0xffda91,transparent:true,depthWrite:false});
+  const arcMaterial=new T.MeshBasicMaterial({color:0xffb83c,transparent:true,depthWrite:false});
   const angleGuide=new T.Group();
   angleGuide.position.z=.38;
-  const arcTube=new T.Mesh(new T.TorusGeometry(1.5,.038,8,32,1.1),arcMaterial);
+  const arcTube=new T.Mesh(new T.TorusGeometry(1.5,.054,8,32,1.1),arcMaterial);
   arcTube.rotation.z=-.55;
   angleGuide.add(arcTube);
   for(const sign of [-1,1]){
@@ -102,6 +102,11 @@ function createProjectileExhibit(canvas) {
     head.rotation.z=a+(sign<0?Math.PI:0);
     angleGuide.add(head);
   }
+  const arcEdges=angleGuide.children.map(mesh=>outlineGuide(mesh,mesh===arcTube?
+    new T.TorusGeometry(1.5,.082,8,32,1.1):null));
+  const speedShaft=new T.Mesh(new T.CylinderGeometry(.032,.032,1,10),initialVector.cone.material);
+  initialVector.add(speedShaft);
+  const speedEdges=[outlineGuide(speedShaft),outlineGuide(initialVector.cone)];
   const ball=part(scene,new T.SphereGeometry(1,48,32),alloy);
   for(const angle of [-.32,.32]){
     const belt=part(ball,new T.TorusGeometry(Math.cos(angle),.027,8,64),graphite,0,Math.sin(angle),0);
@@ -310,6 +315,7 @@ function createProjectileExhibit(canvas) {
     pendingPlatform.getObjectByName('Lift direction').visible=editable;
     initialVector.visible=editable;
     const length=editSpeed*.16;
+    speedShaft.position.y=length/2;speedShaft.scale.y=length;
     initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
     platform.getObjectByName('Lift direction').visible=editable&&!setup;
     if(setup){
@@ -455,9 +461,14 @@ function createProjectileExhibit(canvas) {
       if(active)return key===active?1:.2;
       return base*opacity;
     }
+    for(const edge of arcEdges)edge.opacity=level('theta',.95);
+    for(const edge of speedEdges)edge.opacity=level('v0',.95);
+    for(const lift of [platform,pendingPlatform]){
+      for(const edge of lift.getObjectByName('Lift direction').userData.edges)edge.opacity=level('y0',.95);
+    }
     arcMaterial.opacity=level('theta',1);
-    for(const material of liftCueMaterials)material.opacity=level('y0',.78);
-    initialVector.line.material.opacity=initialVector.cone.material.opacity=level('v0',.85);
+    for(const material of liftCueMaterials)material.opacity=level('y0',.94);
+    initialVector.line.material.opacity=initialVector.cone.material.opacity=level('v0',.98);
     renderer.render(scene,flightCamera);
   };
   render.cameraFrame=()=>lastFrame;

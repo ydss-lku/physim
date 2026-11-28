@@ -1,4 +1,12 @@
 // Local terrain coordinates are independent of the camera zoom.
+function outlineGuide(mesh,geometry){
+  const outline=new THREE.Mesh(geometry||mesh.geometry,new THREE.MeshBasicMaterial({
+    color:0x10212c,side:THREE.BackSide,transparent:true,depthWrite:false
+  }));
+  if(!geometry)outline.scale.set(1.4,1.09,1.4);
+  mesh.add(outline);
+  return outline.material;
+}
 function createLaunchLift(T,preview=false){
   const lift=new T.Group();
   function material(color){
@@ -32,6 +40,7 @@ function createLaunchLift(T,preview=false){
     if(sign<0)head.rotation.z=Math.PI;
     guide.add(head);
   }
+  guide.userData.edges=guide.children.map(mesh=>outlineGuide(mesh));
   lift.setRise=function(rise){
     const travel=Math.max(0,rise-.37);
     foot.position.y=-.29-travel;

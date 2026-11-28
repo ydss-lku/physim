@@ -353,7 +353,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function changeSetting(source,value){
     source.value=String(value);source.dispatchEvent(new Event('input',{bubbles:true}));
   }
-  let modelDrag=null;
+  let modelDrag=null,hoverCue=null;
   const angleValue=document.createElement('output');
   angleValue.className='rig-angle-value';angleValue.hidden=true;
   trajCanvas.parentElement.append(angleValue);
@@ -370,23 +370,25 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
   function placeRigHints(w,h){
     angleValue.hidden=true;
+    if(state.playing)hoverCue=null;
     if(!renderExhibit || state.playing)return;
     const {muzzle,pivot,onArc,liftBadge,speedTip}=renderExhibit.controlAnchor();
     arcPoints=Array.from({length:25},(_,i)=>onArc((i/24-.5)*1.1,1.5));
-    const tick=onArc(0,1.64);
-    if(modelDrag?.key==='theta'){
+    const tick=onArc(0,1.64),focused=modelDrag?.key ?? hoverCue;
+    if(focused)angleValue.style.color=renderExhibit.cueColors[focused];
+    if(focused==='theta'){
       angleValue.hidden=false;angleValue.textContent=draft.theta+'°';
       const dx=tick.x-pivot.x,dy=tick.y-pivot.y,len=Math.hypot(dx,dy)||1;
       angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,tick.x+dx/len*15-angleValue.offsetWidth/2))+'px';
       angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,tick.y+dy/len*15-angleValue.offsetHeight/2))+'px';
     }
-    if(modelDrag?.key==='y0'){
+    if(focused==='y0'){
       angleValue.textContent='y₀ = '+draft.y0+' m';
       angleValue.hidden=false;
       angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,liftBadge.x-angleValue.offsetWidth/2))+'px';
       angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,liftBadge.y-angleValue.offsetHeight-15))+'px';
     }
-    if(modelDrag?.key==='v0'){
+    if(focused==='v0'){
       angleValue.hidden=false;angleValue.textContent='v₀ = '+draft.v0+' m/s';
       const width=angleValue.offsetWidth,height=angleValue.offsetHeight;
       const dx=speedTip.x-muzzle.x,dy=speedTip.y-muzzle.y;
@@ -486,8 +488,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
   function paintCues(){
     const phase=(performance.now()-cueStart)*2*Math.PI/1500;
-    const opacity=reducedMotion.matches?1:.72+.28*Math.cos(phase);
-    renderExhibit.setCueOpacity(cueTimer || !launched || canOrbit ? opacity : 1,modelDrag?.key);
+    const opacity=reducedMotion.matches?1:.85+.15*Math.cos(phase);
+    renderExhibit.setCueOpacity(cueTimer || !launched || canOrbit ? opacity : 1,modelDrag?.key ?? hoverCue);
   }
   function syncCues(enabled){
     if(enabled && !cueTimer){
@@ -1108,7 +1110,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         const coords=renderExhibit.dragCoordinates(),start=coords(event.clientX,event.clientY);
         if(start){
           modelDrag={id:event.pointerId,key,coords,start,value:draft[key]};
-          angleValue.style.color=renderExhibit.cueColors[key];
+          hoverCue=null;
           paintCues();
           placeRigHints(trajCanvas.clientWidth,trajCanvas.clientHeight);
           trajCanvas.setPointerCapture(event.pointerId);event.preventDefault();return;
@@ -1144,8 +1146,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       }
       return;
     }
-    if(!event.buttons && renderExhibit && !state.playing){
+    if(!event.buttons && event.pointerType!=="touch" && renderExhibit && !state.playing){
       const hit=editTarget(event);
+      setHoverCue(hit);
+      if(hit)hideProbe();
       trajCanvas.style.cursor=hit==='y0'?'ns-resize':hit?'grab':'';
     }
     const previous=fingers.get(event.pointerId);
@@ -1167,7 +1171,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       }
       return;
     }
-    if(!event.buttons && event.pointerType!=="touch" && trajectoryView && launched && !state.playing && state.t>=trajectoryView.p.T && trajectoryView.p.T>0){
+    if(!hoverCue && !event.buttons && event.pointerType!=="touch" && trajectoryView && launched && !state.playing && state.t>=trajectoryView.p.T && trajectoryView.p.T>0){
       inspectFlight(event);return;
     }
     if (graphPress?.id !== event.pointerId) return;
@@ -1176,7 +1180,14 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
   trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId);if(modelDrag?.id===event.pointerId){modelDrag=null;paintCues();}angleValue.hidden=true;graphPress=null; });
 
-  trajCanvas.addEventListener("pointerleave",hideProbe);
+  function setHoverCue(key){
+    if(hoverCue===key)return;
+    hoverCue=key;
+    paintCues();
+    placeRigHints(trajCanvas.clientWidth,trajCanvas.clientHeight);
+  }
+  trajCanvas.addEventListener("pointerleave",()=>{hideProbe();setHoverCue(null);trajCanvas.style.cursor='';});
+  window.addEventListener('blur',()=>setHoverCue(null));
 
   function bindAngleChartScrub(canvas) {
     let dragging = false;
