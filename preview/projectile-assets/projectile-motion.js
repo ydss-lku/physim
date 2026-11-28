@@ -903,10 +903,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     updatePlayButtons();
     updateUI();
   }
+  let zoomFrame=0;
   function zoomView(factor){
+    const next=Math.min(6,Math.max(.35,view.zoom*factor));
+    if(next===view.zoom)return;
     view.active=true;
-    view.zoom=Math.min(6,Math.max(.35,view.zoom*factor));
-    updateUI();
+    view.zoom=next;
+    if(!zoomFrame)zoomFrame=requestAnimationFrame(()=>{
+      zoomFrame=0;
+      updateUI();
+    });
   }
   function pinchDistance(){
     const [a,b]=fingers.values();
@@ -915,7 +921,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   trajCanvas.addEventListener("wheel",event=>{
     if(!canOrbit)return;
     event.preventDefault();
-    zoomView(Math.exp(-Math.sign(event.deltaY)*.12));
+    // Precision trackpads deliver a stream of fractional wheel deltas.
+    const unit=event.deltaMode===1?16:event.deltaMode===2?trajCanvas.clientHeight:1;
+    const pixels=event.deltaY*unit;
+    const gain=event.ctrlKey?.004:.0013;
+    const change=Math.max(-.10,Math.min(.10,-pixels*gain));
+    zoomView(Math.exp(change));
   },{passive:false});
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
@@ -939,7 +950,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(previous){
       const distance=fingers.size===2?pinchDistance():0;
       fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
-      if(distance>0){zoomView(pinchDistance()/distance);return;}
+      if(distance>0){const next=pinchDistance();if(next>0)zoomView((next/distance)**.68);return;}
       if(fingers.size===1){
         view.active=true;
         const turnLimit=Math.PI;
