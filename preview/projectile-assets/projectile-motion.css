@@ -135,7 +135,7 @@ main .observation .viewport{height:clamp(265px,28vw,380px)}
 .can-orbit{cursor:grab;touch-action:none}.can-orbit:active{cursor:grabbing}
 
 
-.camera-choice{display:flex;gap:4px;margin:.45rem 0}.camera-choice button{min-height:44px}.camera-choice [aria-pressed=true]{color:var(--on);background:var(--selected)}
+.viewport .camera-choice{position:absolute;z-index:5;top:8px;right:8px;display:flex;margin:0}.camera-choice button{min-height:44px}.camera-choice [aria-pressed=true]{color:var(--on);background:var(--selected)}
 
 #ballInset{position:absolute;top:8px;right:8px;width:clamp(136px,29%,230px);height:clamp(108px,39%,162px);border:1px solid var(--line);background:var(--field);border-radius:4px;pointer-events:none;overflow:hidden}
 #ballInset canvas{width:100%;height:100%}
@@ -149,8 +149,7 @@ html[data-theme=tech] main .observation .viewport,html[data-theme=tech] #ballIns
 @media(max-width:520px){.dial-bank{justify-content:space-around;gap:4px}.dial{flex-direction:column;gap:0}.vector-symbol{height:25px}.vector-reading{line-height:18px}}
 
 .range-scene .stage-heading{display:flex;align-items:center;flex-wrap:wrap;gap:6px 18px;margin-bottom:10px}
-.range-scene .stage-heading h2,.stage-heading .camera-choice{margin:0}
-.stage-heading .camera-choice{order:2;margin-inline-start:auto}
+.range-scene .stage-heading h2{margin:0}
 .stage-heading #livePosTag{font-variant-numeric:tabular-nums;letter-spacing:.02em;color:var(--muted)}
 main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(--line)}
 @media(max-width:650px){main .observation .viewport{height:clamp(275px,68vw,360px)}.stage-heading #livePosTag{order:3;flex-basis:100%}}
