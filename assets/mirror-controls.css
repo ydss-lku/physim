@@ -1,0 +1,47 @@
+/* Page-local controls. The approved Night shell, materials and optics stay in their existing layers. */
+html body main .mirror-toggle,
+html body main button.mirror-view-button {
+  position:relative; display:inline-flex; align-items:center; justify-content:center;
+  box-sizing:border-box; width:48px; height:48px; min-width:48px; min-height:48px;
+  margin:0; padding:0; border:1px solid #71847b; border-radius:4px;
+  background:#f4f3eb; color:#2b453c; cursor:pointer; flex:0 0 auto;
+}
+html body main .mirror-toggle > .bilingual,
+html body main .mirror-toggle > .dot,
+html body main button.mirror-view-button > .bilingual { display:none!important; }
+html body main .mirror-toggle input {
+  position:absolute; inset:0; width:100%; height:100%; margin:0;
+  opacity:0; cursor:pointer; z-index:1;
+}
+.mirror-glyph { width:25px; height:25px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+.mirror-glyph text { fill:currentColor; stroke:none; font:italic 13px Georgia,serif; }
+html body main .mirror-toggle:has(input:checked) { background:#d3e8dc; border-color:#315f48; box-shadow:inset 0 -3px #315f48; }
+html body main .mirror-toggle:focus-within,
+html body main .mirror-view-button:focus-visible { outline:3px solid #457ca0; outline-offset:3px; }
+.mirror-ray-row,.mirror-toggle-row,html body #rayControls,html body #displayControls {
+  display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;
+}
+.mirror-ray-number { position:absolute; left:3px; top:1px; font:700 11px system-ui; }
+.mirror-control-guide { margin:16px 0 4px; }
+.mirror-control-guide summary { min-height:44px; padding:10px 0; box-sizing:border-box; cursor:pointer; }
+.mirror-control-guide summary small { margin-left:8px; }
+.mirror-guide-items { display:grid; gap:12px; padding-block:10px; }
+.mirror-guide-items > div { display:flex; align-items:center; gap:12px; font-size:13px; }
+.mirror-guide-items .mirror-glyph { flex:0 0 25px; }
+html[data-theme=tech] body main .mirror-toggle,
+html[data-theme=tech] body main button.mirror-view-button {
+  background:#15262c; color:#c7dadc; border-color:#5a7880; border-radius:0;
+  box-shadow:none;
+}
+html[data-theme=tech] body main .mirror-toggle:has(input:checked),
+html[data-theme=tech] body main button.mirror-view-button.active {
+  background:#fcee0a; color:#101519; border-color:#fcee0a;
+  box-shadow:inset 0 -3px #b7ae00;
+}
+html[data-theme=tech] .mirror-toggle[style]::after {
+  content:''; position:absolute; top:-3px; right:-3px; width:8px; height:8px;
+  background:var(--ray-colour); border:2px solid #101e25; border-radius:50%;
+}
+html[data-theme=tech] body main .mirror-toggle:focus-within,
+html[data-theme=tech] body main .mirror-view-button:focus-visible { outline-color:#77f5ef; }
+html[data-theme=tech] .mirror-control-guide { color:#c7dadc; }
