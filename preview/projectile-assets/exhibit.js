@@ -426,6 +426,12 @@ function createProjectileExhibit(canvas) {
       return {horizontal:pt.x,height:pt.y,angle:Math.atan2(pt.y,pt.x)*180/Math.PI};
     };
   };
+  const liftCueMaterials=[platform,pendingPlatform].map(lift=>lift.getObjectByName('Lift direction').children[0].material);
+  render.setCueOpacity=function(opacity){
+    for(const material of liftCueMaterials)material.opacity=.78*opacity;
+    initialVector.line.material.opacity=initialVector.cone.material.opacity=.85*opacity;
+    renderer.render(scene,flightCamera);
+  };
   render.cameraFrame=()=>lastFrame;
   render.cannonBounds=cannonBounds;
   return render;

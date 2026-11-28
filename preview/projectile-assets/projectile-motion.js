@@ -513,6 +513,25 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
     impactFrame=requestAnimationFrame(fade);
   }
+  let cueTimer=0,cueStart=0;
+  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+  function paintCues(){
+    const phase=(performance.now()-cueStart)*2*Math.PI/1500;
+    const opacity=reducedMotion.matches?1:.72+.28*Math.cos(phase);
+    dragHints.theta.style.opacity=String(opacity);
+    renderExhibit.setCueOpacity(opacity);
+  }
+  function syncCues(enabled){
+    if(enabled && !cueTimer){
+      cueStart=performance.now();
+      paintCues();
+      cueTimer=setInterval(()=>{if(!document.hidden)paintCues();},50);
+    }else if(!enabled && cueTimer){
+      clearInterval(cueTimer);cueTimer=0;
+      dragHints.theta.style.opacity='1';
+      renderExhibit.setCueOpacity(1);
+    }
+  }
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
@@ -561,6 +580,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     trajectoryView = {p,project};
     placeRange(p,project,w,h);
     placeRigHints(w,h);
+    syncCues(Boolean(renderExhibit && (!launched || canOrbit)));
     ctx.clearRect(0,0,w,h);
     const styles = getComputedStyle(document.querySelector(".shell"));
     const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());
