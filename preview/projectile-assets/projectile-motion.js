@@ -350,6 +350,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     probe.style.left=Math.max(2,Math.min(rect.width-width-2,anchor.x+width+15<rect.width?anchor.x+12:anchor.x-width-12))+'px';
     probe.style.top=Math.max(2,Math.min(rect.height-height-2,anchor.y-height/2))+'px';
   }
+  const previewLabel=document.createElement('output');
+  previewLabel.className='launch-preview';previewLabel.hidden=true;
+  trajCanvas.parentElement.append(previewLabel);
   let trajectoryView;
   // Sample only elapsed simulation time so pausing and scrubbing reproduce the same flame.
   function drawFireTrail(ctx,p,t,scale,toX,toY,w,h,radius,project){
@@ -428,7 +431,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const toPxX = x => start+x*scale;
     const toPxY = y => floor-y*scale;
     const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
-    const project=renderExhibit?renderExhibit({ready,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
+    const preview=draft.theta!==state.theta || draft.v0!==state.v0 ? draft : null;
+    previewLabel.hidden=!preview;
+    if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽")+"  ·  θ "+preview.theta+"°   ·   v₀ "+preview.v0+" m/s";
+    const project=renderExhibit?renderExhibit({ready,preview,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
     trajectoryView = {p,project};
@@ -470,6 +476,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.beginPath();ctx.arc(-20+n*10,0,4,0,2*Math.PI);ctx.stroke();
     }
     ctx.restore();}
+    if(preview && !renderExhibit){
+      const a=preview.theta*Math.PI/180,len=preview.v0*.16*scale;
+      ctx.save();ctx.translate(start,toPxY(preview.y0));ctx.rotate(-a);
+      ctx.globalAlpha=.65;ctx.strokeStyle=ctx.fillStyle='#54cfc6';ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(-scale*1.86,0);ctx.lineTo(len,0);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(len,0);ctx.lineTo(len-7,-4);ctx.lineTo(len-7,4);ctx.fill();ctx.restore();
+    }
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
     path(p,state.t,chartInk.trace,[],0,1.8,true);

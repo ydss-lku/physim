@@ -71,6 +71,15 @@ function createProjectileExhibit(canvas) {
     }
     cylinder(rig,.12,.12,.36,graphite,0,y,z);
   }
+  const pendingBarrel=barrel.clone();
+  const ghostMaterial=new T.MeshBasicMaterial({color:0x70ebe0,transparent:true,opacity:.34,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
+  pendingBarrel.traverse(part=>{
+    if(part.isMesh){part.material=ghostMaterial;part.castShadow=false;part.receiveShadow=false;}
+  });
+  const initialVector=new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(1.86,0,0),1,0x70ebe0);
+  initialVector.line.material.transparent=initialVector.cone.material.transparent=true;
+  initialVector.line.material.opacity=initialVector.cone.material.opacity=.85;
+  pendingBarrel.add(initialVector);scene.add(pendingBarrel);
   const ball=part(scene,new T.SphereGeometry(1,48,32),alloy);
   for(const angle of [-.32,.32]){
     const belt=part(ball,new T.TorusGeometry(Math.cos(angle),.027,8,64),graphite,0,Math.sin(angle),0);
@@ -110,7 +119,7 @@ function createProjectileExhibit(canvas) {
     return bounds;
   }
   function ease(t){t=Math.max(0,Math.min(1,t));return t*t*t*(10+t*(-15+6*t));}
-  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready}){
+  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready,preview}){
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
@@ -159,6 +168,7 @@ function createProjectileExhibit(canvas) {
       (Math.abs(q.y-aim.y)+.24*size)/(tan*spread)));
     flightCamera.position.set(aim.x,aim.y,distance).applyQuaternion(flightCamera.quaternion).add(rig.position);
     flightCamera.zoom=view.zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
+    pendingBarrel.visible=false;
     if(inset){
       const iw=inset.w, ih=inset.h;
       const radius=Math.min(32,ih*.095,iw*.08);
@@ -177,6 +187,16 @@ function createProjectileExhibit(canvas) {
       renderer.setScissorTest(false);renderer.setViewport(0,0,w,h);
       rig.visible=showRig;
 
+    }
+    if(preview){
+      const angle=preview.theta*Math.PI/180;
+      pendingBarrel.scale.setScalar(size);
+      pendingBarrel.rotation.z=angle;
+      pendingBarrel.position.set(mx-1.86*Math.cos(angle)*size,
+        my+(preview.y0-flight.y0-1.86*Math.sin(angle))*size,0);
+      const length=preview.v0*.16;
+      initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
+      pendingBarrel.visible=true;
     }
     renderer.render(scene,flightCamera);
     return function project(horizontal,height){

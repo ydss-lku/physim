@@ -158,3 +158,6 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 .flight-probe,.flight-probe-pin{position:absolute;z-index:4;pointer-events:none}
 .flight-probe{white-space:pre;padding:6px 9px;border:1px solid #7ecfc7;border-radius:4px;background:#12262cef;color:#effaf7;font:12px/1.4 ui-monospace,monospace;font-variant-numeric:tabular-nums}
 .flight-probe-pin{width:8px;height:8px;transform:translate(-50%,-50%);border:2px solid #aceee2;border-radius:50%;background:#173136}
+
+.launch-preview{position:absolute;bottom:8px;right:8px;z-index:3;pointer-events:none;padding:5px 9px;border:1px solid #65b8b0;border-radius:4px;color:#d8fffa;background:#172f35dc;font:600 12px/1.4 system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.launch-preview[hidden]{display:none}
