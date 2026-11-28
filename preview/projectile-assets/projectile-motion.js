@@ -354,71 +354,32 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     source.value=String(value);source.dispatchEvent(new Event('input',{bubbles:true}));
   }
   let modelDrag=null;
-  const dragHints={};
-  for(const [key,glyph] of [['theta','<path class="pivot-arc"/><path class="pivot-tick"/>'],['y0','<path d="M15 4v24 M9 10l6-7 6 7 M9 22l6 7 6-7"/>']]){
-    const icon=document.createElement('span');icon.className='rig-hint';icon.setAttribute('aria-hidden','true');
-    icon.innerHTML='<svg viewBox="0 0 32 32">'+glyph+'</svg>';trajCanvas.parentElement.append(icon);dragHints[key]=icon;
-  }
   const angleValue=document.createElement('output');
   angleValue.className='rig-angle-value';angleValue.hidden=true;
   trajCanvas.parentElement.append(angleValue);
   let arcPoints=[];
   function editTarget(event){
-    for(const [key,icon] of Object.entries(dragHints)){
-      if(icon.hidden)continue;
-      if(key==='theta'){
-        const bounds=trajCanvas.getBoundingClientRect();
-        if(arcPoints.some(p=>Math.hypot(event.clientX-bounds.left-p.x,event.clientY-bounds.top-p.y)<9))return key;
-        continue;
-      }
-      const r=icon.getBoundingClientRect();
-      if(event.clientX>=r.left && event.clientX<=r.right && event.clientY>=r.top && event.clientY<=r.bottom)return key;
-    }
-    const {muzzle,speedTip:end}=renderExhibit.controlAnchor();
+    const {muzzle,speedTip:end,liftBadge}=renderExhibit.controlAnchor();
     const rect=trajCanvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+    if(Math.hypot(x-liftBadge.x,y-liftBadge.y)<16)return 'y0';
+    if(arcPoints.some(p=>Math.hypot(x-p.x,y-p.y)<9))return 'theta';
     const dx=end.x-muzzle.x,dy=end.y-muzzle.y;
     const t=Math.max(.15,Math.min(1,((x-muzzle.x)*dx+(y-muzzle.y)*dy)/(dx*dx+dy*dy||1)));
     if(Math.hypot(x-muzzle.x-t*dx,y-muzzle.y-t*dy)<10)return 'v0';
     return renderExhibit.pickControl(event.clientX,event.clientY);
   }
   function placeRigHints(w,h){
-    const hide=!renderExhibit || state.playing;
-    dragHints.theta.hidden=dragHints.y0.hidden=hide;
     angleValue.hidden=true;
-    if(hide)return;
-    const {muzzle,rear,pivot,base,onArc,liftBadge,speedTip}=renderExhibit.controlAnchor();
-    if(pivot.x<0||pivot.x>w||pivot.y<0||pivot.y>h){
-      dragHints.theta.hidden=dragHints.y0.hidden=true;return;
-    }
-    dragHints.y0.style.opacity="0";
-    function placeHint(icon,x,y){
-      icon.style.left=Math.max(1,Math.min(w-30,x-15))+'px';
-      icon.style.top=Math.max(1,Math.min(h-32,y-16))+'px';
-    }
-    // Project a circle in the barrel's own rotation plane, including its perspective foreshortening.
-    const radius=1.5;
-    arcPoints=Array.from({length:25},(_,i)=>onArc((i/24-.5)*1.1,radius));
-    const tip=arcPoints[12],tick=onArc(0,radius*1.09);
-    const ox=Math.min(...arcPoints.map(p=>p.x),tick.x)-8,oy=Math.min(...arcPoints.map(p=>p.y),tick.y)-8;
-    const icon=dragHints.theta,svg=icon.firstElementChild;
-    const aw=Math.max(...arcPoints.map(p=>p.x),tick.x)-ox+8,ah=Math.max(...arcPoints.map(p=>p.y),tick.y)-oy+8;
-    Object.assign(icon.style,{left:ox+'px',top:oy+'px',width:aw+'px',height:ah+'px'});
-    svg.setAttribute('viewBox',[0,0,aw,ah].join(' '));
-    const local=p=>(p.x-ox)+' '+(p.y-oy);
-    svg.firstElementChild.setAttribute('d',arcPoints.map((p,i)=>(i?'L':'M')+local(p)).join(' '));
-    function arrowHead(end,inside){
-      const dx=end.x-inside.x,dy=end.y-inside.y,len=Math.hypot(dx,dy)||1;
-      const side=k=>local({x:end.x-(5*dx+k*3*dy)/len,y:end.y-(5*dy-k*3*dx)/len});
-      return 'M'+side(1)+'L'+local(end)+'L'+side(-1);
-    }
-    svg.lastElementChild.setAttribute('d',arrowHead(arcPoints[0],arcPoints[1])+arrowHead(arcPoints[24],arcPoints[23]));
+    if(!renderExhibit || state.playing)return;
+    const {muzzle,pivot,onArc,liftBadge,speedTip}=renderExhibit.controlAnchor();
+    arcPoints=Array.from({length:25},(_,i)=>onArc((i/24-.5)*1.1,1.5));
+    const tick=onArc(0,1.64);
     if(modelDrag?.key==='theta'){
       angleValue.hidden=false;angleValue.textContent=draft.theta+'°';
       const dx=tick.x-pivot.x,dy=tick.y-pivot.y,len=Math.hypot(dx,dy)||1;
       angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,tick.x+dx/len*15-angleValue.offsetWidth/2))+'px';
       angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,tick.y+dy/len*15-angleValue.offsetHeight/2))+'px';
     }
-    placeHint(dragHints.y0,liftBadge.x,liftBadge.y);
     if(modelDrag?.key==='y0'){
       angleValue.textContent='y₀ = '+draft.y0+' m';
       angleValue.hidden=false;
@@ -526,7 +487,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function paintCues(){
     const phase=(performance.now()-cueStart)*2*Math.PI/1500;
     const opacity=reducedMotion.matches?1:.72+.28*Math.cos(phase);
-    dragHints.theta.style.opacity=String(opacity);
     renderExhibit.setCueOpacity(opacity);
   }
   function syncCues(enabled){
@@ -536,7 +496,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       cueTimer=setInterval(()=>{if(!document.hidden)paintCues();},50);
     }else if(!enabled && cueTimer){
       clearInterval(cueTimer);cueTimer=0;
-      dragHints.theta.style.opacity='1';
       renderExhibit.setCueOpacity(1);
     }
   }

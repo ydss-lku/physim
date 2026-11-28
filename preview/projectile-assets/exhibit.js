@@ -89,6 +89,19 @@ function createProjectileExhibit(canvas) {
   initialVector.line.material.transparent=initialVector.cone.material.transparent=true;
   initialVector.line.material.opacity=initialVector.cone.material.opacity=.85;
   pendingBarrel.add(initialVector);
+  const arcMaterial=new T.MeshBasicMaterial({color:0xffda91,transparent:true,depthWrite:false});
+  const angleGuide=new T.Group();
+  angleGuide.position.z=.38;
+  const arcTube=new T.Mesh(new T.TorusGeometry(1.5,.038,8,32,1.1),arcMaterial);
+  arcTube.rotation.z=-.55;
+  angleGuide.add(arcTube);
+  for(const sign of [-1,1]){
+    const a=sign*.55;
+    const head=new T.Mesh(new T.ConeGeometry(.105,.25,12),arcMaterial);
+    head.position.set(1.5*Math.cos(a),1.5*Math.sin(a),0);
+    head.rotation.z=a+(sign<0?Math.PI:0);
+    angleGuide.add(head);
+  }
   const ball=part(scene,new T.SphereGeometry(1,48,32),alloy);
   for(const angle of [-.32,.32]){
     const belt=part(ball,new T.TorusGeometry(Math.cos(angle),.027,8,64),graphite,0,Math.sin(angle),0);
@@ -292,6 +305,9 @@ function createProjectileExhibit(canvas) {
     rig.visible=!ready;platform.visible=!ready;
     const vectorParent=setup?pendingBarrel:barrel;
     if(initialVector.parent!==vectorParent)vectorParent.add(initialVector);
+    if(angleGuide.parent!==vectorParent)vectorParent.add(angleGuide);
+    angleGuide.visible=editable;
+    pendingPlatform.getObjectByName('Lift direction').visible=editable;
     initialVector.visible=editable;
     const length=editSpeed*.16;
     initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
@@ -415,7 +431,7 @@ function createProjectileExhibit(canvas) {
     const angle=(pendingSetup.visible?pendingBarrel:barrel).rotation.z;
     const tip=initialVector.cone.getWorldPosition(new T.Vector3()).project(flightCamera);
     const speedTip={x:(tip.x+1)*rect.width/2,y:(1-tip.y)*rect.height/2};
-    return {speedTip,liftBadge:screen(-3,-.358,.64),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),0),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
+    return {speedTip,liftBadge:screen(-3,-.358,.64),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),.38),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
   };
   render.dragCoordinates=function(){
     const cam=flightCamera.clone(),root=pendingSetup.visible?pendingSetup:rig;
@@ -430,6 +446,7 @@ function createProjectileExhibit(canvas) {
   };
   const liftCueMaterials=[platform,pendingPlatform].map(lift=>lift.getObjectByName('Lift direction').children[0].material);
   render.setCueOpacity=function(opacity){
+    arcMaterial.opacity=opacity;
     for(const material of liftCueMaterials)material.opacity=.78*opacity;
     initialVector.line.material.opacity=initialVector.cone.material.opacity=.85*opacity;
     renderer.render(scene,flightCamera);
