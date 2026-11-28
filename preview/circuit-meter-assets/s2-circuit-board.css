@@ -58,3 +58,9 @@ footer[data-author-credit]{margin-top:16px;color:var(--soft);font-size:13px}
 .slot.fault-target .slot-focus{stroke:#bf812c;stroke-dasharray:6 4}
 .great-job{position:absolute;top:26%;left:50%;pointer-events:none;white-space:nowrap;color:#ffd451;font:italic 1000 clamp(48px,7.5vw,114px)/1 system-ui;letter-spacing:-.07em;-webkit-text-stroke:1.5px #382048;text-shadow:3px 4px #763865;transform:translateX(-50%) rotate(-7deg);animation:board-praise 6s linear both}
 @keyframes board-praise{0%{opacity:0}20%,83.3333%{opacity:1}100%{opacity:0}}
+
+.board-head,.board-head .seg{flex-wrap:wrap}
+#challenge-task{padding:6px 16px 10px;color:var(--ink)}
+#challenge-win{background:var(--panel);color:var(--ink);border:2px solid var(--accent);border-radius:8px;padding:24px;max-width:90vw;text-align:center}
+#challenge-win::backdrop{background:#0008}
+#challenge-win button{margin-top:14px;padding:4px 22px}

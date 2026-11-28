@@ -130,11 +130,57 @@ function praise(){
  applause.currentTime=0;
  applause.play().catch(()=>{});
 }
+let freeBoard=null, matched=false;
+function matchesChallenge(){
+ const nodes=Array.from({length:12},(_,n)=>n);
+ const root=n=>nodes[n]===n?n:root(nodes[n]);
+ const components=[],meters=[],degree=Array(12).fill(0);
+ for(const {id,a,b} of slots){
+   const part=parts[id];
+   if(!part)continue;
+   degree[a]++;degree[b]++;
+   if(part.voltmeter || part.type==='voltmeter')meters.push({a,b});
+   if(part.type==='wire')nodes[root(a)]=root(b);
+   else if(part.type!=='voltmeter')components.push({a,b,...part});
+ }
+ if(degree.includes(1)||components.length!==5||meters.length!==1)return false;
+ const cell=components.find(p=>p.type==='cell');
+ if(!cell)return false;
+ let node=root(cell.b);
+ const visited=new Set([node]),remaining=components.filter(p=>p!==cell);
+ for(const [index,type] of ['bulb','ammeter','bulb','switch'].entries()){
+   const choices=remaining.filter(p=>root(p.a)===node||root(p.b)===node);
+   if(choices.length!==1)return false;
+   const part=choices[0];
+   if(part.type!==type || part.closed || (type==='bulb'&&!part.fitted))return false;
+   const next=root(part.a)===node?root(part.b):root(part.a);
+   if(visited.has(next))return false;
+   if(index===2){
+     const meterEnds=[root(meters[0].a),root(meters[0].b)];
+     if(!meterEnds.includes(node)||!meterEnds.includes(next))return false;
+   }
+   remaining.splice(remaining.indexOf(part),1);
+   visited.add(next);node=next;
+ }
+ return node===root(cell.a) && degree.every((d,n)=>!d||visited.has(root(n)));
+}
+el('challenge').onclick=()=>{
+ if(!freeBoard){
+   freeBoard={parts,experiment,tool,guide,failures,earned,cellRemovedForRepair,selectedResistor,history:history.splice(0)};
+   parts={};experiment='empty';guide=null;failures=0;earned=false;cellRemovedForRepair=false;selectedResistor=null;
+   document.querySelector('.great-job')?.remove();applause.pause();choose('use');
+ }else{
+   const saved=freeBoard;
+   ({parts,experiment,guide,failures,earned,cellRemovedForRepair,selectedResistor}=saved);
+   history.splice(0,history.length,...saved.history);freeBoard=null;matched=false;
+   closed=solve(parts).state==='closed';choose(saved.tool);
+ }
+};
 function resetBoard(){
  if(!Object.keys(parts).length)return;
  save();cellRemovedForRepair=false;const status=solve(parts).state;
  failures=earned?0:failures+1;earned=false;guide=null;selectedResistor=null;experiment='empty';
- if(failures>=2){
+ if(failures>=2 && !freeBoard){
    for(const {id} of slots){
      const old=parts[id];
      if(status!=='short' && old && !(old.type==='switch'&&!old.closed || old.type==='bulb'&&!old.fitted))continue;
@@ -180,10 +226,22 @@ faultAction.onclick=()=>{
  board.querySelector('[data-slot="'+id+'"]').focus({preventScroll:true});
 };
 function render() {
+ const challenge=Boolean(freeBoard);
+ el('challenge').textContent=pick('Challenge Mode','挑戰模式');
+ el('challenge').setAttribute('aria-pressed',String(challenge));
+ el('preset').disabled=challenge;
+ el('challenge-task').hidden=!challenge;
+ el('challenge-task').textContent=pick('Build the circuit shown on the printed card.','請按現場圖卡砌出電路。');
+ const correct=challenge && matchesChallenge();
+ if(correct && !matched){
+   el('challenge-message').textContent=pick('Congratulations! Your circuit matches the card.','恭喜你！你砌嘅電路同圖卡相符。');
+   el('challenge-win').showModal();
+ }
+ matched=correct;
  const result=solve(parts), degree=Array(12).fill(0);
  const fault=result.state==='short'?disconnectTarget():null;
  if(fault){if(!applause.paused)applause.pause();document.querySelector('.great-job')?.remove();}
- if(result.state==='closed'){earned=true;failures=0;guide=null;if(!closed)praise();}
+ if(result.state==='closed'){earned=true;failures=0;guide=null;if(!closed&&!freeBoard)praise();}
  closed=result.state==='closed';
  const activeSlot=document.activeElement?.getAttribute('data-slot');
  const bulbNames=new Map(slots.filter(s=>parts[s.id]?.type==='bulb').map((s,i)=>[s.id,'L'+(i+1)]));
