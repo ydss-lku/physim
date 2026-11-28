@@ -110,6 +110,15 @@ function createProjectileExhibit(canvas) {
   const speedShaft=new T.Mesh(new T.CylinderGeometry(.085,.085,1,16),initialVector.cone.material);
   initialVector.add(speedShaft);
   const speedEdges=[outlineGuide(speedShaft),outlineGuide(initialVector.cone)];
+  let arrowLength=1,mainArrowMetresPerPixel=0;
+  function sizeSpeedArrow(length,metresPerPixel){
+    const shaftRadius=Math.min(length*.095,.24,Math.max(.065,2.4*metresPerPixel));
+    const headLength=Math.min(length*.36,Math.max(.48,10*metresPerPixel));
+    const headWidth=Math.min(length*.42,Math.max(.40,shaftRadius*4));
+    initialVector.setLength(length,headLength,headWidth);
+    speedShaft.position.y=(length-headLength)/2;
+    speedShaft.scale.set(shaftRadius/.085,length-headLength,shaftRadius/.085);
+  }
   const ball=part(scene,new T.SphereGeometry(1,48,32),alloy);
   for(const angle of [-.32,.32]){
     const belt=part(ball,new T.TorusGeometry(Math.cos(angle),.027,8,64),graphite,0,Math.sin(angle),0);
@@ -364,6 +373,8 @@ function createProjectileExhibit(canvas) {
     pendingPlatform.getObjectByName('Lift direction').visible=editable;
     initialVector.visible=editable;
     const length=editSpeed*.16;
+    arrowLength=length;
+    sizeSpeedArrow(length,0); // Measure the rig independently of the preceding camera zoom.
 
 
     platform.getObjectByName('Lift direction').visible=editable&&!setup;
@@ -420,11 +431,8 @@ function createProjectileExhibit(canvas) {
     // Maintain a usable silhouette in a wide landing shot without moving the tip.
     const tipDepth=-initialVector.getWorldPosition(new T.Vector3()).applyMatrix4(flightCamera.matrixWorldInverse).z;
     const metrePerPixel=2*tipDepth/(h*size*flightCamera.projectionMatrix.elements[5]);
-    const shaftRadius=Math.max(.085,2.8*metrePerPixel);
-    const headLength=Math.min(length*.45,Math.max(.68,12*metrePerPixel));
-    initialVector.setLength(length,headLength,Math.max(shaftRadius*4,.58));
-    speedShaft.position.y=(length-headLength)/2;
-    speedShaft.scale.set(shaftRadius/.085,length-headLength,shaftRadius/.085);
+    mainArrowMetresPerPixel=metrePerPixel;
+    sizeSpeedArrow(length,metrePerPixel);
     initialVector.line.visible=false;
     lastFrame={yaw,pitch,zoom,offset:flightCamera.position.clone().sub(ground).divideScalar(size)};
 
@@ -508,7 +516,10 @@ function createProjectileExhibit(canvas) {
     const background=scene.background;scene.background=stationBackdrop;
     const showRig=rig.visible,showPlatform=platform.visible;
     if(pendingSetup.visible){rig.visible=false;platform.visible=false;}
+    const root=pendingSetup.visible?pendingSetup:rig;
+    sizeSpeedArrow(arrowLength,(stationCam.top-stationCam.bottom)/(height*root.scale.x));
     renderer.render(scene,stationCam);
+    sizeSpeedArrow(arrowLength,mainArrowMetresPerPixel);
     rig.visible=showRig;platform.visible=showPlatform;scene.background=background;
     stationCanvas.getContext('2d').drawImage(renderer.domElement,0,renderer.domElement.height-sh,sw,sh,0,0,sw,sh);
     renderer.setScissorTest(false);renderer.setViewport(0,0,previousWidth,previousHeight);
