@@ -8,11 +8,16 @@ function createEarthCut(T,scene){
   function edgeX(z){
     return 3.05-.43*(Math.sqrt(z*z+6.)-2.45)+.78*Math.sin(z*.46)+.25*Math.sin(z*1.17)+.09*Math.sin(z*2.8);
   }
+  const originalHalfAngle=Math.atan(.85);
+  const halfAngle=originalHalfAngle*.70;
+  const sectorSlope=Math.tan(halfAngle);
+  const halfWidth=185*Math.sin(halfAngle)/Math.sin(originalHalfAngle);
   const zs=[];
   for(let i=-150;i<=150;i++)zs.push(i*.22);
 
   // Keep the fine bank mesh near the carriage. The distant field needs fewer cross sections.
-  for(let z=35;z<=185;z+=2){zs.unshift(-z);zs.push(z);}
+  for(let z=35;z<halfWidth;z+=2){zs.unshift(-z);zs.push(z);}
+  zs.unshift(-halfWidth);zs.push(halfWidth);
   const positions=[],weights=[],offsets=[],kinds=[],indices=[];
   const rows=[[-720,0,0,1],[-3,0,0,1],[-1.2,0,0,1],[-.91,.07,.09,1],
     [-.62,.23,.14,2],[-.29,.51,.16,2],[-.12,.80,.10,2],[.035,.96,.06,3],
@@ -63,7 +68,8 @@ function createEarthCut(T,scene){
       grass*=.82+.36*turf.a;loam*=.75+.50*clay.a;
       float worn=1.-smoothstep(3.,10.,length(uv*vec2(.85,.7))+3.*(meadowVariation-.5));
       float soil=smoothstep(.18,.9,soilKind)*max(worn,smoothstep(1.,1.75,soilKind));
-      vec2 plateUV=vec2(p.x/5.4+mod(floor(p.z/2.7),2.)*.5,p.z/2.7);
+      vec2 deck=vec2(p.z,-p.x);
+      vec2 plateUV=vec2(deck.x/5.4+mod(floor(deck.y/2.7),2.)*.5,deck.y/2.7);
       vec2 border=.5-abs(fract(plateUV)-.5);
       float gap=min(border.x*5.4,border.y*2.7);
       float seamAA=max(.012,fwidth(gap));
@@ -86,7 +92,7 @@ function createEarthCut(T,scene){
       float major=1.-step(1.,mod(band,20.));
       float stroke=1.-smoothstep(.045+.03*major,.045+.03*major+aa,abs(radius-band));
       // Rounded launch end joins two straight sector sidelines.
-      float side=radial.x < -1.8 ? length(radial+vec2(1.8,0.))-2.5 : (abs(radial.y)-2.5-.85*(radial.x+1.8))*.762;
+      float side=radial.x < -1.8 ? length(radial+vec2(1.8,0.))-2.5 : (abs(radial.y)-2.5-${sectorSlope}*(radial.x+1.8))*${Math.cos(halfAngle)};
       float edgeAA=max(.018,fwidth(side));
       float sector=1.-smoothstep(-edgeAA,edgeAA,side);
       earth*=mix(.84,1.,sector);
@@ -180,7 +186,7 @@ function createEarthCut(T,scene){
   }
   function leftEdge(z,origin){
     const az=Math.abs(z);
-    return origin-9+(Math.hypot(az,7)-7)/.85+1.2*Math.sin(z*.44)+.55*Math.sin(z*1.37);
+    return origin-9+(Math.hypot(az,7)-7)/sectorSlope+1.2*Math.sin(z*.44)+.55*Math.sin(z*1.37);
   }
   function rightEdge(z,origin){
     return origin+Math.sqrt(280*280-z*z)+2.8*Math.sin(z*.17);
