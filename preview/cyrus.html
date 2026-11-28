@@ -104,7 +104,7 @@
         </g>
         <path id="filament" display="none" fill="none" stroke-width="1.2" stroke-linejoin="round"/>
         <g id="arrows" fill="#ffc2bf"></g>
-        <g id="lamp"><circle r="22" fill="transparent"/><g id="sourceDepth" pointer-events="none" style="filter:brightness(.53)"></g><g id="standardSource"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g><g id="gauntlet" display="none" stroke="#41242a" stroke-width="1.1" stroke-linejoin="round"><g fill="#b73839"><path d="M-10 -4 L-15 -14 Q-16 -18 -13 -18 L-6 -9 L-9 -22 Q-9 -25 -6 -24 L-2 -11 L-3 -25 Q-2 -28 1 -25 L3 -11 L4 -23 Q6 -26 8 -22 L7 -7 L11 -13 Q15 -15 14 -10 L10 2 L8 9 L6 21 L-6 21 L-8 9 Z"/></g><path fill="#d6a657" d="M-9 -4 L-3 -8 L6 -6 L9 0 L5 8 L-5 9 L-9 3 Z M-6 12 L6 11 L5 18 L-5 19 Z"/><path fill="none" d="M-12 -13 l3 -2 M-8 -17 l4 -1 M-3 -19 h4 M4 -17 h4 M-6 14 l11 -1"/><circle r="4.8" fill="#272932"/><circle id="core" r="3.4" stroke="none"/></g></g>
+        <g id="lamp"><circle r="22" fill="transparent"/><g id="sourceDepth" pointer-events="none" style="filter:brightness(.53)"></g><g id="palmSides" pointer-events="none"></g><g id="standardSource"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g><g id="gauntlet" display="none" stroke="#41242a" stroke-width="1.1" stroke-linejoin="round"><g fill="#b73839"><path d="M-10 -4 L-15 -14 Q-16 -18 -13 -18 L-6 -9 L-9 -22 Q-9 -25 -6 -24 L-2 -11 L-3 -25 Q-2 -28 1 -25 L3 -11 L4 -23 Q6 -26 8 -22 L7 -7 L11 -13 Q15 -15 14 -10 L10 2 L8 9 L6 21 L-6 21 L-8 9 Z"/></g><path fill="#d6a657" d="M-9 -4 L-3 -8 L6 -6 L9 0 L5 8 L-5 9 L-9 3 Z M-6 12 L6 11 L5 18 L-5 19 Z"/><path fill="none" d="M-12 -13 l3 -2 M-8 -17 l4 -1 M-3 -19 h4 M4 -17 h4 M-6 14 l11 -1"/><circle r="4.8" fill="#272932"/><circle id="core" r="3.4" stroke="none"/></g></g>
         <g id="depthGrip" style="cursor:grab;touch-action:none"><title>Drag to move the source in depth (Z)</title><rect x="-13" y="-11" width="26" height="22" rx="5" fill="#18354c" stroke="#8ddaff"/><text y="5" font-size="14" fill="white">Z</text></g><text pointer-events="none" id="incomingLabel">Incident ray</text>
         <text pointer-events="none" id="outgoingLabel">Reflected ray</text></g>
       </g>
@@ -283,21 +283,40 @@
       const palmUp=elevation(1), localRotation=new DOMMatrix().rotate(-degrees);
       const rise=elevation(spatial?Math.sin(pitch):0).matrixTransform(localRotation);
       byId('standardSource').setAttribute('transform',spatial?'matrix(1 0 '+(-rise.x)+' '+(Math.cos(pitch)-rise.y)+' 0 0)':'translate(0 0)');
-      const tangent=new DOMPoint(ny,-nx,0,0).matrixTransform(localRotation);
-      const vertical=palmUp.matrixTransform(localRotation);
+      // The palm faces along the beam. Its right and up axes rotate with the source.
+      const tangent=new DOMPoint(Math.cos(degrees*rad),Math.sin(degrees*rad),0,0).matrixTransform(localRotation);
+      const vertical=new DOMPoint(palmUp.x*Math.cos(pitch)-dx*Math.sin(pitch),
+                                  palmUp.y*Math.cos(pitch)-dy*Math.sin(pitch),0,0).matrixTransform(localRotation);
       palm.setAttribute('transform',spatial?'matrix('+[tangent.x,tangent.y,-vertical.x,-vertical.y,0,0].join(' ')+')':'translate(0 0)');
       byId('depthGrip').setAttribute('display',spatial?'inline':'none'); byId('depthGrip').setAttribute('transform','translate('+(x+30)+' '+(y+28)+')');
       const depth=byId('sourceDepth');
+      const sides=byId('palmSides');
+      sides.style.display=spatial && byId('secret').getAttribute('aria-pressed')==='true'?'':'none';
       depth.style.display=spatial?'':'none';
       if(spatial){
-        const local=(byId('secret').getAttribute('aria-pressed')==='true'?new DOMPoint(nx,ny,0,0):elevation(-1)).matrixTransform(localRotation);
+        const glove=byId('secret').getAttribute('aria-pressed')==='true';
+        const back=new DOMPoint(-dx*Math.cos(pitch)-palmUp.x*Math.sin(pitch),
+                                -dy*Math.cos(pitch)-palmUp.y*Math.sin(pitch),0,0);
+        const local=(glove?back:elevation(-1)).matrixTransform(localRotation);
+        if(glove){
+          const rim=[[-10,-4],[-6,-10],[6,-10],[11,-5],[9,8],[6,21],[-6,21],[-9,7]];
+          const points=rim.map(([u,v])=>[u*tangent.x-v*vertical.x,u*tangent.y-v*vertical.y]);
+          points.forEach(([ax,ay],i)=>{
+            const [bx,by]=points[(i+1)%points.length];
+            const face=sides.children[i] || sides.appendChild(document.createElementNS(sides.namespaceURI,'path'));
+            face.setAttribute('d','M'+ax+' '+ay+' L'+bx+' '+by+' l'+local.x*16+' '+local.y*16+' L'+(ax+local.x*16)+' '+(ay+local.y*16)+' Z');
+            face.setAttribute('fill',['#812a31','#ae6740','#76252a','#a33134'][i%4]);
+          });
+        }
         if(!depth.childElementCount){
           for(let n=8;n>=1;n--){const slice=document.createElementNS(depth.namespaceURI,'use');depth.append(slice);}
         }
         const shape=byId('secret').getAttribute('aria-pressed')==='true'?'#gauntlet':'#standardSource';
         [...depth.children].forEach((slice,index)=>{
           slice.setAttribute('href',shape);
-          slice.setAttribute('transform','translate('+local.x*(8-index)+' '+local.y*(8-index)+')');
+          const distance=(8-index)*(glove?2:1);
+          slice.style.filter=glove?'brightness('+(index===0?.85:.56+index*.035)+')':'';
+          slice.setAttribute('transform','translate('+local.x*distance+' '+local.y*distance+')');
         });
       }
       const up=elevation();
