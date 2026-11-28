@@ -224,7 +224,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   let renderExhibit;
   try { renderExhibit=createProjectileExhibit(document.getElementById('exhibitCanvas')); }
   catch(error) { console.warn('Using the 2D flight view',error); }
-  const view={active:false,yaw:0,pitch:0,zoom:1};
+  const view={launchAngle:null,active:false,yaw:0,pitch:0,zoom:1};
   const fingers=new Map();
   let canOrbit=false;
   function resetView(){
@@ -964,6 +964,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function togglePauseResume() {
     const firing=needsLaunch() || (!state.playing && state.t >= calcPhysics(state.theta,state.v0,state.y0,state.g).T);
     if (firing) {
+      view.launchAngle=launched && renderExhibit ? renderExhibit.cameraAngle() : null;
+      resetView();
       clearImpact();
       stopAnimationLoop();
       Object.assign(state,draft);

@@ -275,8 +275,10 @@ function createProjectileExhibit(canvas) {
     updateEarth(size,my-flight.y0*size-ball.scale.x,rig.position.y-1.118*size,rig.position.x,ball,document.documentElement.dataset.theme==="tech",mx,flight.time,flight.vx,landedAge);
     const phase=ready?0:Math.min(1,flight.time/Math.max(.001,flight.T));
     const sweep=ease(phase/.62),settle=ease((phase-.56)/.44);
-    const yaw=-.71+.36*sweep+.35*settle+view.yaw;
-    const pitch=.48-.18*sweep+(25*Math.PI/180-.30)*settle-view.pitch;
+    const opening=view.launchAngle;
+    const yaw=(opening ? opening.yaw*(1-settle) : -.71+.36*sweep+.35*settle)+view.yaw;
+    const sidePitch=25*Math.PI/180;
+    const pitch=(opening ? opening.pitch+(sidePitch-opening.pitch)*settle : .48-.18*sweep+(sidePitch-.30)*settle)-view.pitch;
     flightCamera.rotation.set(-pitch,yaw,0,'YXZ');
     flightCamera.aspect=w/h;
     const inverse=flightCamera.quaternion.clone().invert();
@@ -405,6 +407,7 @@ function createProjectileExhibit(canvas) {
       return {horizontal:pt.x,height:pt.y,angle:Math.atan2(pt.y,pt.x)*180/Math.PI};
     };
   };
+  render.cameraAngle=()=>({yaw:flightCamera.rotation.y,pitch:-flightCamera.rotation.x});
   render.cannonBounds=cannonBounds;
   return render;
 }
