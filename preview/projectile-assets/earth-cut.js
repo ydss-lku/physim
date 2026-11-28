@@ -216,8 +216,8 @@ function createEarthCut(T,scene){
       const j=rim[index%rim.length],x=pos.getX(j),z=pos.getZ(j);
       const [drop,inset,tint]=levels[level];
       const seam=Math.sin(x*.49+z*.52)+.48*Math.sin(x*1.14-z*.7);
-      const depth=7+4*Math.cos(z*.21+x*.08)+4*(1+Math.sin(x*.14-z*.31));
-      const shift=inset*(1+.18*seam);
+      const depth=12;
+      const shift=-inset*.009;
       const xx=x+(86-x)*shift,zz=z*(1-shift);
       const yy=pos.getY(j)-drop*depth;
       cliffPoints.push(xx,yy,zz);
