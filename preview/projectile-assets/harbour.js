@@ -51,9 +51,35 @@ function createHarbour(T,scene){
   for(const [color,matrices] of batches){
     const mat=new T.MeshStandardMaterial({color,roughness:.68,metalness:.33});
     const mesh=new T.InstancedMesh(new T.BoxGeometry(),mat,matrices.length);
+    mat.onBeforeCompile=shader=>{
+      shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 yardUV;')
+        .replace('#include <begin_vertex>','#include <begin_vertex>\nyardUV=(instanceMatrix*vec4(position,1.)).xyz;');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 yardUV;')
+        .replace('#include <color_fragment>',`#include <color_fragment>
+          vec3 q=yardUV;
+          float ribs=sin((q.x+q.z)*15.);
+          float wear=.5+.5*sin(q.z*1.7+sin(q.x*1.1))*sin(q.x*.91+q.y*.63);
+          diffuseColor.rgb*=.65+.19*wear+.16*ribs*(1.-smoothstep(.05,.33,fwidth(q.x+q.z)));`);
+    };
     matrices.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix));district.add(mesh);
   }
-  const sea=new T.Mesh(new T.CircleGeometry(1300,96),new T.MeshStandardMaterial({color:0x456e78,roughness:.38,metalness:.48}));
+  // Break up reflections into bands of wind ripples, anchored to harbour metres.
+  const water=new T.MeshStandardMaterial({color:0xffffff,roughness:.44,metalness:.22});
+  water.onBeforeCompile=shader=>{
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec2 waterPoint;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nwaterPoint=position.xy;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 waterPoint;')
+      .replace('#include <color_fragment>',`#include <color_fragment>
+        vec2 q=waterPoint;
+        float drift=sin(q.x*.18+q.y*.11)+.57*sin(q.x*.41-q.y*.27);
+        float swell=sin(q.y*1.68+drift*2.+sin(q.x*.07));
+        float ripple=sin(q.y*5.2+drift*3.+sin(q.x*.61));
+        float glint=smoothstep(.46,1.54,swell+.55*ripple)*(1.-smoothstep(.12,.95,fwidth(q.y)));
+        float lane=.5+.5*sin(q.x*.12+q.y*.034+sin(q.y*.09));
+        diffuseColor.rgb=mix(vec3(.013,.055,.073),vec3(.054,.137,.147),.5+.5*drift/1.57)
+          +glint*mix(vec3(.073,.15,.165),vec3(.25,.145,.064),pow(lane,5.));`); 
+  };
+  const sea=new T.Mesh(new T.CircleGeometry(1300,96),water);
   sea.rotation.x=-Math.PI/2;sea.position.y=-32;district.add(sea);
   const skies=['day','dusk'].map(mood=>{
     const tex=new T.TextureLoader().load('preview/projectile-assets/harbour-sphere-'+mood+'.webp');
