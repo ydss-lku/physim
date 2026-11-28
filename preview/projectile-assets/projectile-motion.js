@@ -363,17 +363,48 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   sceneSpeed.addEventListener('pointerdown',()=>{speedDragging=true;});
   sceneSpeed.addEventListener('lostpointercapture',()=>{speedDragging=false;});
   window.addEventListener('pointerup',()=>{speedDragging=false;});
+  const dragHints={};
+  for(const [key,glyph] of [['theta','<path d="M6 26Q6 9 25 6 M19 3l7 2-2 7 M3 20l3 7 6-5"/>'],['y0','<path d="M15 4v24 M9 10l6-7 6 7 M9 22l6 7 6-7"/>']]){
+    const icon=document.createElement('span');icon.className='rig-hint';icon.setAttribute('aria-hidden','true');
+    icon.innerHTML='<svg viewBox="0 0 32 32">'+glyph+'</svg>';trajCanvas.parentElement.append(icon);dragHints[key]=icon;
+  }
+  function editTarget(event){
+    for(const [key,icon] of Object.entries(dragHints)){
+      if(icon.hidden)continue;
+      const r=icon.getBoundingClientRect();
+      if(event.clientX>=r.left && event.clientX<=r.right && event.clientY>=r.top && event.clientY<=r.bottom)return key;
+    }
+    return renderExhibit.pickControl(event.clientX,event.clientY);
+  }
   function placeSpeedBar(w,h){
-    speedTag.hidden=!renderExhibit || state.playing;
-    if(speedTag.hidden)return;
+    const hide=!renderExhibit || state.playing;
+    speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=hide;
+    if(hide)return;
+    const {muzzle,rear,pivot,base}=renderExhibit.controlAnchor();
+    if(pivot.x<0||pivot.x>w||pivot.y<0||pivot.y>h){
+      speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=true;return;
+    }
+    const rearSide=rear.x<=pivot.x?-1:1;
+    function placeHint(icon,x,y){
+      icon.style.left=Math.max(1,Math.min(w-30,x-15))+'px';
+      icon.style.top=Math.max(1,Math.min(h-32,y-16))+'px';
+    }
+    placeHint(dragHints.theta,muzzle.x-rearSide*17,muzzle.y-20);
+    placeHint(dragHints.y0,rear.x+rearSide*21,base.y-4);
     sceneSpeed.value=draft.v0;
     speedTag.querySelector('output').textContent='v₀ '+draft.v0+' m/s';
     if(speedDragging)return;
-    const {speed}=renderExhibit.controlAnchor();
     const width=speedTag.offsetWidth,height=speedTag.offsetHeight;
-    if(speed.x<0||speed.x>w||speed.y<0||speed.y>h){speedTag.hidden=true;return;}
-    speedTag.style.left=Math.max(4,Math.min(w-width-4,speed.x+width+14<w?speed.x+12:speed.x-width-14))+'px';
-    speedTag.style.top=Math.max(4,Math.min(h-height-4,speed.y-height/2))+'px';
+    const bottom=Math.max(base.y,rear.y,pivot.y,muzzle.y)+22;
+    const left=Math.min(base.x,rear.x,pivot.x,muzzle.x)-38;
+    const right=Math.max(base.x,rear.x,pivot.x,muzzle.x)+38;
+    let x=base.x-width/2,y=bottom;
+    if(bottom+height>h-4){
+      x=right+width<w?right:left-width;y=base.y+6-height/2;
+      if(x<4){x=base.x-width/2;y=Math.min(muzzle.y,pivot.y)-height-45;}
+    }
+    speedTag.style.left=Math.max(4,Math.min(w-width-4,x))+'px';
+    speedTag.style.top=Math.max(4,Math.min(h-height-4,y))+'px';
   }
   const previewLabel=document.createElement('output');
   previewLabel.className='launch-preview';previewLabel.hidden=true;
@@ -1058,7 +1089,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   trajCanvas.addEventListener("pointerdown", event => {
     hideProbe();
     if(event.button===0 && event.isPrimary && renderExhibit && !state.playing){
-      const key=renderExhibit.pickControl(event.clientX,event.clientY);
+      const key=editTarget(event);
       if(key){
         const coords=renderExhibit.dragCoordinates(),start=coords(event.clientX,event.clientY);
         if(start){
@@ -1091,7 +1122,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       return;
     }
     if(!event.buttons && renderExhibit && !state.playing){
-      const hit=renderExhibit.pickControl(event.clientX,event.clientY);
+      const hit=editTarget(event);
       trajCanvas.style.cursor=hit==='y0'?'ns-resize':hit==='theta'?'grab':'';
     }
     const previous=fingers.get(event.pointerId);

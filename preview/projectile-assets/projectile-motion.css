@@ -171,3 +171,9 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 .rig-speed[hidden]{display:none}
 .rig-speed input[type=range]{width:100%;min-width:0;height:17px;margin:0;accent-color:#85ddd2}
 .rig-speed output{color:inherit;background:none;padding:0}
+
+.rig-hint{position:absolute;width:30px;height:32px;z-index:2;pointer-events:none;color:#ffe0a1;filter:drop-shadow(0 1px 2px #18262c);animation:rig-cue 1.2s ease-in-out 2}
+.rig-hint[hidden]{display:none}
+.rig-hint svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+@keyframes rig-cue{0%,100%{opacity:.82}50%{opacity:1;filter:drop-shadow(0 0 3px #ffbd58)}}
+@media(prefers-reduced-motion:reduce){.rig-hint{animation:none}}

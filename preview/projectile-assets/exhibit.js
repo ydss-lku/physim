@@ -287,17 +287,20 @@ function createProjectileExhibit(canvas) {
       const q=new T.Vector3(x,y,z).sub(rig.position).applyQuaternion(inverse);
       points.push(q);bounds.expandByPoint(q);
     }
-    if(preview){
-      const tilt=preview.theta*Math.PI/180;
+    const setup=preview || (ready?{theta,y0:flight.y0,v0:0}:null);
+    rig.visible=!ready;
+    if(setup){
+      const tilt=setup.theta*Math.PI/180;
       const field=my-flight.y0*size-ball.scale.x;
       const floor=Math.min(field-.35*size,rig.position.y-1.118*size);
-      pendingSetup.position.set(mx-1.86*Math.cos(tilt)*size,my+(preview.y0-flight.y0-1.86*Math.sin(tilt))*size,0);
+      pendingSetup.position.set(mx-1.86*Math.cos(tilt)*size,my+(setup.y0-flight.y0-1.86*Math.sin(tilt))*size,0);
       pendingSetup.scale.setScalar(size);
       pendingBarrel.rotation.z=tilt;
       const wheelBottom=-1.118;
       const rise=Math.max(.07,wheelBottom-(floor-pendingSetup.position.y)/size);
       pendingPlatform.scale.y=rise;pendingPlatform.position.set(-.65,wheelBottom-rise/2,0);
-      const length=preview.v0*.16;
+      initialVector.visible=Boolean(preview);
+      const length=Math.max(.01,setup.v0*.16);
       initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
       const extent=new T.Box3().setFromObject(pendingSetup);
       for(const x of [extent.min.x,extent.max.x])for(const y of [extent.min.y,extent.max.y])for(const z of [extent.min.z,extent.max.z])include(x,y,z);
@@ -345,7 +348,7 @@ function createProjectileExhibit(canvas) {
       rig.visible=showRig;
 
     }
-    pendingSetup.visible=Boolean(preview);
+    pendingSetup.visible=Boolean(setup);
     frameStain(flightCamera,h,size,impactAge,landed);
     renderer.render(scene,flightCamera);
     return function project(horizontal,height){
@@ -370,7 +373,7 @@ function createProjectileExhibit(canvas) {
   }
   render.pickControl=function(x,y){
     aimRay(x,y,flightCamera);
-    const parts=[[barrel,'theta'],[platform,'y0']];
+    const parts=rig.visible?[[barrel,'theta'],[platform,'y0']]:[[platform,'y0']];
     if(pendingSetup.visible)parts.unshift([pendingBarrel,'theta'],[pendingPlatform,'y0']);
     for(const [object,key] of parts){
       if(picker.intersectObject(object,true).length)return key;
@@ -387,7 +390,8 @@ function createProjectileExhibit(canvas) {
       const pt=root.localToWorld(new T.Vector3(x,y,z)).project(flightCamera);
       return {x:(pt.x+1)*rect.width/2,y:(1-pt.y)*rect.height/2};
     }
-    return {base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
+    const angle=(pendingSetup.visible?pendingBarrel:barrel).rotation.z;
+    return {muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
   };
   render.dragCoordinates=function(){
     const cam=flightCamera.clone(),root=pendingSetup.visible?pendingSetup:rig;
