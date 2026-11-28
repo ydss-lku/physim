@@ -15,7 +15,7 @@ const tools = {
   erase:['Remove','移除','Tap a component or wire to remove it. Undo restores the last edit.','點選元件或導線將其移除；可按「復原」還原。','M4 14 15 3l10 9-9 9h-5z M8 10l11 10 M16 21h12'],
   reset:['Reset','重設','Clear board','清空電路板','M5 10a10 10 0 1 1 1 9 M5 3v7h7']
 };
-const stateText = {noCell:['No cell fitted','未裝上電池'],open:['Open circuit','開路'],closed:['Current flowing','有電流通過'],short:['Short circuit. Break the direct connection between the cell terminals.','短路。請斷開直接連通電池兩極的支路。']};
+const stateText = {noCell:['No cell fitted','未裝上電池'],open:['Open circuit','開路'],closed:['Current flowing','有電流通過'],short:['Short circuit! Excessive current. Disconnect the shorted path.','短路！電流過大。請斷開直接連通電芯兩極的路徑。']};
 let experiment=matchMedia('(min-width:900px)').matches?'empty':'simple';
 let parts=preset(experiment), tool='use', schematic=false;
 const history=[];
@@ -32,8 +32,10 @@ let hint=tools.use.slice(2,4);
 const x=n=>50+(n%4)*180, y=n=>65+Math.floor(n/4)*132;
 const post=n=>String.fromCharCode(65+n%4)+(1+Math.floor(n/4));
 const board=el('board');
+const faultAction=el('fault-action');
+let cellRemovedForRepair=false;
 function save() {
-  history.push({experiment,parts:structuredClone(parts),guide:structuredClone(guide),failures,earned});
+  history.push({experiment,parts:structuredClone(parts),guide:structuredClone(guide),failures,earned,cellRemovedForRepair});
   if(history.length>80) history.shift();
 }
 const defs=`<defs>
@@ -123,14 +125,14 @@ function praise(){
  if(!matchMedia('(min-width:900px)').matches)return;
  document.querySelector('.great-job')?.remove();
  const badge=document.createElement('div');
- badge.className='great-job';badge.textContent='Great job!';board.parentElement.append(badge);
+ badge.className='great-job';badge.textContent='Great job!';board.closest('.left').append(badge);
  badge.onanimationend=()=>badge.remove();
  applause.currentTime=0;
  applause.play().catch(()=>{});
 }
 function resetBoard(){
  if(!Object.keys(parts).length)return;
- save();const status=solve(parts).state;
+ save();cellRemovedForRepair=false;const status=solve(parts).state;
  failures=earned?0:failures+1;earned=false;guide=null;selectedResistor=null;experiment='empty';
  if(failures>=2){
    for(const {id} of slots){
@@ -146,8 +148,41 @@ function resetBoard(){
  }
  parts={};choose('use');
 }
+function disconnectTarget(){
+ // A switch in a parallel branch may leave a direct path across the cell.
+ const switches=slots.filter(({id})=>parts[id]?.type==='switch' && parts[id].closed);
+ for(const edge of switches){
+   const opened={...parts,[edge.id]:{...parts[edge.id],closed:false}};
+   if(solve(opened).state!=='short')return edge;
+ }
+ return slots.find(({id})=>parts[id]?.type==='cell');
+}
+function positionFaultAction(){
+ if(faultAction.hidden)return;
+ const target=board.querySelector('.fault-target');
+ const matrix=target?.getScreenCTM();
+ if(!matrix)return;
+ const bounds=board.parentElement.getBoundingClientRect();
+ const cx=matrix.e-bounds.left, cy=matrix.f-bounds.top;
+ const gap=20*matrix.d, above=cy-gap-faultAction.offsetHeight;
+ const left=Math.max(4,Math.min(cx-faultAction.offsetWidth/2,bounds.width-faultAction.offsetWidth-4));
+ faultAction.style.left=left+'px';
+ faultAction.style.top=(above>=4?above:cy+gap)+'px';
+}
+new ResizeObserver(positionFaultAction).observe(board);
+faultAction.onclick=()=>{
+ const id=faultAction.dataset.slotId, part=parts[id];
+ if(faultAction.hidden || !part)return;
+ save();
+ if(part.type==='switch')part.closed=false;
+ else {delete parts[id];cellRemovedForRepair=true;guide=null;}
+ choose('use');
+ board.querySelector('[data-slot="'+id+'"]').focus({preventScroll:true});
+};
 function render() {
  const result=solve(parts), degree=Array(12).fill(0);
+ const fault=result.state==='short'?disconnectTarget():null;
+ if(fault){if(!applause.paused)applause.pause();document.querySelector('.great-job')?.remove();}
  if(result.state==='closed'){earned=true;failures=0;guide=null;if(!closed)praise();}
  closed=result.state==='closed';
  const activeSlot=document.activeElement?.getAttribute('data-slot');
@@ -188,7 +223,7 @@ function render() {
    drawing=`<g opacity=".52"><rect x="${6-half}" y="-21" width="${2*half-12}" height="42" rx="7" stroke="var(--letter)" stroke-dasharray="6 5" fill="none"/>${symbol(target,half)}</g>`;
    accessible=pick('Suggested connection: ','建議駁法：')+pick(...tools[target.type].slice(0,2))+' · '+position;
   }
-  svg+=`<g class="slot" role="button" tabindex="0" data-slot="${id}" aria-label="${accessible}" transform="translate(${cx} ${cy})"><title>${accessible}</title><g transform="rotate(${vertical?90:0})">${drawing}</g>`;
+  svg+=`<g class="slot${id===fault?.id?' fault-target':''}" role="button" tabindex="0" data-slot="${id}" aria-label="${accessible}" transform="translate(${cx} ${cy})"><title>${accessible}</title><g transform="rotate(${vertical?90:0})">${drawing}</g>`;
   let instruments='';
   if(meter) instruments+=meterFace(p.type,0,0,p.type==='ammeter'?result.amps[id]:result.voltage[id]);
   if(p?.voltmeter){
@@ -210,6 +245,12 @@ function render() {
  }
  svg+=directionOverlay(result.active)+meterOverlays;
  board.innerHTML=svg;
+ faultAction.hidden=!fault;
+ if(fault){
+   faultAction.dataset.slotId=fault.id;
+   el('fault-label').textContent=parts[fault.id].type==='cell'?pick('Remove cell','拔出電芯'):pick('Open switch','斷開開關');
+   positionFaultAction();
+ }
  el('resistance-control').hidden=tool!=='resistor';
  const target=parts[selectedResistor]?.type==='resistor'?slots.find(s=>s.id===selectedResistor):null;
  el('resistance-label').textContent=pick('Resistance','阻值')+(target?' · '+post(target.a)+'–'+post(target.b):'');
@@ -220,7 +261,9 @@ function render() {
    button.setAttribute('aria-pressed',String(directionMode===id));
  }
  if(activeSlot) board.querySelector('[data-slot="'+activeSlot+'"]')?.focus({preventScroll:true});
- el('state').textContent=pick(...stateText[result.state]);
+ el('state').textContent=cellRemovedForRepair && result.state==='noCell'
+   ?pick('Cell removed. Rewire the circuit before refitting it.','電芯已拔出。請先改駁電路，再裝回電芯。')
+   :pick(...stateText[result.state]);
  el('indicator').dataset.state=result.state;el('count').textContent=result.lit+' / '+result.total;
  el('preset').value=experiment;
  el('real').setAttribute('aria-pressed',String(!schematic));el('diagram').setAttribute('aria-pressed',String(schematic));
@@ -265,8 +308,16 @@ function operate(id) {
    }
    if(tool==='resistor') selectedResistor=id;
    if(p?.type===tool){render();return;}
+   if(tool==='cell' && cellRemovedForRepair && solve({...parts,[id]:{type:'cell'}}).state==='short'){
+     hint=['The cell would still be shorted here. Break the direct wire path or fit a load in that path first.',
+       '喺呢格裝回電芯仍會短路。請先斷開直接連通兩極嘅路徑，或喺該路徑串入燈泡或電阻器。'];
+     el('hint').textContent=pick(...hint);return;
+   }
    save();
-   if(tool==='cell') for(const key in parts) if(parts[key].type==='cell') delete parts[key];
+   if(tool==='cell'){
+     cellRemovedForRepair=false;
+     for(const key in parts) if(parts[key].type==='cell') delete parts[key];
+   }
    parts[id]={type:tool};
    if(tool==='resistor') parts[id].ohms=Number(resistance.value);
    if(tool==='switch') parts[id].closed=false;
@@ -283,8 +334,8 @@ for(const [id,[en,zh,,,icon]] of Object.entries(tools)){
 }
 board.addEventListener('click',ev=>{const slot=ev.target.closest('[data-slot]');if(slot)operate(slot.dataset.slot);});
 board.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){const slot=ev.target.closest('[data-slot]');if(slot){ev.preventDefault();operate(slot.dataset.slot);}}});
-el('preset').onchange=()=>{save();guide=null;earned=false;failures=0;selectedResistor=null;experiment=el('preset').value;parts=preset(experiment);choose(experiment==='empty'?'cell':'use');};
-el('undo').onclick=()=>{const last=history.pop();if(last){guide=last.guide;failures=last.failures;earned=last.earned;parts=last.parts;experiment=last.experiment;choose(tool);}};
+el('preset').onchange=()=>{save();cellRemovedForRepair=false;guide=null;earned=false;failures=0;selectedResistor=null;experiment=el('preset').value;parts=preset(experiment);choose(experiment==='empty'?'cell':'use');};
+el('undo').onclick=()=>{const last=history.pop();if(last){cellRemovedForRepair=last.cellRemovedForRepair;guide=last.guide;failures=last.failures;earned=last.earned;parts=last.parts;experiment=last.experiment;choose(tool);}};
 for(const id of ['current','electron']) el(id).onclick=()=>{
  directionMode=directionMode===id?'':id;
  render();
