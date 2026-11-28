@@ -227,7 +227,7 @@ function prepareRound(){
  el('start-button').focus();
 }
 el('next-player').onclick=()=>{
- if(!el('entry').hidden){
+ if(!el('entry').hidden && el('player-name').value.trim()){
    el('entry').requestSubmit();
    if(!el('entry').hidden)return;
  }
