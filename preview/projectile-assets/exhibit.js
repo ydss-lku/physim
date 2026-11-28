@@ -162,18 +162,41 @@ function createProjectileExhibit(canvas) {
   const stainMap=new T.CanvasTexture(stamp);stainMap.colorSpace=T.SRGBColorSpace;
   const stain=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:stainMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,toneMapped:false}));
   stain.rotation.x=-Math.PI/2;scene.add(stain);stain.visible=false;
-  const waveGeometry=new T.RingGeometry(.90,1,128,3);
-  const positions=waveGeometry.attributes.position,colors=[];
-  for(let i=0;i<positions.count;i++){
-    const radius=Math.hypot(positions.getX(i),positions.getY(i));
-    const color=new T.Color(radius>.96?0xffdd82:0xc47a37);
-    colors.push(color.r,color.g,color.b);
-  }
-  waveGeometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));
-  const wave=new T.Mesh(waveGeometry,new T.MeshBasicMaterial({vertexColors:true,
-    transparent:true,depthWrite:false,side:T.DoubleSide,polygonOffset:true,
-    polygonOffsetFactor:-3,toneMapped:false,fog:false}));
-  wave.name='Impact wave';wave.rotation.x=-Math.PI/2;scene.add(wave);
+  // A shallow rolling front: dark airborne grit inside, a lit crest, then clear air.
+  const waveGeometry=new T.PlaneGeometry(1,1,192,12);
+  const wave=new T.Mesh(waveGeometry,new T.ShaderMaterial({
+    transparent:true,depthWrite:false,side:T.DoubleSide,
+    uniforms:{phase:{value:0}},
+    vertexShader:`
+      uniform float phase;
+      varying vec2 sheet;
+      void main(){
+        sheet=uv;float a=uv.x*6.2831853, v=uv.y;
+        float lobes=.043*sin(7.*a+.8)+.023*sin(13.*a-phase)+.014*sin(23.*a);
+        float radius=mix(.55,1.,v)*(1.+lobes);
+        float roll=sin(v*3.14159)*(.063+.030*sin(9.*a+phase*3.));
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(radius*cos(a),.007+roll,radius*sin(a),1.);
+      }`,
+    fragmentShader:`
+      uniform float phase;varying vec2 sheet;
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}
+      void main(){
+        float a=sheet.x*6.2831853,v=sheet.y;
+        vec2 p=vec2(cos(a),sin(a))*(7.+v*2.5);
+        float soot=.54*noise(p+phase)+.30*noise(3.*p-phase*2.)+.16*noise(8.*p);
+        float crest=.77+.19*(soot-.5);
+        float dust=smoothstep(.04,.55,v)*(1.-smoothstep(crest,1.,v));
+        float lip=exp(-pow((v-crest)/.095,2.));
+        float life=1.-smoothstep(.24,1.,phase);
+        float opacity=life*(dust*(.26+.68*soot)+lip*.42)*smoothstep(.12,.54,soot+.13*(1.-phase));
+        vec3 colour=mix(vec3(.18,.19,.20),vec3(.62,.48,.32),soot);
+        colour=mix(colour,vec3(1.,.71,.35),lip*(1.-phase));
+        gl_FragColor=vec4(colour,min(.85,opacity));
+      }`
+  }));
+  wave.frustumCulled=false;wave.name='Impact wave';scene.add(wave);
   const contactView=new T.Vector3();
   function frameStain(camera,height,size,age,landed){
     wave.visible=landed && age>=0 && age<1.65;
@@ -186,11 +209,12 @@ function createProjectileExhibit(canvas) {
     stain.scale.setScalar(diameter*(age>=0?.78+.22*Math.min(1,age/.24):1));
     if(wave.visible){
       const progress=age/1.65;
-      const reach=Math.min(92,Math.max(32,height*.14))*pixel;
+      const reach=Math.min(108,Math.max(34,height*.17))*pixel;
       const start=Math.min(reach*.3,diameter*.48);
       wave.position.copy(stain.position);wave.position.y+=.012*size;
-      wave.scale.setScalar(start+(reach-start)*(1-(1-progress)**2));
-      wave.material.opacity=.93*(1-progress*progress*(3-2*progress));
+      wave.scale.setScalar(start+(reach-start)*(1-(1-progress)**3.4));
+      wave.material.uniforms.phase.value=progress;
+      burst.scale.setScalar(Math.max(size,Math.min(13,height*.017)*pixel));
     }
   }
   const flashMap=puffTexture(false),dustMap=puffTexture(true);
