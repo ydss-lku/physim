@@ -162,8 +162,21 @@ function createProjectileExhibit(canvas) {
   const stainMap=new T.CanvasTexture(stamp);stainMap.colorSpace=T.SRGBColorSpace;
   const stain=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:stainMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,toneMapped:false}));
   stain.rotation.x=-Math.PI/2;scene.add(stain);stain.visible=false;
+  const waveGeometry=new T.RingGeometry(.90,1,128,3);
+  const positions=waveGeometry.attributes.position,colors=[];
+  for(let i=0;i<positions.count;i++){
+    const radius=Math.hypot(positions.getX(i),positions.getY(i));
+    const color=new T.Color(radius>.96?0xffdd82:0xc47a37);
+    colors.push(color.r,color.g,color.b);
+  }
+  waveGeometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));
+  const wave=new T.Mesh(waveGeometry,new T.MeshBasicMaterial({vertexColors:true,
+    transparent:true,depthWrite:false,side:T.DoubleSide,polygonOffset:true,
+    polygonOffsetFactor:-3,toneMapped:false,fog:false}));
+  wave.name='Impact wave';wave.rotation.x=-Math.PI/2;scene.add(wave);
   const contactView=new T.Vector3();
   function frameStain(camera,height,size,age,landed){
+    wave.visible=landed && age>=0 && age<1.65;
     stain.visible=landed;if(!landed)return;
     stain.position.copy(ball.position);stain.position.y-=ball.scale.y-.022*size;
     camera.updateMatrixWorld();
@@ -171,6 +184,14 @@ function createProjectileExhibit(canvas) {
     const pixel=2*depth/(height*camera.projectionMatrix.elements[5]);
     const diameter=Math.max(20*pixel,Math.min(44*pixel,1.6*size));
     stain.scale.setScalar(diameter*(age>=0?.78+.22*Math.min(1,age/.24):1));
+    if(wave.visible){
+      const progress=age/1.65;
+      const reach=Math.min(92,Math.max(32,height*.14))*pixel;
+      const start=Math.min(reach*.3,diameter*.48);
+      wave.position.copy(stain.position);wave.position.y+=.012*size;
+      wave.scale.setScalar(start+(reach-start)*(1-(1-progress)**2));
+      wave.material.opacity=.93*(1-progress*progress*(3-2*progress));
+    }
   }
   const flashMap=puffTexture(false),dustMap=puffTexture(true);
   function particle(map,color,bright){
