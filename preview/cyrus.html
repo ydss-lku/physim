@@ -57,6 +57,16 @@
     main:is(:fullscreen,.expanded) .stage {width:100%;height:100%;aspect-ratio:auto}
     main:is(:fullscreen,.expanded) .controls {display:none}
     main:is(:fullscreen,.expanded) .frame {border:0}
+    #fullscreen svg,.bookIcon{width:24px;height:24px;vertical-align:middle}
+    .rainbowIcon{display:block;width:22px;height:22px;border-radius:50%;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);mask:radial-gradient(circle,transparent 25%,black 29%);animation:rainbowTurn 5s linear infinite}
+    @keyframes rainbowTurn{to{transform:rotate(360deg)}}
+    #tutorial{max-width:min(340px,82vw);background:#172534;color:white;border:1px solid #82aeda;border-radius:8px;font:16px system-ui}
+    #tutorial::backdrop{background:#000a}
+    #tutorial svg{display:block;width:100%;background:#07111a}
+    #tutorial footer{display:flex;justify-content:space-between}
+    .demoMove{animation:demoMove 3s ease-in-out infinite alternate}
+    @keyframes demoMove{to{transform:translate(45px,-15px)}}
+    @media(prefers-reduced-motion:reduce){.rainbowIcon,.demoMove{animation:none}}
     </style>
 </head>
 <body>
@@ -89,11 +99,11 @@
       </g>
       <g id="dial" display="none" style="touch-action:none" fill="none"><circle r="39" stroke="#8ed275" stroke-width="2"/><g id="arm"><path d="M0 0 H39" stroke="#9fea6e" stroke-width="4"/><circle cx="39" r="9" fill="#9fea6e" stroke="white"/></g><circle r="40" stroke="transparent" stroke-width="22"/><text id="dialValue" y="5" text-anchor="middle" fill="white" stroke="#182018" stroke-width="3" paint-order="stroke" font-size="13"></text></g>
     </g></svg>
-    <button id="fullscreen" type="button">Full screen</button>
-    <details class="palette"><summary>Laser colour</summary><div class="picker"><div class="wheel" aria-hidden="true"></div><label>Hue<input type="range" id="hue" min="0" max="359" value="355"></label><label>Saturation<input type="range" id="sat" min="0" max="100" value="80"></label><output id="colourValue"></output></div></details></div>
+    <button id="fullscreen" type="button" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="white" stroke-width="1.7"><defs><path id="cornerArrow" d="M10 10 L3 3 M3 8 V3 H8"/></defs><use href="#cornerArrow"/><use href="#cornerArrow" transform="rotate(90 12 12)"/><use href="#cornerArrow" transform="rotate(180 12 12)"/><use href="#cornerArrow" transform="rotate(270 12 12)"/></svg></button>
+    <details class="palette"><summary aria-label="Laser colour" title="Laser colour"><span class="rainbowIcon" aria-hidden="true"></span></summary><div class="picker"><div class="wheel" aria-hidden="true"></div><label>Hue<input type="range" id="hue" min="0" max="359" value="355"></label><label>Saturation<input type="range" id="sat" min="0" max="100" value="80"></label><output id="colourValue"></output></div></details></div>
     <section class="controls" aria-label="Simulation controls">
       <output id="angle"></output>
-      <span style="grid-column:1/-1;text-align:center">Drag empty space to pan. Pinch and twist with two fingers to zoom and rotate. With a mouse, scroll to zoom or Shift-drag to rotate. Drag an object to move it. Hold the source or mirror, then drag the green handle to rotate.</span><details style="grid-column:1/-1"><summary>Fine adjustments</summary><label>Source X<input id="sx" type="range" min="62" max="578" value="270"></label>
+      <button id="openTutorial" type="button"><svg class="bookIcon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6 Q8 3 2 4 V19 Q8 18 12 21 Q17 18 22 19 V4 Q17 3 12 6 Z M12 6 V21"/></svg> Tutorial</button><details style="grid-column:1/-1"><summary>Fine adjustments</summary><label>Source X<input id="sx" type="range" min="62" max="578" value="270"></label>
       <label>Source Y<input id="sy" type="range" min="62" max="298" value="280"></label>
       <label>Rotate source <output id="sourceAngle"></output><input id="rotation" type="range" min="-180" max="180" step="0.1" value="20"></label>
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
@@ -101,13 +111,37 @@
       <button id="secret" type="button" aria-label="Switch light source" aria-pressed="false">???</button></details><label>Mirror length<input id="mirrorLength" type="range" min="80" max="620" value="308"></label>
       <button id="reset" type="button">Restore defaults</button>
     </section>
+    <dialog id="tutorial" aria-labelledby="demoTitle"><h2 id="demoTitle"></h2>
+      <svg id="demoPicture" viewBox="0 0 220 85" aria-label="A hand dragging the light source"><path d="M36 18 H184" stroke="#9bd8f0" stroke-width="4"/><g class="demoMove"><path d="M86 61 V3" stroke="#ff717c"/><rect x="80" y="55" width="12" height="18" fill="#b8c6d6"/><path d="M91 76 L84 64 Q82 60 85 60 L90 65 V50 Q92 46 94 50 V60 Q105 58 109 65 L108 75 L103 80 H94 Z" fill="#ffe2ba" stroke="#765637"/></g></svg>
+      <p id="demoText"></p><footer><button id="closeTutorial">Close</button><button id="nextTip">Next</button></footer></dialog>
   </main>
   <script>
     const slider = document.querySelector('#rotation');
     const simulation = document.querySelector('main');
+    const lessons = [
+      ['Move the source','Drag the light source with one finger. Watch where the beam hits the mirror as you move it sideways.'],
+      ['Adjust the mirror','Drag the mirror up or down. Change Mirror length in the panel to catch a beam that just misses its edge.'],
+      ['Rotate an object','Hold the source or mirror until the green handle appears. Drag around the circle to change its angle.'],
+      ['Move the camera','Drag empty space to pan. Pinch to zoom and twist two fingers to rotate. With a mouse, scroll to zoom or Shift-drag to rotate.'],
+      ['Explore the controls','Open the rainbow wheel to change the laser colour. The four-arrow button enters or exits full screen. Restore defaults returns the setup to its starting position.']
+    ];
+    const tutorial=document.querySelector('#tutorial');
+    let lesson=0;
+    function showLesson(){
+      document.querySelector('#demoTitle').textContent=lessons[lesson][0];
+      document.querySelector('#demoText').textContent=lessons[lesson][1];
+      document.querySelector('#demoPicture').style.display=lesson===0?'block':'none';
+      document.querySelector('#nextTip').textContent=lesson===lessons.length-1?'Done':'Next';
+    }
+    document.querySelector('#openTutorial').onclick=()=>{lesson=0;showLesson();tutorial.showModal()};
+    document.querySelector('#closeTutorial').onclick=()=>tutorial.close();
+    document.querySelector('#nextTip').onclick=()=>{if(++lesson===lessons.length)tutorial.close();else showLesson()};
     const fullButton = document.querySelector('#fullscreen');
     function syncFullscreen() {
-      fullButton.textContent = document.fullscreenElement || simulation.classList.contains('expanded') ? 'Exit full screen' : 'Full screen';
+      const expanded = Boolean(document.fullscreenElement || simulation.classList.contains('expanded'));
+      fullButton.title = expanded ? 'Exit full screen' : 'Full screen';
+      fullButton.setAttribute('aria-label',fullButton.title);
+      document.querySelector('#cornerArrow').setAttribute('d',expanded?'M3 3 L10 10 M5 10 H10 V5':'M10 10 L3 3 M3 8 V3 H8');
     }
     fullButton.onclick = async () => {
       if (document.fullscreenElement) await document.exitFullscreen();
