@@ -506,6 +506,34 @@ function createProjectileExhibit(canvas) {
   const stationToggle=document.getElementById('toggleRigInset');
   const stationPointer={value:-1};
   render.stationPointer=stationPointer;
+  // Thin model-space guides need a wider luminous core in the small inset.
+  const stationArcGeometry=new T.TorusGeometry(arcRadius,.092,8,20,outerAngle-innerAngle);
+  const stationCueMaterials={};
+  for(const key of ['theta','y0']){
+    stationCueMaterials[key]=new T.MeshBasicMaterial({color:0xe6a1ff,transparent:true,
+      toneMapped:false,fog:false,depthWrite:true});
+  }
+  let cuePulse=1,focusedCue=null;
+  function stationGuide(group,key,enabled){
+    const material=stationCueMaterials[key];
+    const focused=focusedCue===key;
+    material.color.setHex(focused?0xf8e4ff:0xe6a1ff);
+    material.opacity=focused?1:focusedCue ? .65 : .86+.14*cuePulse;
+    for(const mesh of group.children){
+      if(enabled){
+        mesh.userData.mainMaterial=mesh.material;
+        mesh.material=material;
+        if(mesh.geometry.type==='TorusGeometry'){
+          mesh.userData.mainGeometry=mesh.geometry;mesh.geometry=stationArcGeometry;
+        }else mesh.scale.set(1.3,1,1.3);
+      }else{
+        mesh.material=mesh.userData.mainMaterial;
+        if(mesh.userData.mainGeometry)mesh.geometry=mesh.userData.mainGeometry;
+        mesh.scale.set(1,1,1);
+      }
+      mesh.children[0].visible=!enabled;
+    }
+  }
   function drawStation(){
     if(stationPanel.hidden)return;
     const width=stationCanvas.clientWidth,height=stationCanvas.clientHeight,ratio=renderer.getPixelRatio();
@@ -518,7 +546,10 @@ function createProjectileExhibit(canvas) {
     if(pendingSetup.visible){rig.visible=false;platform.visible=false;}
     const root=pendingSetup.visible?pendingSetup:rig;
     sizeSpeedArrow(arrowLength,(stationCam.top-stationCam.bottom)/(height*root.scale.x));
+    const lift=(pendingSetup.visible?pendingPlatform:platform).getObjectByName('Lift direction');
+    stationGuide(angleGuide,'theta',true);stationGuide(lift,'y0',true);
     renderer.render(scene,stationCam);
+    stationGuide(angleGuide,'theta',false);stationGuide(lift,'y0',false);
     sizeSpeedArrow(arrowLength,mainArrowMetresPerPixel);
     rig.visible=showRig;platform.visible=showPlatform;scene.background=background;
     stationCanvas.getContext('2d').drawImage(renderer.domElement,0,renderer.domElement.height-sh,sw,sh,0,0,sw,sh);
@@ -604,6 +635,7 @@ function createProjectileExhibit(canvas) {
     ctx.restore();
   };
   render.setCueOpacity=function(opacity,active){
+    cuePulse=opacity;focusedCue=active;
     function level(key,base){
       if(active)return key===active?1:.2;
       return base*opacity;
