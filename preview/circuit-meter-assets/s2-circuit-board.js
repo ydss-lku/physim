@@ -164,7 +164,44 @@ function matchesChallenge(){
  }
  return node===root(cell.a) && degree.every((d,n)=>!d||visited.has(root(n)));
 }
+let attempt=null, frame;
+const recordPrefix='s2-circuit-card-v1:';
+function raceTime(ms){
+ const pad=(n,len)=>String(n).padStart(len,'0');
+ return pad(Math.floor(ms/60000),2)+':'+pad(Math.floor(ms/1000)%60,2)+'.'+pad(ms%1000,3);
+}
+function tick(){
+ el('race-clock').textContent=raceTime(Math.floor(performance.now()-attempt.start));
+ frame=requestAnimationFrame(tick);
+}
+el('challenge-start').onsubmit=e=>{
+ e.preventDefault();
+ const input=el('player-name'),name=input.value.trim();
+ if(!name){input.value='';input.reportValidity();return;}
+ attempt={name,start:performance.now(),ms:null};
+ render();tick();board.querySelector('[data-slot]')?.focus();
+};
+function finishRace(){
+ attempt.ms=Math.floor(performance.now()-attempt.start);
+ cancelAnimationFrame(frame);
+ el('race-clock').textContent=raceTime(attempt.ms);
+ el('finish-time').textContent=attempt.name+' · '+raceTime(attempt.ms);
+ el('ranking-title').textContent=pick('Local leaderboard','本機龍虎榜');
+ const record={name:attempt.name,ms:attempt.ms},rows=[record];
+ const warning=el('storage-status');warning.hidden=true;
+ try{
+   for(const key of Object.keys(localStorage).filter(k=>k.startsWith(recordPrefix))){
+     let row;try{row=JSON.parse(localStorage.getItem(key));}catch{continue;}
+     if(typeof row?.name==='string' && Number.isSafeInteger(row.ms) && row.ms>=0)rows.push(row);
+   }
+   localStorage.setItem(recordPrefix+crypto.randomUUID(),JSON.stringify(record));
+ }catch{warning.hidden=false;warning.textContent=pick('Could not save on this browser.','此瀏覽器未能儲存紀錄。');}
+ el('rankings').replaceChildren(...rows.sort((a,b)=>a.ms-b.ms).map(row=>{
+   const item=document.createElement('li');item.textContent=row.name+' · '+raceTime(row.ms);return item;
+ }));
+}
 el('challenge').onclick=()=>{
+ cancelAnimationFrame(frame);attempt=null;el('player-name').value='';
  if(!freeBoard){
    freeBoard={parts,experiment,tool,guide,failures,earned,cellRemovedForRepair,selectedResistor,history:history.splice(0)};
    parts={};experiment='empty';guide=null;failures=0;earned=false;cellRemovedForRepair=false;selectedResistor=null;
@@ -232,8 +269,16 @@ function render() {
  el('preset').disabled=challenge;
  el('challenge-task').hidden=!challenge;
  el('challenge-task').textContent=pick('Build the circuit shown on the printed card.','請按現場圖卡砌出電路。');
- const correct=challenge && matchesChallenge();
+ const waiting=challenge && !attempt;
+ el('challenge-start').hidden=!waiting;
+ board.inert=waiting;
+ document.querySelector('.rack').inert=waiting;
+ el('name-label').textContent=pick('Player name','玩家姓名');
+ el('start-button').textContent=pick('Start','Start 開始');
+ el('race-clock').hidden=!challenge || !attempt;
+ const correct=challenge && attempt?.ms===null && matchesChallenge();
  if(correct && !matched){
+   finishRace();
    el('challenge-message').textContent=pick('Congratulations! Your circuit matches the card.','恭喜你！你砌嘅電路同圖卡相符。');
    el('challenge-win').showModal();
  }
