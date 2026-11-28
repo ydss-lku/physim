@@ -164,11 +164,8 @@ function matchesChallenge(){
  }
  return node===root(cell.a) && degree.every((d,n)=>!d||visited.has(root(n)));
 }
-const raceSounds=['challenge-launch.mp3','challenge-finish.mp3'].map(file=>new Audio(new URL(file,document.currentScript.src)));
-function cue(index){
- for(const sound of raceSounds){sound.pause();sound.currentTime=0;}
- const sound=raceSounds[index];sound.volume=.45;sound.play().catch(()=>{});
-}
+const finishSound=new Audio(new URL('challenge-finish.mp3',document.currentScript.src));
+finishSound.volume=.45;
 let attempt=null, frame;
 const recordPrefix='s2-circuit-card-v1:';
 function raceTime(ms){
@@ -182,7 +179,6 @@ function tick(){
 el('challenge-start').onsubmit=e=>{
  e.preventDefault();
  attempt={start:performance.now(),ms:null,key:recordPrefix+crypto.randomUUID()};
- cue(0);
  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)
    el('race-clock').animate([{transform:'scale(1.35)'},{transform:'scale(1)'}],{duration:450});
  render();tick();board.querySelector('[data-slot]')?.focus();
@@ -191,7 +187,7 @@ function finishRace(){
  attempt.ms=Math.floor(performance.now()-attempt.start);
  cancelAnimationFrame(frame);
  el('race-clock').textContent=raceTime(attempt.ms);
- cue(1);
+ finishSound.currentTime=0;finishSound.play().catch(()=>{});
  el('finish-time').textContent=raceTime(attempt.ms);
  el('ranking-title').textContent=pick('Leaderboard','龍虎榜');
  el('entry').hidden=false;
@@ -206,7 +202,7 @@ el('entry').onsubmit=e=>{
  try{
    localStorage.setItem(attempt.key,JSON.stringify({name,ms:attempt.ms}));
    el('entry').hidden=true;el('storage-status').hidden=true;
-   showRanking();el('challenge-ok').focus();
+   showRanking();el('next-player').focus();
  }catch{el('storage-status').hidden=false;el('storage-status').textContent=pick('Could not save on this browser.','此瀏覽器未能儲存紀錄。');}
 };
 function showRanking(){
@@ -223,12 +219,25 @@ function showRanking(){
    const item=document.createElement('li');const name=document.createElement('span'),time=document.createElement('b');name.textContent=row.name;time.textContent=raceTime(row.ms);item.append(name,time);if(row.key===attempt.key)item.className='your-result';return item;
  }));
 }
+function prepareRound(){
+ cancelAnimationFrame(frame);attempt=null;matched=false;history.length=0;
+ finishSound.pause();el('player-name').value='';
+   parts={};experiment='empty';guide=null;failures=0;earned=false;cellRemovedForRepair=false;selectedResistor=null;
+   document.querySelector('.great-job')?.remove();applause.pause();choose('use');
+ el('start-button').focus();
+}
+el('next-player').onclick=()=>{
+ if(!el('entry').hidden){
+   el('entry').requestSubmit();
+   if(!el('entry').hidden)return;
+ }
+ el('challenge-win').close();prepareRound();
+};
 el('challenge').onclick=()=>{
  cancelAnimationFrame(frame);attempt=null;el('player-name').value='';
  if(!freeBoard){
    freeBoard={parts,experiment,tool,guide,failures,earned,cellRemovedForRepair,selectedResistor,history:history.splice(0)};
-   parts={};experiment='empty';guide=null;failures=0;earned=false;cellRemovedForRepair=false;selectedResistor=null;
-   document.querySelector('.great-job')?.remove();applause.pause();choose('use');
+   prepareRound();
  }else{
    const saved=freeBoard;
    ({parts,experiment,guide,failures,earned,cellRemovedForRepair,selectedResistor}=saved);
