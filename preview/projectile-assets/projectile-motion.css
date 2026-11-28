@@ -194,8 +194,11 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 @container (max-width:760px){.fine-sliders{grid-template-columns:1fr}}
 @media(max-width:600px){.launch-settings aside{grid-template-columns:minmax(0,1fr)}}
 
-.scale-ticks[data-slider=sliderV0] button[aria-pressed=true]{background:var(--selected);color:var(--on);font-weight:750;border-radius:3px}
+.scale-ticks[data-slider=sliderV0] button:is(:hover,:focus-visible,[aria-pressed=true]){background:transparent}
+.scale-ticks[data-slider=sliderV0] button[aria-pressed=true]{color:var(--selected);font-weight:750}
+.scale-ticks[data-slider=sliderV0] button:focus-visible{outline:2px solid currentColor;outline-offset:-2px}
 
 .initial-readings{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 1.25em;margin:0 0 8px;font-variant-numeric:tabular-nums}
-.initial-readings span{white-space:nowrap;background:#172b31;border-radius:3px;padding:2px 7px}
+.initial-readings span{white-space:nowrap}
+html:not([data-theme=tech]) .initial-readings span{-webkit-text-stroke:1.5px #314a4b;paint-order:stroke fill}
 .initial-readings output{font-weight:700;color:inherit}
