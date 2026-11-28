@@ -755,6 +755,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   // ====== 動畫迴圈 (確保從 t = 0 穩定起飛，絕不中途跳動) ======
   function stopAnimationLoop() {
     airSound.pause();
+    whistleStarted=false;
     if (animFrameId !== null) {
       cancelAnimationFrame(animFrameId);
       animFrameId = null;
@@ -782,7 +783,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
     state.t += dt;
-    shapeWhistle(state.t,p.T);
+    if(state.t<p.T)syncWhistle(rawDt>0?dt/rawDt:state.speedFactor);
     observedTime = Math.max(observedTime,Math.min(state.t,p.T));
 
     if (state.t >= p.T) {
@@ -807,24 +808,32 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const launchSound=new Audio('preview/projectile-assets/harbour-launch.mp3');
   launchSound.preload='auto';
   launchSound.volume=.48;
-  const airSound=new Audio('preview/projectile-assets/air-whistle.wav');
+  const airSound=new Audio('preview/projectile-assets/air-descent.wav');
   const impactSound=new Audio('preview/projectile-assets/quay-impact.mp3?v=attack61');
-  airSound.loop=true;airSound.preservesPitch=false;airSound.preload='auto';
+  airSound.loop=false;airSound.preservesPitch=true;airSound.preload='auto';
   impactSound.preload='auto';impactSound.volume=.38;
-  function shapeWhistle(time,duration){
-    const phase=Math.min(1,time/Math.max(.001,duration));
-    airSound.playbackRate=1.12*Math.pow(.33,phase);
-    airSound.volume=.20*Math.min(1,time/.18)*Math.min(1,Math.max(0,duration-time)/.055);
-  }
-  function playWhistle(duration){
-    shapeWhistle(state.t,duration);
-    airSound.play().catch(()=>{});
+  const whistleLength=3; // Seconds in the one-shot descent recording.
+  let whistleStarted=false,shotDuration=0;
+  airSound.volume=.20;
+  function syncWhistle(clockRate){
+    const offset=whistleLength-(shotDuration-state.t);
+    if(!soundSwitch.checked || offset<0 || offset>=whistleLength)return;
+    if(!whistleStarted){
+      whistleStarted=true;
+      airSound.currentTime=offset;
+      airSound.playbackRate=Math.max(.1,Math.min(2,clockRate));
+      airSound.play().catch(()=>{});
+    }else{
+      // Follow the simulation clock without seeking or retriggering the recording.
+      const correction=(offset-airSound.currentTime)*.65;
+      airSound.playbackRate=Math.max(.1,Math.min(2,clockRate+correction));
+    }
   }
   const soundSwitch=document.getElementById('launchSound');
   try{soundSwitch.checked=localStorage.getItem('projectile-launch-sound')!=='off';}catch{}
   soundSwitch.addEventListener('change',()=>{
-    if(!soundSwitch.checked){launchSound.pause();airSound.pause();impactSound.pause();}
-    else if(state.playing)playWhistle(calcPhysics(state.theta,state.v0,state.y0,state.g).T);
+    if(!soundSwitch.checked){launchSound.pause();airSound.pause();whistleStarted=false;impactSound.pause();}
+    else if(state.playing)syncWhistle(state.speedFactor);
     try{localStorage.setItem('projectile-launch-sound',soundSwitch.checked?'on':'off');}catch{}
   });
   function togglePauseResume() {
@@ -850,8 +859,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       if (state.t >= p.T - 1e-6) state.t = 0;
       stopAnimationLoop();
       state.playing = true;
-      if(firing){impactSound.pause();airSound.currentTime=0;}
-      if(soundSwitch.checked)playWhistle(p.T);
+      if(firing){impactSound.pause();shotDuration=p.T;}
+      syncWhistle(state.speedFactor);
       if(firing && soundSwitch.checked){
         launchSound.currentTime=0;
         launchSound.play().catch(()=>{});
