@@ -254,6 +254,7 @@ function createProjectileExhibit(canvas) {
     });
   }
   function ease(t){t=Math.max(0,Math.min(1,t));return t*t*t*(10+t*(-15+6*t));}
+  let lastFrame;
   function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready,preview,impactAge,editSpeed,editable}){
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
@@ -275,7 +276,7 @@ function createProjectileExhibit(canvas) {
     updateEarth(size,my-flight.y0*size-ball.scale.x,rig.position.y-1.118*size,rig.position.x,ball,document.documentElement.dataset.theme==="tech",mx,flight.time,flight.vx,landedAge);
     const phase=ready?0:Math.min(1,flight.time/Math.max(.001,flight.T));
     const sweep=ease(phase/.62),settle=ease((phase-.56)/.44);
-    const opening=view.launchAngle;
+    const opening=view.launchFrame;
     const yaw=(opening ? opening.yaw*(1-settle) : -.71+.36*sweep+.35*settle)+view.yaw;
     const sidePitch=25*Math.PI/180;
     const pitch=(opening ? opening.pitch+(sidePitch-opening.pitch)*settle : .48-.18*sweep+(sidePitch-.30)*settle)-view.pitch;
@@ -326,8 +327,26 @@ function createProjectileExhibit(canvas) {
     for(const q of points)distance=Math.max(distance,q.z+Math.max(
       (Math.abs(q.x-aim.x)+.24*size)/(tan*spread*w/h),
       (Math.abs(q.y-aim.y)+.24*size)/(tan*spread)));
-    flightCamera.position.set(aim.x,aim.y,distance).applyQuaternion(flightCamera.quaternion).add(rig.position);
-    flightCamera.zoom=view.zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
+    const ground=new T.Vector3(mx,my-flight.y0*size,0);
+    const cameraLocal=new T.Vector3(aim.x,aim.y,distance);
+    let zoom=view.zoom;
+    if(opening && phase<1){
+      // Keep the captured pose in metres relative to the launch origin across scene rescaling.
+      const held=opening.offset.clone().multiplyScalar(size).add(ground).sub(rig.position).applyQuaternion(inverse);
+      const follow=ease((phase-.10)/.58);
+      cameraLocal.x=held.x+(aim.x-held.x)*follow;
+      cameraLocal.y=held.y+(aim.y-held.y)*follow;
+      zoom=opening.zoom+(1-opening.zoom)*settle;
+      let fitted=distance;
+      for(const q of points)fitted=Math.max(fitted,q.z+zoom*Math.max(
+        (Math.abs(q.x-cameraLocal.x)+.24*size)/(tan*spread*w/h),
+        (Math.abs(q.y-cameraLocal.y)+.24*size)/(tan*spread)));
+      const wide=Math.max(held.z*zoom/opening.zoom,fitted);
+      cameraLocal.z=held.z+(wide-held.z)*follow+(distance-wide)*settle;
+    }
+    flightCamera.position.copy(cameraLocal).applyQuaternion(flightCamera.quaternion).add(rig.position);
+    flightCamera.zoom=zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
+    lastFrame={yaw,pitch,zoom,offset:flightCamera.position.clone().sub(ground).divideScalar(size)};
 
     drawImpact(landed?impactAge:-1,size);
     pendingSetup.visible=false;
@@ -407,7 +426,7 @@ function createProjectileExhibit(canvas) {
       return {horizontal:pt.x,height:pt.y,angle:Math.atan2(pt.y,pt.x)*180/Math.PI};
     };
   };
-  render.cameraAngle=()=>({yaw:flightCamera.rotation.y,pitch:-flightCamera.rotation.x});
+  render.cameraFrame=()=>lastFrame;
   render.cannonBounds=cannonBounds;
   return render;
 }
