@@ -364,13 +364,22 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   sceneSpeed.addEventListener('lostpointercapture',()=>{speedDragging=false;});
   window.addEventListener('pointerup',()=>{speedDragging=false;});
   const dragHints={};
-  for(const [key,glyph] of [['theta','<path d="M6 26Q6 9 25 6 M19 3l7 2-2 7 M3 20l3 7 6-5"/>'],['y0','<path d="M15 4v24 M9 10l6-7 6 7 M9 22l6 7 6-7"/>']]){
+  for(const [key,glyph] of [['theta','<path class="pivot-arc"/><path class="pivot-tick"/>'],['y0','<path d="M15 4v24 M9 10l6-7 6 7 M9 22l6 7 6-7"/>']]){
     const icon=document.createElement('span');icon.className='rig-hint';icon.setAttribute('aria-hidden','true');
     icon.innerHTML='<svg viewBox="0 0 32 32">'+glyph+'</svg>';trajCanvas.parentElement.append(icon);dragHints[key]=icon;
   }
+  const angleValue=document.createElement('output');
+  angleValue.className='rig-angle-value';angleValue.hidden=true;
+  trajCanvas.parentElement.append(angleValue);
+  let arcPoints=[];
   function editTarget(event){
     for(const [key,icon] of Object.entries(dragHints)){
       if(icon.hidden)continue;
+      if(key==='theta'){
+        const bounds=trajCanvas.getBoundingClientRect();
+        if(arcPoints.some(p=>Math.hypot(event.clientX-bounds.left-p.x,event.clientY-bounds.top-p.y)<9))return key;
+        continue;
+      }
       const r=icon.getBoundingClientRect();
       if(event.clientX>=r.left && event.clientX<=r.right && event.clientY>=r.top && event.clientY<=r.bottom)return key;
     }
@@ -379,8 +388,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function placeSpeedBar(w,h){
     const hide=!renderExhibit || state.playing;
     speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=hide;
+    angleValue.hidden=true;
     if(hide)return;
-    const {muzzle,rear,pivot,base}=renderExhibit.controlAnchor();
+    const {muzzle,rear,pivot,base,onArc}=renderExhibit.controlAnchor();
     if(pivot.x<0||pivot.x>w||pivot.y<0||pivot.y>h){
       speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=true;return;
     }
@@ -389,7 +399,24 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       icon.style.left=Math.max(1,Math.min(w-30,x-15))+'px';
       icon.style.top=Math.max(1,Math.min(h-32,y-16))+'px';
     }
-    placeHint(dragHints.theta,muzzle.x-rearSide*17,muzzle.y-20);
+    // Project a circle in the barrel's own rotation plane, including its perspective foreshortening.
+    const radius=Math.max(2.25,Math.min(6,58/Math.max(1,Math.hypot(muzzle.x-pivot.x,muzzle.y-pivot.y)/1.86)));
+    arcPoints=Array.from({length:25},(_,i)=>onArc((i/24-.5)*.80,radius));
+    const tip=arcPoints[12],tick=onArc(0,radius*1.09);
+    const ox=Math.min(...arcPoints.map(p=>p.x),tick.x)-3,oy=Math.min(...arcPoints.map(p=>p.y),tick.y)-3;
+    const icon=dragHints.theta,svg=icon.firstElementChild;
+    const aw=Math.max(...arcPoints.map(p=>p.x),tick.x)-ox+3,ah=Math.max(...arcPoints.map(p=>p.y),tick.y)-oy+3;
+    Object.assign(icon.style,{left:ox+'px',top:oy+'px',width:aw+'px',height:ah+'px'});
+    svg.setAttribute('viewBox',[0,0,aw,ah].join(' '));
+    const local=p=>(p.x-ox)+' '+(p.y-oy);
+    svg.firstElementChild.setAttribute('d',arcPoints.map((p,i)=>(i?'L':'M')+local(p)).join(' '));
+    svg.lastElementChild.setAttribute('d','M'+local(tip)+'L'+local(tick));
+    if(modelDrag?.key==='theta'){
+      angleValue.hidden=false;angleValue.textContent=draft.theta+'°';
+      const dx=tick.x-pivot.x,dy=tick.y-pivot.y,len=Math.hypot(dx,dy)||1;
+      angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,tick.x+dx/len*15-angleValue.offsetWidth/2))+'px';
+      angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,tick.y+dy/len*15-angleValue.offsetHeight/2))+'px';
+    }
     placeHint(dragHints.y0,rear.x+rearSide*21,base.y-4);
     sceneSpeed.value=draft.v0;
     speedTag.querySelector('output').textContent='v₀ '+draft.v0+' m/s';
@@ -1094,6 +1121,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         const coords=renderExhibit.dragCoordinates(),start=coords(event.clientX,event.clientY);
         if(start){
           modelDrag={id:event.pointerId,key,coords,start,value:draft[key]};
+          placeSpeedBar(trajCanvas.clientWidth,trajCanvas.clientHeight);
           trajCanvas.setPointerCapture(event.pointerId);event.preventDefault();return;
         }
       }
@@ -1151,7 +1179,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if (Math.hypot(event.clientX - graphPress.x, event.clientY - graphPress.y) >= 3) graphPress.dragging = true;
     if (graphPress.dragging) seekTrajectory(event);
   });
-  trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId);if(modelDrag?.id===event.pointerId)modelDrag=null;graphPress=null; });
+  trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId);if(modelDrag?.id===event.pointerId)modelDrag=null;angleValue.hidden=true;graphPress=null; });
 
   trajCanvas.addEventListener("pointerleave",hideProbe);
 
