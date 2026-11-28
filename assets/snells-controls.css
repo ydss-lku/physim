@@ -59,3 +59,39 @@ html[data-page=snells-law] .panel > div:last-child { margin-top:5px!important; }
  html[data-page=snells-law] .panel .slider-ticks button { height:44px; min-height:44px!important; }
  html[data-page=snells-law] .panel input[type=range] { min-height:28px; height:28px; }
 }
+
+/* Presentation layout: the full calculation remains available on demand. */
+html[data-page=snells-law] .panel .result { display:grid; grid-template-columns:1fr auto; gap:2px 8px; align-items:center; }
+html[data-page=snells-law] .panel .result :is(.working-details,.primary) { grid-column:1/-1; }
+html[data-page=snells-law] .panel .working-details { border:0; border-radius:0; padding:0; margin:1px 0 0; background:transparent; }
+html[data-page=snells-law] .panel .working-details summary { min-height:28px; padding:4px 0; font-size:12px; line-height:20px; }
+html[data-page=snells-law] .panel .law small { display:none; }
+@media(min-width:721px) and (pointer:fine) {
+ html[data-page=snells-law] main .panel { padding:8px 14px; }
+ html[data-page=snells-law] .panel .tabs { margin-bottom:4px; padding:0; }
+ html[data-page=snells-law] .panel .section-title { display:none; }
+ html[data-page=snells-law] .panel .material-menu { margin:2px 0 4px; }
+ html[data-page=snells-law] .panel .control { margin:2px 0 4px; }
+ html[data-page=snells-law] .panel .number input[type=number] { height:30px; min-height:30px!important; }
+ html[data-page=snells-law] .panel input[type=range] { height:20px; min-height:20px; margin:0; }
+ html[data-page=snells-law] .panel .slider-ticks { height:22px; }
+ html[data-page=snells-law] .panel .slider-ticks button { height:22px; min-height:22px!important; padding-top:4px; }
+ html[data-page=snells-law] .panel .rotation-control { padding:3px 0; margin:3px 0; }
+ html[data-page=snells-law] .panel .rotation-bottom { margin-top:0; }
+ html[data-page=snells-law] .panel #level-interface { min-height:24px!important; padding:0 7px; }
+ html[data-page=snells-law] .panel .actions { margin:4px 0; }
+ html[data-page=snells-law] .panel .result { margin-top:4px; padding:5px 9px; }
+ html[data-page=snells-law] .panel .law { padding:3px 0 0; }
+ html[data-page=snells-law] .panel > div:last-child { margin-top:2px!important; }
+}
+@media(min-width:981px) and (max-height:800px) and (pointer:fine) {
+ html[data-page=snells-law] main .panel { padding-top:4px; padding-bottom:4px; }
+ html[data-page=snells-law] .panel .control { margin:1px 0 2px; }
+ /* Direct material selectors remain on the diagram; omit the duplicate pair picker. */
+ html[data-page=snells-law] .panel #preset-area { display:none; }
+ html[data-page=snells-law] .panel .law { display:none; }
+ html[data-page=snells-law] .panel .number input[type=number] { height:28px; min-height:28px!important; }
+ html[data-page=snells-law] .panel input[type=range] { height:16px; min-height:16px; }
+ html[data-page=snells-law] .panel .slider-ticks { height:20px; }
+ html[data-page=snells-law] .panel .slider-ticks button { height:20px; min-height:20px!important; }
+}
