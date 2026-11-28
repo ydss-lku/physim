@@ -881,6 +881,21 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     panel.querySelector('.trace').setAttribute('d',`M49 ${level(start)} L${x} ${y}`);
     panel.querySelector('circle').setAttribute('cx',x);
     panel.querySelector('circle').setAttribute('cy',y);
+    if(index===1){
+      const zeroTime=p.vy0/gravity;
+      const mark=panel.querySelector('.vertical-zero');
+      const reached=launched && zeroTime>=0 && zeroTime<=p.T && t>=zeroTime;
+      mark.setAttribute('display',reached?'inline':'none');
+      if(reached){
+        const zx=49+278*(p.T?zeroTime/p.T:0);
+        mark.querySelector('circle').setAttribute('cx',zx);
+        mark.querySelector('circle').setAttribute('cy',level(0));
+        const label=mark.querySelector('text');
+        label.setAttribute('x',zx);
+        label.setAttribute('text-anchor',zx<95?'start':zx>280?'end':'middle');
+        label.textContent='0 m/s · '+zeroTime.toFixed(2)+' s';
+      }
+    }
   });
 }
   function updateUI() {
