@@ -29,20 +29,9 @@ function createProjectileExhibit(canvas) {
   scene.environment=environment.texture;
   generator.dispose(); texture.dispose();
   const metal=(color,metalness,roughness)=>new T.MeshStandardMaterial({color,metalness,roughness});
-  const bronze=metal(0x926a35,.83,.34), brass=metal(0xcfaa67,.82,.24);
-  const iron=metal(0x313b40,.68,.38), wood=metal(0x745039,.12,.57), dark=metal(0x171c20,.45,.48);
-  const grain=document.createElement('canvas');grain.width=512;grain.height=128;
-  const gc=grain.getContext('2d');gc.fillStyle='#bfa58b';gc.fillRect(0,0,512,128);
-  for(let i=0;i<170;i++){
-    gc.strokeStyle=i%3?'rgba(66,38,23,.15)':'rgba(255,235,207,.19)';
-    gc.beginPath();
-    for(let x=0;x<=512;x+=8){const y=i*.78+2*Math.sin(x*.017+i*.2)+Math.sin(x*.043+i);if(x)gc.lineTo(x,y);else gc.moveTo(x,y);}
-    gc.stroke();
-  }
-  wood.map=new T.CanvasTexture(grain);wood.map.wrapS=wood.map.wrapT=T.RepeatWrapping;
-  wood.map.colorSpace=T.SRGBColorSpace;wood.color.setHex(0x916340);
-  bronze.roughness=.29;brass.roughness=.25;
-  wood.bumpMap=wood.map;wood.bumpScale=.015;
+  const armour=metal(0x566b78,.78,.33), alloy=metal(0xb9c9ce,.87,.26);
+  const graphite=metal(0x23303a,.62,.44), enamel=metal(0xffb320,.35,.34);
+  const teal=metal(0x178a91,.48,.31);
   function part(parent,geometry,material,x=0,y=0,z=0){
     const obj=new T.Mesh(geometry,material);
     obj.position.set(x,y,z); obj.castShadow=true; obj.receiveShadow=true; parent.add(obj);
@@ -57,45 +46,37 @@ function createProjectileExhibit(canvas) {
     const hole=new T.Path(); hole.absarc(0,0,outer-thickness,0,2*Math.PI,true); shape.holes.push(hole);
     return part(parent,new T.ExtrudeGeometry(shape,{depth,curveSegments:48,bevelEnabled:true,bevelThickness:.012,bevelSize:.012,bevelSegments:2}),material,x,y,z-depth/2);
   }
-  const profile=[[0,-1.85],[.14,-1.81],[.16,-1.65],[.31,-1.57],[.40,-1.36],[.415,-1.16],[.39,-.95],[.35,-.60],[.305,.05],[.285,.79],[.30,1.18],[.355,1.33],[.355,1.48],[.24,1.48],[.23,1.12],[0,1.10]];
-  const tube=part(barrel,new T.LatheGeometry(profile.map(([r,y])=>new T.Vector2(r,y)),96),bronze);
+  function panel(parent,outline,depth,material,x,y,z){
+    const shape=new T.Shape();
+    outline.forEach(([px,py],i)=>i?shape.lineTo(px,py):shape.moveTo(px,py));shape.closePath();
+    return part(parent,new T.ExtrudeGeometry(shape,{depth,bevelEnabled:true,bevelSegments:2,bevelSize:.025,bevelThickness:.025}),material,x,y,z-depth/2);
+  }
+  const sleeve=[[0,-1.77],[.31,-1.77],[.41,-1.6],[.41,-.78],[.34,-.68],[.30,1.14],[.40,1.26],[.40,1.48],[.25,1.48],[.25,1.11],[0,1.10]];
+  const tube=part(barrel,new T.LatheGeometry(sleeve.map(([r,y])=>new T.Vector2(r,y)),12),armour,.38);
   tube.rotation.z=-Math.PI/2;
-  // Offset the barrel along its own axis so its rear clears the carriage in the opening pose.
-  tube.position.x=.38;
-  for(const [x,r] of [[-1.2,.42],[-.95,.40],[-.46,.356],[.73,.30],[1.36,.356]]){
-    const band=part(barrel,new T.TorusGeometry(r,.026,12,80),brass,x+.38);band.rotation.y=Math.PI/2;
-  }
-  cylinder(rig,.12,.12,1.57,iron,0,-.22,0);
   for(const side of [-1,1]){
-    const z=side*.72, y=-.32;
-    ring(rig,.76,.115,.14,wood,0,y,z);
-    ring(rig,.79,.045,.17,iron,0,y,z);
-    for(let i=0;i<12;i++){
-      const a=i*Math.PI/6;
-      const spoke=part(rig,new T.CylinderGeometry(.037,.055,.61,8),wood,.37*Math.cos(a),y+.37*Math.sin(a),z);
-      spoke.rotation.z=a-Math.PI/2;
+    panel(barrel,[[-1.30,.15],[-1.05,.34],[.89,.34],[1.24,.11],[.74,-.09],[-1.08,-.10]],.10,enamel,0,0,side*.32);
+    for(let i=0;i<4;i++)panel(barrel,[[0,0],[.09,0],[.21,.16],[.12,.16]],.018,graphite,-.89+.22*i,.025,side*.384);
+    panel(rig,[[-2.18,-.84],[-2.02,-1.06],[-.42,-.65],[.34,-.39],[.29,-.04],[-.34,.03]],.21,armour,0,0,side*.41);
+    panel(rig,[[-1.95,-.83],[-1.72,-.85],[-.52,-.43],[-.45,-.30]],.035,teal,0,0,side*.55);
+    const z=side*.73,y=-.32;
+    cylinder(rig,.79,.79,.20,graphite,0,y,z);
+    cylinder(rig,.65,.67,.24,armour,0,y,z);
+    ring(rig,.57,.064,.035,alloy,0,y,z+side*.13);
+    cylinder(rig,.27,.30,.31,enamel,0,y,z);
+    for(let i=0;i<8;i++){
+      const a=i*Math.PI/4;
+      const lug=part(rig,new T.BoxGeometry(.21,.105,.03),graphite,.435*Math.cos(a),y+.435*Math.sin(a),z+side*.14);
+      lug.rotation.z=a;
     }
-    cylinder(rig,.17,.17,.235,brass,0,y,z);
-    cylinder(rig,.10,.10,.26,iron,0,y,z);
-    const boss=part(rig,new T.SphereGeometry(.092,32,18),bronze,0,y,z+side*.128);
-    boss.scale.z=.36;
-    for(const [r,t] of [[.151,.009],[.106,.006]]){
-      part(rig,new T.TorusGeometry(r,t,8,56),brass,0,y,z+side*.125);
-    }
-    for(let k=0;k<6;k++){
-      const t=k*Math.PI/3;
-      cylinder(rig,.014,.014,.026,iron,.128*Math.cos(t),y+.128*Math.sin(t),z+side*.13);
-    }
-    for(let n=0;n<8;n++){
-      const t=n*Math.PI/4;
-      cylinder(rig,.018,.018,.038,brass,.735*Math.cos(t),y+.735*Math.sin(t),z+side*.092);
-    }
-    const plate=new T.Shape();
-    plate.moveTo(-2.2,-.89);plate.lineTo(-2.12,-1.04);plate.lineTo(.40,-.4);plate.lineTo(.36,-.04);plate.lineTo(-.13,.08);plate.closePath();
-    part(rig,new T.ExtrudeGeometry(plate,{depth:.13,bevelThickness:.025,bevelSize:.025,bevelSegments:3}),wood,0,0,side*.37);
-    for(const x of [-1.76,-.86,.16])cylinder(rig,.052,.052,.17,brass,x,-.30+.32*x,side*.37+.065);
+    cylinder(rig,.12,.12,.36,graphite,0,y,z);
   }
-  const ball=part(scene,new T.SphereGeometry(1,64,48),metal(0x728391,.91,.22));
+  const ball=part(scene,new T.SphereGeometry(1,48,32),alloy);
+  for(const angle of [-.32,.32]){
+    const belt=part(ball,new T.TorusGeometry(Math.cos(angle),.027,8,64),graphite,0,Math.sin(angle),0);
+    belt.rotation.x=Math.PI/2;
+  }
+  const insert=part(ball,new T.TorusGeometry(1,.036,8,64),enamel);insert.rotation.x=Math.PI/2;
   const key=new T.DirectionalLight(0xffdaaa,2.55);
   key.position.set(-260,420,340); key.castShadow=true;
   Object.assign(key.shadow.camera,{left:-450,right:450,top:350,bottom:-350,near:1,far:1200});

@@ -63,8 +63,19 @@ function createEarthCut(T,scene){
       grass*=.82+.36*turf.a;loam*=.75+.50*clay.a;
       float worn=1.-smoothstep(3.,10.,length(uv*vec2(.85,.7))+3.*(meadowVariation-.5));
       float soil=smoothstep(.18,.9,soilKind)*max(worn,smoothstep(1.,1.75,soilKind));
-      vec3 earth=mix(grass,loam,soil);
-      earth*=1.-.35*smoothstep(2.3,2.96,soilKind);
+      vec2 plateUV=vec2(p.x/5.4+mod(floor(p.z/2.7),2.)*.5,p.z/2.7);
+      vec2 border=.5-abs(fract(plateUV)-.5);
+      float gap=min(border.x*5.4,border.y*2.7);
+      float seamAA=max(.012,fwidth(gap));
+      float plate=smoothstep(.015,.015+seamAA,gap);
+      float tile=earthHash(vec3(floor(plateUV),.5));
+      vec3 steel=mix(vec3(.055,.087,.106),vec3(.145,.195,.205),tile*.55+crumb*.45);
+      vec3 earth=mix(vec3(.019,.027,.034),steel,plate);
+      earth=mix(earth,mix(vec3(.058,.067,.077),vec3(.18,.20,.21),clay.r),soil*.77);
+      float lane=abs(abs(p.z)-1.85);
+      float dash=1.-smoothstep(.55,.61,fract((p.x+p.z*.55)*.68));
+      float paint=(1.-smoothstep(.06,.06+fwidth(lane),lane))*dash*(1.-smoothstep(2.,5.,abs(p.x)));
+      earth=mix(earth,vec3(.76,.39,.035),paint*.9);
       float resolution=1.-smoothstep(.008,.05,length(fwidth(p)));
       earth*=1.+(fine-.5)*.42*resolution;
       float dist=length(p.xz-vec2(ballShadow.x,0.))/max(.01,ballShadow.z);
@@ -117,7 +128,7 @@ function createEarthCut(T,scene){
     }
   }
   const bg=new T.BufferGeometry();bg.setAttribute('position',new T.Float32BufferAttribute(blades,3));bg.setAttribute('color',new T.Float32BufferAttribute(bladeColors,3));
-  const grass=new T.Mesh(bg,new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide}));root.add(grass);
+  const grass=new T.Mesh(bg,new T.MeshBasicMaterial({vertexColors:true,side:T.DoubleSide}));grass.visible=false;root.add(grass);
   const toe=new T.Group();root.add(toe);
   const stones=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),new T.MeshStandardMaterial({color:0x76654e,roughness:1,envMapIntensity:.1}),220);
   const item=new T.Object3D();for(let i=0;i<stones.count;i++){
@@ -128,7 +139,7 @@ function createEarthCut(T,scene){
     item.updateMatrix();stones.setMatrixAt(i,item.matrix);
     stones.setColorAt(i,new T.Color().setHSL(.082+random()*.035,.10+random()*.13,.28+random()*.16));
   }
-  toe.add(stones);stones.castShadow=true;stones.receiveShadow=true;
+  stones.visible=false;toe.add(stones);stones.castShadow=true;stones.receiveShadow=true;
   // Short branching root ends hang immediately below the broken sod.
   const roots=[];
   for(let j=0;j<215;j++){
@@ -137,8 +148,8 @@ function createEarthCut(T,scene){
     roots.push(x,.018,z,mx,-h*.55,mz,mx,-h*.55,mz,mx+.02,-h,mz+.025);
   }
   const rg=new T.BufferGeometry();rg.setAttribute('position',new T.Float32BufferAttribute(roots,3));
-  const rootlets=new T.LineSegments(rg,new T.LineBasicMaterial({color:0x655039}));root.add(rootlets);
-  const pedestal=new T.Mesh(new T.BoxGeometry(3.35,1,2.1),new T.MeshStandardMaterial({color:0x746550,roughness:1}));
+  const rootlets=new T.LineSegments(rg,new T.LineBasicMaterial({color:0x655039}));rootlets.visible=false;root.add(rootlets);
+  const pedestal=new T.Mesh(new T.BoxGeometry(3.35,1,2.1),new T.MeshStandardMaterial({color:0x384852,roughness:1}));
   pedestal.castShadow=true;pedestal.receiveShadow=true;root.add(pedestal);
   const labels=[];
   function makeLabel(radius){
@@ -181,8 +192,8 @@ function createEarthCut(T,scene){
   for(let i=zs.length-2;i>=0;i--)rim.push((rows.length-1)*zs.length+i);
   for(let row=rows.length-2;row>0;row--)rim.push(row*zs.length);
   const cliffGeometry=new T.BufferGeometry(),cliffPoints=[],cliffColors=[],cliffUV=[];
-  const levels=[[0,0,0x776746],[.065,.012,0x57493c],[.25,.032,0x998675],[.38,.09,0x655e58],[.64,.17,0x827e77],[.86,.28,0x645e60],[1,.47,0x46434b]];
-  const rock=new T.MeshStandardMaterial({map:bank.value,vertexColors:true,roughness:1,flatShading:true,side:T.DoubleSide});
+  const levels=[[0,0,0x70838a],[.065,.004,0x35444f],[.12,.004,0x2ca7a0],[.16,.018,0x202e39],[.28,.018,0x74838a],[.33,.056,0x23303a],[.67,.17,0x52606c],[.82,.23,0x263038],[1,.47,0x393e49]];
+  const rock=new T.MeshStandardMaterial({vertexColors:true,metalness:.54,roughness:.52,flatShading:true,side:T.DoubleSide});
   const cliff=new T.Mesh(cliffGeometry,rock);root.add(cliff);cliff.receiveShadow=true;
   function buildCliff(){
     cliffPoints.length=cliffColors.length=cliffUV.length=0;
