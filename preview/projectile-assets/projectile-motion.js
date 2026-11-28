@@ -1,3 +1,4 @@
+  const gravity = 9.8;
 const chartInk = {};
 function refreshChartInk() {
   const styles = getComputedStyle(document.documentElement);
@@ -15,7 +16,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     maxTheta: 90,
     v0: 20,
     y0: 0,
-    g: 9.8,
     t: 0,
     playing: false,
     speedFactor: 1.0,
@@ -24,7 +24,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     showCompare: false
   };
 
-  const draft = {theta: state.theta, v0: state.v0, y0: state.y0, g: state.g};
+  const draft = {theta: state.theta, v0: state.v0, y0: state.y0};
   let launched = false;
   let observedTime = 0;
   function needsLaunch() {
@@ -102,8 +102,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   function posAtTime(t, p) {
     const x = p.vx * t;
-    const y = Math.max(0, state.y0 + p.vy0 * t - 0.5 * state.g * t * t);
-    const vy = p.vy0 - state.g * t;
+    const y = Math.max(0, state.y0 + p.vy0 * t - 0.5 * gravity * t * t);
+    const vy = p.vy0 - gravity * t;
     return { x, y, vx: p.vx, vy };
   }
 
@@ -348,7 +348,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(best>=100){hideProbe();return;}
     const pos=posAtTime(time,p),anchor=project(pos.x,pos.y);
     const signed=(v,n)=>Math.abs(v)<.5*10**(-n)?(0).toFixed(n):(v>0?'+':'−')+Math.abs(v).toFixed(n);
-    const times=[time],other=2*p.vy0/state.g-time;
+    const times=[time],other=2*p.vy0/gravity-time;
     if(Math.abs(p.vx)<1e-8 && other>=0 && other<=p.T && Math.abs(other-time)>.01)times.push(other);
     probe.textContent=times.sort((a,b)=>a-b).map(t=>{
       const {vx,vy}=posAtTime(t,p),speed=Math.hypot(vx,vy);
@@ -518,15 +518,15 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
-    const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
-    const reference = angleAnalysis.open && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
+    const p = calcPhysics(state.theta,state.v0,state.y0,gravity);
+    const reference = angleAnalysis.open && state.showCompare ? calcPhysics(45,state.v0,state.y0,gravity) : null;
     canOrbit=Boolean(renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
     trajCanvas.classList.toggle('can-orbit',canOrbit);
     if(!canOrbit && (view.active || fingers.size))resetView();
     const pos=posAtTime(state.t,p);
     const ready=!launched && !!renderExhibit;
     const hull=renderExhibit?.cannonBounds(state.theta) || {left:-3.8,right:1,bottom:-2.7,top:1};
-    const maxSpeed=Math.hypot(p.vx,p.vy0-state.g*p.T) || 1;
+    const maxSpeed=Math.hypot(p.vx,p.vy0-gravity*p.T) || 1;
     // Fit the projected model and the current ball.
     // The two axes share one scale; the viewport aspect ratio sets the limiting axis.
     function frameAt(scale){
@@ -558,7 +558,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const preview=draft.theta!==state.theta || draft.v0!==state.v0 || draft.y0!==state.y0 ? draft : null;
     previewLabel.hidden=!preview;
     if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽");
-    const project=renderExhibit?renderExhibit({editable:!state.playing,editSpeed:draft.v0,ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
+    const project=renderExhibit?renderExhibit({editable:!state.playing,editSpeed:draft.v0,ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:gravity}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
     trajectoryView = {p,project};
@@ -645,7 +645,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const maxDeg = state.maxTheta;
     const spanDeg = maxDeg - minDeg;
 
-    const env = getEnvelopeBounds(state.v0, state.y0, state.g);
+    const env = getEnvelopeBounds(state.v0, state.y0, gravity);
     const maxY = (isH ? env.maxH : env.maxR) * 1.15;
 
     const toPxX = (deg) => pad.left + ((deg - minDeg) / spanDeg) * plotW;
@@ -709,7 +709,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     const points = [];
     for (let deg = minDeg; deg <= maxDeg; deg += 0.5) {
-      const p = calcPhysics(deg, state.v0, state.y0, state.g);
+      const p = calcPhysics(deg, state.v0, state.y0, gravity);
       const val = isH ? p.H : p.R;
       points.push({ deg, val, px: toPxX(deg), py: toPxY(val) });
     }
@@ -733,7 +733,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ctx.stroke();
 
     if (!isH && env.optDeg >= minDeg && env.optDeg <= maxDeg) {
-      const optP = calcPhysics(env.optDeg, state.v0, state.y0, state.g);
+      const optP = calcPhysics(env.optDeg, state.v0, state.y0, gravity);
       const ox = toPxX(env.optDeg);
       const oy = toPxY(optP.R);
       ctx.save();
@@ -753,7 +753,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       ctx.fillText(`θ*=${env.optDeg.toFixed(1)}°`, Math.min(Math.max(ox, pad.left + 32), pad.left + plotW - 32), Math.max(pad.top + 14, oy - 6));
     }
 
-    const curP = calcPhysics(state.theta, state.v0, state.y0, state.g);
+    const curP = calcPhysics(state.theta, state.v0, state.y0, gravity);
     const curVal = isH ? curP.H : curP.R;
     const cx = toPxX(state.theta);
     const cy = toPxY(curVal);
@@ -794,8 +794,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   // ====== 更新按鈕狀態 ======
   function updatePlayButtons() {
-    const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
-    const next = calcPhysics(draft.theta,draft.v0,draft.y0,draft.g);
+    const p = calcPhysics(state.theta, state.v0, state.y0, gravity);
+    const next = calcPhysics(draft.theta,draft.v0,draft.y0,gravity);
     btnLaunch.disabled = needsLaunch() ? next.T <= 0 : p.T <= 0;
     const label = needsLaunch() ? labLanguage.pick("Launch","發射") : state.playing ? labLanguage.pick("Pause","暫停")
       : state.t >= p.T && p.T > 0 ? labLanguage.pick("Replay","重播")
@@ -813,19 +813,19 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   document.getElementById('jumpPeak')?.addEventListener('click',()=>{
     state.playing=false;
     stopAnimationLoop();
-    state.t=calcPhysics(state.theta,state.v0,state.y0,state.g).tPeak;
+    state.t=calcPhysics(state.theta,state.v0,state.y0,gravity).tPeak;
     updatePlayButtons();
     updateUI();
   });
   const speedChart=document.querySelector('.speed-chart');
   function drawSpeedChart(p,t){
-    const speedAt=time=>Math.hypot(p.vx,p.vy0-state.g*time);
+    const speedAt=time=>Math.hypot(p.vx,p.vy0-gravity*time);
     const ceiling=Math.max(5,5*Math.ceil(Math.max(speedAt(0),speedAt(p.T))/5));
     const x=time=>48+353*(p.T?time/p.T:0),y=time=>91-74*speedAt(time)/ceiling;
     const times=[0];
     if(t>0){
       for(let i=1;i<=64;i++)times.push(t*i/64);
-      const apex=p.vy0/state.g;
+      const apex=p.vy0/gravity;
       if(apex>0 && apex<t){times.push(apex);times.sort((a,b)=>a-b);}
     }
     speedChart.querySelector('.trace').setAttribute('d',times.map((time,i)=>(i?'L':'M')+x(time).toFixed(2)+' '+y(time).toFixed(2)).join(' '));
@@ -840,7 +840,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   if(!flightPhase) return;
   const stage = !launched ? ["Ready to launch","準備發射"] : !p.T ? ['No flight','沒有飛行階段'] : !t ? ['Launch','發射一刻'] : t>=p.T ? ['At impact','觸地一刻'] : Math.abs(vy)<1e-8 ? ['Highest point','最高點'] : vy>0 ? ['Rising','上升中'] : ['Falling','下降中'];
   flightPhase.textContent=labLanguage.pick(...stage);
-  const limit=Math.max(5,5*Math.ceil(Math.max(p.vx,Math.abs(p.vy0),Math.abs(p.vy0-state.g*p.T))/5));
+  const limit=Math.max(5,5*Math.ceil(Math.max(p.vx,Math.abs(p.vy0),Math.abs(p.vy0-gravity*p.T))/5));
   const x=49+278*(p.T?t/p.T:0);
   const level=value=>56-40*value/limit;
   flightCharts.forEach((panel,index)=>{
@@ -869,14 +869,14 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     valV0.textContent = `${draft.v0} m/s`;
     valY0.textContent = draft.y0;
 
-    const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
+    const p = calcPhysics(state.theta, state.v0, state.y0, gravity);
 
     outH.textContent = `${p.H.toFixed(2)} m`;
     outR.textContent = `${p.R.toFixed(2)} m`;
     outT.textContent = `${p.T.toFixed(2)} s`;
     outOptAngle.textContent = `${p.optDeg.toFixed(1)}°`;
     outVx.textContent = `${p.vx.toFixed(2)} m/s`;
-    outVy.textContent = `${(Math.abs(p.vy0 - state.g * state.t) < 1e-9 ? 0 : p.vy0 - state.g * state.t).toFixed(2)} m/s`;
+    outVy.textContent = `${(Math.abs(p.vy0 - gravity * state.t) < 1e-9 ? 0 : p.vy0 - gravity * state.t).toFixed(2)} m/s`;
 
     hrFormulaBox.textContent = state.theta > 0
       ? "H = y₀ + (v₀ sin θ)² / (2g)"
@@ -929,7 +929,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     // 限制單幀最大時間增量為 0.05s，防止分頁切換或瞬時延遲造成快轉至中途
     const dt = Math.min(0.05, Math.max(0, rawDt)) * state.speedFactor;
 
-    const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
+    const p = calcPhysics(state.theta, state.v0, state.y0, gravity);
     state.t += dt;
     if(state.t<p.T)syncWhistle(rawDt>0?dt/rawDt:state.speedFactor);
     observedTime = Math.max(observedTime,Math.min(state.t,p.T));
@@ -986,7 +986,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     try{localStorage.setItem('projectile-launch-sound',soundSwitch.checked?'on':'off');}catch{}
   });
   function togglePauseResume() {
-    const firing=needsLaunch() || (!state.playing && state.t >= calcPhysics(state.theta,state.v0,state.y0,state.g).T);
+    const firing=needsLaunch() || (!state.playing && state.t >= calcPhysics(state.theta,state.v0,state.y0,gravity).T);
     if (firing) {
       view.launchFrame=launched && renderExhibit ? renderExhibit.cameraFrame() : null;
       resetView();
@@ -999,7 +999,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       launched = true;
       state.playing = false;
     }
-    const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
+    const p = calcPhysics(state.theta, state.v0, state.y0, gravity);
     if (p.T <= 0) return;
 
     if (state.playing) {
@@ -1059,7 +1059,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   sliderTime.addEventListener("input", (e) => {
     state.playing = false;
     stopAnimationLoop();
-    const p = calcPhysics(state.theta, state.v0, state.y0, state.g);
+    const p = calcPhysics(state.theta, state.v0, state.y0, gravity);
     state.t = Math.min(observedTime, parseFloat(e.target.value) * p.T);
     updatePlayButtons();
     updateUI();
@@ -1074,11 +1074,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       slider.dispatchEvent(new Event("input", { bubbles: true }));
     });
   }
-  document.getElementById("gravityValue").addEventListener("change", event => {
-    draft.g = Number(event.target.value);
-    onParamChanged();
-  });
-
   btnLaunch.addEventListener("click", togglePauseResume);
 
 
