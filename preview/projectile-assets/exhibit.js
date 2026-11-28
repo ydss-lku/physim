@@ -445,6 +445,11 @@ function createProjectileExhibit(canvas) {
     };
   };
   const liftCueMaterials=[platform,pendingPlatform].map(lift=>lift.getObjectByName('Lift direction').children[0].material);
+  render.cueColors={
+    theta:'#'+arcMaterial.color.getHexString(),
+    y0:'#'+liftCueMaterials[0].color.getHexString(),
+    v0:'#'+initialVector.cone.material.color.getHexString()
+  };
   render.setCueOpacity=function(opacity,active){
     function level(key,base){
       if(active)return key===active?1:.2;

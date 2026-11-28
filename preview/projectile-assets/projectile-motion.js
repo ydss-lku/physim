@@ -1108,6 +1108,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         const coords=renderExhibit.dragCoordinates(),start=coords(event.clientX,event.clientY);
         if(start){
           modelDrag={id:event.pointerId,key,coords,start,value:draft[key]};
+          angleValue.style.color=renderExhibit.cueColors[key];
           paintCues();
           placeRigHints(trajCanvas.clientWidth,trajCanvas.clientHeight);
           trajCanvas.setPointerCapture(event.pointerId);event.preventDefault();return;
