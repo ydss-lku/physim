@@ -445,10 +445,14 @@ function createProjectileExhibit(canvas) {
     };
   };
   const liftCueMaterials=[platform,pendingPlatform].map(lift=>lift.getObjectByName('Lift direction').children[0].material);
-  render.setCueOpacity=function(opacity){
-    arcMaterial.opacity=opacity;
-    for(const material of liftCueMaterials)material.opacity=.78*opacity;
-    initialVector.line.material.opacity=initialVector.cone.material.opacity=.85*opacity;
+  render.setCueOpacity=function(opacity,active){
+    function level(key,base){
+      if(active)return key===active?1:.2;
+      return base*opacity;
+    }
+    arcMaterial.opacity=level('theta',1);
+    for(const material of liftCueMaterials)material.opacity=level('y0',.78);
+    initialVector.line.material.opacity=initialVector.cone.material.opacity=level('v0',.85);
     renderer.render(scene,flightCamera);
   };
   render.cameraFrame=()=>lastFrame;

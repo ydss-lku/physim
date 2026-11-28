@@ -487,7 +487,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function paintCues(){
     const phase=(performance.now()-cueStart)*2*Math.PI/1500;
     const opacity=reducedMotion.matches?1:.72+.28*Math.cos(phase);
-    renderExhibit.setCueOpacity(opacity);
+    renderExhibit.setCueOpacity(cueTimer || !launched || canOrbit ? opacity : 1,modelDrag?.key);
   }
   function syncCues(enabled){
     if(enabled && !cueTimer){
@@ -1108,6 +1108,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         const coords=renderExhibit.dragCoordinates(),start=coords(event.clientX,event.clientY);
         if(start){
           modelDrag={id:event.pointerId,key,coords,start,value:draft[key]};
+          paintCues();
           placeRigHints(trajCanvas.clientWidth,trajCanvas.clientHeight);
           trajCanvas.setPointerCapture(event.pointerId);event.preventDefault();return;
         }
@@ -1172,7 +1173,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if (Math.hypot(event.clientX - graphPress.x, event.clientY - graphPress.y) >= 3) graphPress.dragging = true;
     if (graphPress.dragging) seekTrajectory(event);
   });
-  trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId);if(modelDrag?.id===event.pointerId)modelDrag=null;angleValue.hidden=true;graphPress=null; });
+  trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId);if(modelDrag?.id===event.pointerId){modelDrag=null;paintCues();}angleValue.hidden=true;graphPress=null; });
 
   trajCanvas.addEventListener("pointerleave",hideProbe);
 
