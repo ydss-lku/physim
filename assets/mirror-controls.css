@@ -8,7 +8,7 @@ html body main button.mirror-view-button {
 }
 html body main .mirror-toggle > .bilingual,
 html body main .mirror-toggle > .dot,
-html body main button.mirror-view-button > .bilingual { display:none!important; }
+html body main button.mirror-view-button > :not(.mirror-glyph) { display:none!important; }
 html body main .mirror-toggle input {
   position:absolute; inset:0; width:100%; height:100%; margin:0;
   opacity:0; cursor:pointer; z-index:1;
@@ -21,6 +21,7 @@ html body main .mirror-view-button:focus-visible { outline:3px solid #457ca0; ou
 .mirror-ray-row,.mirror-toggle-row,html body #rayControls,html body #displayControls {
   display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;
 }
+html[data-page=mirror-rotation] body #toggles {display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .mirror-ray-number { position:absolute; left:3px; top:1px; font:700 11px system-ui; }
 .mirror-control-guide { margin:16px 0 4px; }
 .mirror-control-guide summary { min-height:44px; padding:10px 0; box-sizing:border-box; cursor:pointer; }

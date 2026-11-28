@@ -19,7 +19,18 @@
     eyeHeightLock: '<path d="M4 14h10v7H4zM6 14v-3a3 3 0 0 1 6 0v3M20 3v18M17 6l3-3 3 3M17 18l3 3 3-3"/>',
     perspective: '<path d="m12 3 9 5v9l-9 5-9-5V8zM3 8l9 5 9-5M12 13v9M12 3v5"/>',
     topview: '<path d="M4 8h16v12H4zM8 3h8M12 2v9m-3-3 3 3 3-3"/>',
+    original: '<path d="M5 3v18M21 5 9 12l12 7" stroke-dasharray="2 3"/><text x="3" y="22">0</text>',
+    initialIncident: '<path d="M19 3v18M3 5l12 7-12 7" stroke-dasharray="2 3"/><text x="3" y="22">0</text>',
+    incidentChange: '<path d="M4 20V3M4 20 20 6M4 9a11 11 0 0 1 8 3"/><text x="13" y="21">Δi</text>',
+    rayAngle: '<path d="M20 20V3M20 20 4 6M20 9a11 11 0 0 0-8 3"/><text x="2" y="21">Δr</text>',
+    mirrorAngle: '<path d="M4 18h16M6 21 18 3M12 18a6 6 0 0 0 5-3"/><text x="2" y="10">θ</text>',
+    op: '<path d="M4 18 20 6"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="6" r="2"/><text x="2" y="9">OP</text>',
+    target: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+    values: '<text x="2" y="16">123</text>',
+    zero: '<path d="M3 18h18M12 18V4M5 11a7 7 0 0 1 12-5M17 2v5h-5"/>',
   };
+  paths.iAngle = paths.incidentAngle;
+  paths.rAngle = paths.reflectionAngle;
   function icon(name) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
@@ -33,6 +44,7 @@
       width:[2,8,14], position:[-3,0,3], objectX:[-7,0,7], distance:[1.5,4,8],
       mirrorBottom:[0,2,4], mirrorHeight:[1,2,4], eyeDistance:[1,3,5],
       eyeHeight:[0.5,2,4], postDistance:[1,5,10,15], postHeight:[1,3,6],
+      mirror:[-90,-45,0,45,90], sourceAngle:[0,90,180,270],
     };
     const scales = [];
     for (const slider of document.querySelectorAll('aside input[type="range"]')) {
@@ -40,7 +52,8 @@
       scale.className = 'mirror-scale-ticks';
       scale.dataset.slider = slider.id;
       const minimum = Number(slider.min), maximum = Number(slider.max);
-      const unit = document.documentElement.dataset.page === 'mirror-image-2' ? ' m' : '';
+      const page = document.documentElement.dataset.page;
+      const unit = page === 'mirror-image-2' ? ' m' : page === 'mirror-rotation' ? '°' : '';
       // Buttons must sit outside the input's label so tapping a tick never also toggles a label.
       const label = slider.closest('label');
       if (label) {
@@ -78,11 +91,19 @@
     document.querySelector('main').addEventListener('input', syncPresets);
     document.querySelector('main').addEventListener('pointermove', syncPresets);
     document.getElementById('reset').addEventListener('click', syncPresets);
+    document.getElementById('zero')?.addEventListener('click', syncPresets);
     syncPresets();
     const guide = document.createElement('details');
     guide.className = 'mirror-control-guide';
     guide.innerHTML = '<summary><span lang="en">Control guide</span><small lang="zh-HK">圖示說明</small></summary><div class="mirror-guide-items"></div>';
     const items = guide.lastElementChild;
+    const zero = document.getElementById('zero');
+    if (zero) {
+      zero.classList.add('mirror-view-button');
+      zero.title = 'Zero mirror / 鏡面歸零';
+      zero.setAttribute('aria-label', zero.title);
+      zero.append(icon('zero'));
+    }
     const inputs = [...document.querySelectorAll('aside input[type="checkbox"]')];
     for (const input of inputs) {
       const label = input.closest('label');
