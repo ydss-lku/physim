@@ -1,7 +1,8 @@
 // Orthographic exhibit scene. The flight plane z=0 maps directly to the measurement overlay.
 function createProjectileExhibit(canvas) {
   const T = window.THREE;
-  const renderer = new T.WebGLRenderer({canvas, alpha:true, antialias:true});
+  const phoneView=matchMedia("(max-width: 640px), (max-height: 520px) and (pointer: coarse)");
+  const renderer = new T.WebGLRenderer({canvas, alpha:true, antialias:!phoneView.matches});
   renderer.setClearColor(0,0);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
@@ -128,7 +129,7 @@ function createProjectileExhibit(canvas) {
   const key=new T.DirectionalLight(0xffd3a3,2.45);
   key.position.set(-260,420,340); key.castShadow=true;
   Object.assign(key.shadow.camera,{left:-450,right:450,top:350,bottom:-350,near:1,far:1200});
-  key.shadow.mapSize.set(2048,2048);key.shadow.normalBias=.4;scene.add(key);
+  key.shadow.mapSize.setScalar(phoneView.matches?512:2048);key.shadow.normalBias=.4;scene.add(key);
   scene.add(new T.HemisphereLight(0xc4deef,0x645444,.84));
   const rim=new T.DirectionalLight(0xafcfe4,.94);rim.position.set(140,180,-250);scene.add(rim);
   const sunOffset=new T.Vector3(-38,34,-49);scene.add(key.target);
@@ -326,7 +327,7 @@ function createProjectileExhibit(canvas) {
   function ease(t){t=Math.max(0,Math.min(1,t));return t*t*t*(10+t*(-15+6*t));}
   let lastFrame;
   function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready,preview,impactAge,editSpeed,editable}){
-    const ratio=Math.min(devicePixelRatio||1,2);
+    const ratio=Math.min(devicePixelRatio||1,phoneView.matches?1:2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
       renderer.setSize(w,h,false);
@@ -467,7 +468,7 @@ function createProjectileExhibit(canvas) {
     const pixelsPerMetre=h*flightCamera.projectionMatrix.elements[5]*size/(2*Math.max(1,depth));
     const keepOpen=stationCanvas.hasPointerCapture(stationPointer.value);
     const autoOpen=!ready && (keepOpen || pixelsPerMetre*3.5<=(stationPanel.hidden?95:112));
-    stationPanel.hidden=!(render.stationOpen ?? autoOpen);
+    stationPanel.hidden=!(render.stationOpen ?? (!phoneView.matches && autoOpen));
     stationToggle.setAttribute('aria-pressed',String(!stationPanel.hidden));
     if(!stationPanel.hidden){
       const width=stationCanvas.clientWidth,height=stationCanvas.clientHeight;

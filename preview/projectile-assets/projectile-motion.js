@@ -117,11 +117,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   }
 
   // ====== Canvas 工具 ======
+  const phoneView=matchMedia("(max-width: 640px), (max-height: 520px) and (pointer: coarse)");
   function setupCanvas(canvas) {
     const rect = canvas.parentElement.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.max(100, Math.floor(rect.width));
-    const h = Math.max(100, Math.floor(rect.height));
+    const dpr = Math.min(window.devicePixelRatio || 1,phoneView.matches?1.5:Infinity);
+    const w = Math.max(1, Math.floor(rect.width));
+    const h = Math.max(1, Math.floor(rect.height));
     if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
@@ -246,8 +247,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const ballInset=document.getElementById('ballInset');
   const insetCanvas=document.getElementById('insetCanvas');
   const insetToggle=document.getElementById('toggleInset');
+  if(phoneView.matches){ballInset.hidden=true;insetToggle.setAttribute('aria-pressed','false')}
   insetToggle.addEventListener('click',()=>{
     ballInset.hidden=!ballInset.hidden;
+    if(phoneView.matches && !ballInset.hidden && renderExhibit)renderExhibit.stationOpen=false;
     insetToggle.setAttribute('aria-pressed',String(!ballInset.hidden));
     updateUI();
   });
@@ -510,7 +513,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(enabled && !cueTimer){
       cueStart=performance.now();
       paintCues();
-      cueTimer=setInterval(()=>{if(!document.hidden)paintCues();},50);
+      cueTimer=setInterval(()=>{if(!document.hidden)paintCues();},phoneView.matches?150:50);
     }else if(!enabled && cueTimer){
       clearInterval(cueTimer);cueTimer=0;
       renderExhibit.setCueOpacity(1);
@@ -1222,6 +1225,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   stationToggle.hidden=!renderExhibit;
   stationToggle.addEventListener('click',()=>{
     renderExhibit.stationOpen=document.getElementById('rigInset').hidden;
+    if(phoneView.matches && renderExhibit.stationOpen){ballInset.hidden=true;insetToggle.setAttribute('aria-pressed','false')}
     stationHover=null;drawTrajectory();
   });
   stationLaunch.addEventListener('click',()=>btnLaunch.click());
