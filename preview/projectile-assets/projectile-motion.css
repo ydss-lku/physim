@@ -186,3 +186,5 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 .fine-settings summary{cursor:pointer}
 .fine-sliders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 24px;padding:8px}
 @media(max-width:760px){.fine-sliders{grid-template-columns:1fr}}
+
+.fine-sliders .setting{grid-template-rows: minmax(1.8em,auto) 28px 44px;align-content:start}
