@@ -392,6 +392,31 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ribbon(.52,.44,4,[[0,'#fffde5'],[.68,'#ffe484'],[1,'#ffbf3800']]);
     ctx.restore();
   }
+  const landingRange=document.createElement('output');
+  landingRange.className='landing-range';landingRange.hidden=true;
+  trajCanvas.parentElement.append(landingRange);
+  function placeRange(model,project,w,h){
+    const end=project(model.R,0);
+    landingRange.hidden=!(launched && model.T>0 && state.t>=model.T && !state.playing &&
+      end.x>=0 && end.x<=w && end.y>=0 && end.y<=h);
+    if(landingRange.hidden)return;
+    const reading=model.R.toFixed(2)+' m';
+    if(landingRange.textContent!==reading)landingRange.textContent=reading;
+    const width=landingRange.offsetWidth,height=landingRange.offsetHeight;
+    const curve=[];
+    for(let i=0;i<=80;i++){
+      const point=posAtTime(model.T*i/80,model);
+      curve.push(project(point.x,point.y));
+    }
+    let best=-Infinity;
+    for(const [dx,dy] of [[12,15],[-width-12,15],[12,-height-13],[-width-12,-height-13],[12,-height/2],[-width-12,-height/2]]){
+      const x=Math.max(3,Math.min(w-width-3,end.x+dx)),y=Math.max(3,Math.min(h-height-3,end.y+dy));
+      const clearance=Math.min(...curve.map(q=>Math.hypot(Math.max(x-q.x,0,q.x-x-width),Math.max(y-q.y,0,q.y-y-height))));
+      const underInset=!ballInset.hidden && x<ballInset.offsetLeft+ballInset.offsetWidth && x+width>ballInset.offsetLeft && y<ballInset.offsetTop+ballInset.offsetHeight && y+height>ballInset.offsetTop;
+      const score=Math.min(20,clearance)-(underInset?100:0);
+      if(score>best){best=score;landingRange.style.left=x+'px';landingRange.style.top=y+'px';}
+    }
+  }
   let impactStart=null,impactFrame=0;
   function clearImpact(){
     if(impactFrame)cancelAnimationFrame(impactFrame);
@@ -453,6 +478,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
     trajectoryView = {p,project};
+    placeRange(p,project,w,h);
     ctx.clearRect(0,0,w,h);
     const styles = getComputedStyle(document.querySelector(".shell"));
     const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());

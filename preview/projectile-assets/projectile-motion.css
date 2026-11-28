@@ -161,3 +161,8 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 
 .launch-preview{position:absolute;bottom:8px;right:8px;z-index:3;pointer-events:none;padding:5px 9px;border:1px solid #65b8b0;border-radius:4px;color:#d8fffa;background:#172f35dc;font:600 12px/1.4 system-ui,sans-serif;font-variant-numeric:tabular-nums}
 .launch-preview[hidden]{display:none}
+
+.landing-range{position:absolute;z-index:2;pointer-events:none;padding:3px 7px;border-radius:3px;border-left:2px solid #f6bf75;background:#142529eb;color:#ffdb9c;font:600 13px/1.35 system-ui,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap;animation:landing-range-in .48s ease-out both}
+.landing-range[hidden]{display:none}
+@keyframes landing-range-in{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.landing-range{animation:none}}
