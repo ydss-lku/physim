@@ -67,6 +67,15 @@
     .demoMove{animation:demoMove 3s ease-in-out infinite alternate}
     @keyframes demoMove{to{transform:translate(45px,-15px)}}
     @media(prefers-reduced-motion:reduce){.rainbowIcon,.demoMove{animation:none}}
+    .demoMirror{animation:mirrorSlide 2s ease-in-out infinite alternate}
+    .demoRotate{transform-origin:110px 43px;animation:dialTurn 2s ease-in-out infinite alternate}
+    .demoCamera{transform-origin:center;animation:cameraMove 3s ease-in-out infinite alternate}
+    .demoColour{animation:colourChange 3s linear infinite alternate}
+    @keyframes mirrorSlide{to{transform:translateY(32px)}}
+    @keyframes dialTurn{from{transform:rotate(-40deg)}to{transform:rotate(45deg)}}
+    @keyframes cameraMove{to{transform:translate(12px,5px) rotate(10deg) scale(1.25)}}
+    @keyframes colourChange{0%{color:#ff5555}50%{color:#60ddff}100%{color:#86ee84}}
+    @media(prefers-reduced-motion:reduce){#demoPicture *{animation:none}}
     </style>
 </head>
 <body>
@@ -127,10 +136,21 @@
     ];
     const tutorial=document.querySelector('#tutorial');
     let lesson=0;
+    const picture=document.querySelector('#demoPicture');
+    const hand='<path fill="#ffe2ba" stroke="#765637" d="M1 18 L-6 7 Q-7 4 -4 4 L0 8 V-6 Q2 -10 4 -6 V2 Q14 0 16 7 L14 17 L10 21 H4 Z"/>';
+    const mirror='<path d="M45 25 H175" stroke="#9bd8f0" stroke-width="4"/>';
+    const lampDemo='<path d="M82 66 L110 25 L142 74" fill="none" stroke="#ff717c" stroke-width="2"/><rect x="76" y="62" width="12" height="14" fill="#b8c6d6"/>';
+    const demos=[
+      picture.innerHTML,
+      '<g class="demoMirror">'+mirror+'<g transform="translate(133 25)">'+hand+'</g></g><path d="M60 70 H160" stroke="#627182" stroke-dasharray="3 4"/>',
+      '<circle cx="110" cy="43" r="28" fill="none" stroke="#8ed275"/><g class="demoRotate"><path d="M110 43 H138" stroke="#9fea6e" stroke-width="4"/><circle cx="138" cy="43" r="6" fill="#9fea6e"/><g transform="translate(140 48)">'+hand+'</g></g>',
+      '<svg x="40" y="6" width="140" height="73" viewBox="40 6 140 73"><g class="demoCamera">'+mirror+lampDemo+'</g></svg><rect x="40" y="6" width="140" height="73" fill="none" stroke="#438dff"/><g class="demoMove"><g transform="translate(60 50)">'+hand+'</g></g>',
+      '<g class="demoColour"><path d="M45 68 L100 22 L170 68" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="184" cy="58" r="9" fill="none" stroke="currentColor" stroke-width="5"/></g>'+mirror+'<g transform="translate(187 65)">'+hand+'</g>'
+    ];
     function showLesson(){
       document.querySelector('#demoTitle').textContent=lessons[lesson][0];
       document.querySelector('#demoText').textContent=lessons[lesson][1];
-      document.querySelector('#demoPicture').style.display=lesson===0?'block':'none';
+      picture.innerHTML=demos[lesson]; picture.setAttribute('aria-label',lessons[lesson][0]+' demonstration');
       document.querySelector('#nextTip').textContent=lesson===lessons.length-1?'Done':'Next';
     }
     document.querySelector('#openTutorial').onclick=()=>{lesson=0;showLesson();tutorial.showModal()};
@@ -264,6 +284,7 @@
         byId('angle').textContent = 'Beam misses the mirror';
       }
       updateDial();
+      applyCamera();
       cancelAnimationFrame(frame);
       animate(performance.now());
     }
@@ -333,7 +354,7 @@
     const world=byId('world'), fingers=new Map();
     const minZoom=1.23;
     function initialCamera(){return new DOMMatrix().translate(324,90).scale(minZoom).translate(-320,-180);}
-    let camera=initialCamera(); applyCamera();
+    let camera=initialCamera(); applyCamera(); new ResizeObserver(applyCamera).observe(svg);
     function setGlove(active){
       byId('filament').setAttribute('display',active?'inline':'none');
       byId("gauntlet").setAttribute("display",active?"inline":"none");
@@ -342,7 +363,27 @@
       draw();
     }
     byId("secret").onclick=()=>setGlove(byId("secret").getAttribute("aria-pressed")!=="true");
-    function applyCamera(){world.setAttribute('transform',camera.toString().replace(/,/g,' '));}
+    function applyCamera(){
+      const box=svg.getBoundingClientRect();
+      if(!box.width||!box.height)return;
+      const inv=svg.getScreenCTM().inverse();
+      const lo=new DOMPoint(box.left+5,box.top+5).matrixTransform(inv);
+      const hi=new DOMPoint(box.right-5,box.bottom-5).matrixTransform(inv);
+      const points=[];
+      for(const [id,angle] of [['lamp',+slider.value],['mirror',+byId('tilt').value]]){
+        const [x,y]=centre(id), length=+byId('mirrorLength').value/2;
+        const transform=camera.translate(x,y).rotate(angle);
+        const bounds=id==='lamp'?[-18,18,-28,26]:[-length,length,-3,3];
+        for(const px of bounds.slice(0,2))for(const py of bounds.slice(2))points.push(new DOMPoint(px,py).matrixTransform(transform));
+      }
+      const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+      const left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys);
+      const fit=Math.min(1,(hi.x-lo.x)/(right-left),(hi.y-lo.y)/(bottom-top));
+      const tx=Math.max(lo.x-left*fit,Math.min(0,hi.x-right*fit));
+      const ty=Math.max(lo.y-top*fit,Math.min(0,hi.y-bottom*fit));
+      camera=new DOMMatrix().translate(tx,ty).scale(fit).multiply(camera);
+      world.setAttribute('transform',camera.toString().replace(/,/g,' '));
+    }
     function transformView(from,to,angle,ratio){
       const scale=Math.hypot(camera.a,camera.b);
       ratio=Math.min(6,Math.max(minZoom,scale*ratio))/scale;
