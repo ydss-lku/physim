@@ -26,7 +26,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   const draft = {theta: state.theta, v0: state.v0, y0: state.y0, g: state.g};
   let launched = false;
-  let flightTickStep = 1;
   let observedTime = 0;
   function needsLaunch() {
     return !launched || Object.keys(draft).some(key => draft[key] !== state[key]);
@@ -510,15 +509,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const styles = getComputedStyle(document.querySelector(".shell"));
     const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());
     ctx.fillStyle=chartInk.grid;
-    if(!ready && !view.active){
-      const step=flightTickStep,limit=Math.max(step*2,pos.x+step);
-      const origin=project(0,0),end=project(limit,0);
-      ctx.strokeStyle=chartInk.grid;ctx.beginPath();ctx.moveTo(origin.x,origin.y);ctx.lineTo(end.x,end.y);ctx.stroke();
-      ctx.font="12px sans-serif";ctx.fillStyle=chartInk.muted;
-      for(let x=0;x<=limit;x+=step){
-        const mark=project(x,0);ctx.fillRect(mark.x,mark.y,1,5);ctx.fillText(x+" m",mark.x-4,mark.y+18);
-      }
-    }
     function path(model,end,color,dash,startTime=0,width=2,outline=false){
       ctx.beginPath();
       for(let i=0;i<=80;i++){
@@ -915,8 +905,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       state.minTheta = state.y0 > 0 ? -90 : 0;
       state.t = 0;
       observedTime = 0;
-      const range=calcPhysics(state.theta,state.v0,state.y0,state.g).R;
-      flightTickStep=niceStep(Math.max(4,range),5);
       launched = true;
       state.playing = false;
     }
