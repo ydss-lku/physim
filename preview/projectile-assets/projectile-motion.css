@@ -154,3 +154,7 @@ html[data-theme=tech] main .observation .viewport,html[data-theme=tech] #ballIns
 .stage-heading #livePosTag{font-variant-numeric:tabular-nums;letter-spacing:.02em;color:var(--muted)}
 main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(--line)}
 @media(max-width:650px){main .observation .viewport{height:clamp(275px,68vw,360px)}.stage-heading #livePosTag{order:3;flex-basis:100%}}
+
+.flight-probe,.flight-probe-pin{position:absolute;z-index:4;pointer-events:none}
+.flight-probe{white-space:pre;padding:6px 9px;border:1px solid #7ecfc7;border-radius:4px;background:#12262cef;color:#effaf7;font:12px/1.4 ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.flight-probe-pin{width:8px;height:8px;transform:translate(-50%,-50%);border:2px solid #aceee2;border-radius:50%;background:#173136}

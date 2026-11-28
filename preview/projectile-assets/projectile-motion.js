@@ -316,6 +316,40 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       label('v',2,x+dx+4,y+dy+(rising?-17:4),rising?-1:1);
     }
   }
+  const probe=document.createElement('div'),pin=document.createElement('i');
+  probe.className='flight-probe';pin.className='flight-probe-pin';
+  trajCanvas.parentElement.append(pin,probe);
+  function hideProbe(){probe.hidden=true;pin.hidden=true;}
+  hideProbe();
+  function inspectFlight(event){
+    const {p,project}=trajectoryView,rect=trajCanvas.getBoundingClientRect();
+    const x=event.clientX-rect.left,y=event.clientY-rect.top;
+    let best=100,time=0,previous=project(0,state.y0);
+    // Hit-test the same 80 projected segments used to paint the curve.
+    for(let i=1;i<=80;i++){
+      const point=posAtTime(p.T*i/80,p),next=project(point.x,point.y);
+      const dx=next.x-previous.x,dy=next.y-previous.y;
+      const u=Math.max(0,Math.min(1,((x-previous.x)*dx+(y-previous.y)*dy)/(dx*dx+dy*dy||1)));
+      const distance=(x-previous.x-u*dx)**2+(y-previous.y-u*dy)**2;
+      if(distance<best){best=distance;time=p.T*(i-1+u)/80;}
+      previous=next;
+    }
+    if(best>=100){hideProbe();return;}
+    const pos=posAtTime(time,p),anchor=project(pos.x,pos.y);
+    const signed=(v,n)=>Math.abs(v)<.5*10**(-n)?(0).toFixed(n):(v>0?'+':'−')+Math.abs(v).toFixed(n);
+    const times=[time],other=2*p.vy0/state.g-time;
+    if(Math.abs(p.vx)<1e-8 && other>=0 && other<=p.T && Math.abs(other-time)>.01)times.push(other);
+    probe.textContent=times.sort((a,b)=>a-b).map(t=>{
+      const {vx,vy}=posAtTime(t,p),speed=Math.hypot(vx,vy);
+      const angle=speed<.005?'—':signed(Math.atan2(vy,vx)*180/Math.PI,1)+'°';
+      return 't   '+t.toFixed(2)+' s\nvₓ  '+signed(vx,2)+' m/s\nvᵧ  '+signed(vy,2)+' m/s\n|v| '+speed.toFixed(2)+' m/s\nθ   '+angle;
+    }).join('\n\n');
+    pin.hidden=probe.hidden=false;
+    pin.style.left=anchor.x+'px';pin.style.top=anchor.y+'px';
+    const width=probe.offsetWidth,height=probe.offsetHeight;
+    probe.style.left=Math.max(2,Math.min(rect.width-width-2,anchor.x+width+15<rect.width?anchor.x+12:anchor.x-width-12))+'px';
+    probe.style.top=Math.max(2,Math.min(rect.height-height-2,anchor.y-height/2))+'px';
+  }
   let trajectoryView;
   // Sample only elapsed simulation time so pausing and scrubbing reproduce the same flame.
   function drawFireTrail(ctx,p,t,scale,toX,toY,w,h,radius,project){
@@ -396,6 +430,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
     const project=renderExhibit?renderExhibit({ready,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
+    hideProbe();
     trajectoryView = {p,project};
     ctx.clearRect(0,0,w,h);
     const styles = getComputedStyle(document.querySelector(".shell"));
@@ -884,6 +919,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   },{passive:false});
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
+    hideProbe();
     if(canOrbit && event.button===0){
       fingers.set(event.pointerId,{x:event.clientX,y:event.clientY});
       trajCanvas.setPointerCapture(event.pointerId);
@@ -918,11 +954,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       }
       return;
     }
+    if(!event.buttons && event.pointerType!=="touch" && trajectoryView && launched && !state.playing && state.t>=trajectoryView.p.T && trajectoryView.p.T>0){
+      inspectFlight(event);return;
+    }
     if (graphPress?.id !== event.pointerId) return;
     if (Math.hypot(event.clientX - graphPress.x, event.clientY - graphPress.y) >= 3) graphPress.dragging = true;
     if (graphPress.dragging) seekTrajectory(event);
   });
   trajCanvas.addEventListener("lostpointercapture", event => { fingers.delete(event.pointerId); graphPress = null; });
+
+  trajCanvas.addEventListener("pointerleave",hideProbe);
 
   function bindAngleChartScrub(canvas) {
     let dragging = false;
