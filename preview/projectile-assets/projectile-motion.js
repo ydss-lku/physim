@@ -233,9 +233,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const speedFinish=document.getElementById('speedFinish');
   if(speedFinish && renderExhibit){
     try{speedFinish.value=localStorage.getItem('projectile-speed-finish')||'teal';}catch{}
-    renderExhibit.setSpeedFinish(speedFinish.value);
-    speedFinish.addEventListener('change',()=>{
+    function applySpeedFinish(){
       renderExhibit.setSpeedFinish(speedFinish.value);
+      const colors=renderExhibit.cueColors;
+      sceneTheta.parentElement.style.color=colors.theta;
+      sceneV0.parentElement.style.color=colors.v0;
+      sceneY0.parentElement.style.color=colors.y0;
+    }
+    applySpeedFinish();
+    speedFinish.addEventListener('change',()=>{
+      applySpeedFinish();
       try{localStorage.setItem('projectile-speed-finish',speedFinish.value);}catch{}
       drawTrajectory();
     });
