@@ -77,6 +77,7 @@
     @keyframes cameraMove{to{transform:translate(12px,5px) rotate(10deg) scale(1.25)}}
     @keyframes colourChange{0%{color:#ff5555}50%{color:#60ddff}100%{color:#86ee84}}
     @media(prefers-reduced-motion:reduce){#demoPicture *{animation:none}}
+    .dimensions{position:absolute;top:6px;left:6px;display:flex;gap:4px}.dimensions button{width:36px;height:36px;color:white;background:#132232;border:1px solid #8aa5be;border-radius:4px}.dimensions [aria-pressed="true"]{background:#254f75;border-color:#92cbff}.controls [hidden]{display:none}
     </style>
 </head>
 <body>
@@ -89,7 +90,7 @@
       </defs>
       <g id="world"><g fill="currentColor" text-anchor="middle">
         <rect x="36" y="36" width="568" height="288" fill="none" stroke="#bac7d5" opacity=".32" stroke-dasharray="2 5"/>
-        <path id="mirror" d="M166 180 H474" stroke="#9bd8f0" stroke-width="5"/>
+        <path id="mirrorFace" fill="#487184" fill-opacity=".75" stroke="#b4dce7" pointer-events="none"/><path id="mirror" d="M166 180 H474" stroke="#9bd8f0" stroke-width="5"/>
         <g id="guide">
         <g id="meter" fill="#a2b2c4" font-size="10" aria-label="Protractor, zero at the normal"></g>
         <path d="M320 56 V220" stroke="#abbaca" stroke-dasharray="7 5"/>
@@ -109,7 +110,7 @@
       </g>
       <g id="dial" display="none" style="touch-action:none" fill="none"><circle r="39" stroke="#8ed275" stroke-width="2"/><g id="arm"><path d="M0 0 H39" stroke="#9fea6e" stroke-width="4"/><circle cx="39" r="9" fill="#9fea6e" stroke="white"/></g><circle r="40" stroke="transparent" stroke-width="22"/><text id="dialValue" y="5" text-anchor="middle" fill="white" stroke="#182018" stroke-width="3" paint-order="stroke" font-size="13"></text></g>
     </g></svg>
-    <button id="fullscreen" type="button" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="white" stroke-width="1.7"><defs><path id="cornerArrow" d="M10 10 L3 3 M3 8 V3 H8"/></defs><use href="#cornerArrow"/><use href="#cornerArrow" transform="rotate(90 12 12)"/><use href="#cornerArrow" transform="rotate(180 12 12)"/><use href="#cornerArrow" transform="rotate(270 12 12)"/></svg></button>
+    <div class="dimensions" role="group" aria-label="View dimension"><button id="view2" aria-pressed="true">2D</button><button id="view3" aria-pressed="false">3D</button></div><button id="fullscreen" type="button" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="white" stroke-width="1.7"><defs><path id="cornerArrow" d="M10 10 L3 3 M3 8 V3 H8"/></defs><use href="#cornerArrow"/><use href="#cornerArrow" transform="rotate(90 12 12)"/><use href="#cornerArrow" transform="rotate(180 12 12)"/><use href="#cornerArrow" transform="rotate(270 12 12)"/></svg></button>
     <details class="palette"><summary aria-label="Laser colour" title="Laser colour"><span class="rainbowIcon" aria-hidden="true"></span></summary><div class="picker"><div class="wheel" aria-hidden="true"></div><label>Hue<input type="range" id="hue" min="0" max="359" value="355"></label><label>Saturation<input type="range" id="sat" min="0" max="100" value="80"></label><output id="colourValue"></output></div></details></div>
     <section class="controls" aria-label="Simulation controls">
       <output id="angle"></output>
@@ -119,6 +120,7 @@
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
       <label>Mirror Y<input id="mirrorY" type="range" min="36" max="324" value="180"></label>
       <button id="secret" type="button" aria-label="Switch light source" aria-pressed="false">???</button></details><label>Mirror length<input id="mirrorLength" type="range" min="80" max="620" value="308"></label>
+      <label id="heightControl" hidden>Mirror height<input id="mirrorHeight" type="range" min="10" max="150" value="65"></label>
       <button id="reset" type="button">Restore defaults</button>
     </section>
     <dialog id="tutorial" aria-labelledby="demoTitle"><h2 id="demoTitle"></h2>
@@ -241,6 +243,22 @@
       const vertical = dy > 0 ? (360-y)/dy : dy < 0 ? -y/dy : Infinity;
       return Math.min(horizontal, vertical);
     }
+    let spatial=false;
+    const floorProjection=new DOMMatrix([.94,.28,-.34,.64,80,-18]);
+    const planeMatrix=()=>spatial?floorProjection:new DOMMatrix();
+    function elevation(){
+      const z=+byId('mirrorHeight').value;
+      return new DOMPoint(0,-z,0,0).matrixTransform(floorProjection.inverse());
+    }
+    function switchView(value){
+      spatial=value;
+      byId('view2').setAttribute('aria-pressed',String(!value));
+      byId('view3').setAttribute('aria-pressed',String(value));
+      byId('heightControl').hidden=!value;
+      draw();
+    }
+    byId('view2').onclick=()=>switchView(false);
+    byId('view3').onclick=()=>switchView(true);
     function draw() {
       const x = +byId('sx').value, y = +byId('sy').value;
       const degrees = +slider.value, tilt = +byId('tilt').value;
@@ -251,6 +269,10 @@
       const mirrorY = +byId('mirrorY').value;
       const halfLength = +byId('mirrorLength').value / 2;
       byId('mirror').setAttribute('d','M'+(320-halfLength)+' 180 H'+(320+halfLength));
+      const left=[320-halfLength*ny,mirrorY+halfLength*nx];
+      const right=[320+halfLength*ny,mirrorY-halfLength*nx];
+      const up=elevation();
+      byId('mirrorFace').setAttribute('d',spatial?'M'+left+' L'+right+' l'+up.x+' '+up.y+' L'+(left[0]+up.x)+' '+(left[1]+up.y)+' Z':'');
       byId('sourceAngle').textContent = degrees.toFixed(1)+'°';
       const halfThickness = Number(byId('mirror').getAttribute('stroke-width')) / 2;
       const normalOffset = (x-320)*nx + (y-mirrorY)*ny;
@@ -302,7 +324,7 @@
     const lamp = byId('lamp');
     const svg = lamp.ownerSVGElement;
     const screenPoint = event => new DOMPoint(event.clientX,event.clientY).matrixTransform(svg.getScreenCTM().inverse());
-    const pointer = event => screenPoint(event).matrixTransform(camera.inverse());
+    const pointer = event => screenPoint(event).matrixTransform(camera.multiply(planeMatrix()).inverse());
     const dial = byId('dial');
     let selected = null, drag, holdTimer;
     function centre(target) {
@@ -377,9 +399,9 @@
       const points=[];
       for(const [id,angle] of [['lamp',+slider.value],['mirror',+byId('tilt').value]]){
         const [x,y]=centre(id), length=+byId('mirrorLength').value/2;
-        const transform=camera.translate(x,y).rotate(angle);
+        const base=camera.multiply(planeMatrix()); const transform=base.translate(x,y).rotate(angle);
         const bounds=id==='lamp'?[-18,18,-28,26]:[-length,length,-3,3];
-        for(const px of bounds.slice(0,2))for(const py of bounds.slice(2))points.push(new DOMPoint(px,py).matrixTransform(transform));
+        for(const px of bounds.slice(0,2))for(const py of bounds.slice(2)){const corner=new DOMPoint(px,py).matrixTransform(transform);points.push(corner);if(spatial && id==="mirror"){const up=elevation().matrixTransform(base);points.push(new DOMPoint(corner.x+up.x,corner.y+up.y));}}
       }
       const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
       const left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys);
@@ -387,7 +409,7 @@
       const tx=Math.max(lo.x-left*fit,Math.min(0,hi.x-right*fit));
       const ty=Math.max(lo.y-top*fit,Math.min(0,hi.y-bottom*fit));
       camera=new DOMMatrix().translate(tx,ty).scale(fit).multiply(camera);
-      world.setAttribute('transform',camera.toString().replace(/,/g,' '));
+      world.setAttribute('transform',camera.multiply(planeMatrix()).toString().replace(/,/g,' '));
     }
     function transformView(from,to,angle,ratio){
       const scale=Math.hypot(camera.a,camera.b);
