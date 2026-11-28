@@ -573,7 +573,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     hideProbe();
     trajectoryView = {p,project};
     placeRange(p,project,w,h);
-    stationLaunch.disabled=!canOrbit || btnLaunch.disabled;
+    stationLaunch.disabled=(!ready && !canOrbit) || btnLaunch.disabled;
     if(!canOrbit)stationHover=null;
     updateStationValue();
     placeRigHints(w,h);
@@ -1156,7 +1156,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(key)stationValue.style.color=renderExhibit.cueColors[key];
   }
   stationSurface.addEventListener('pointerdown',event=>{
-    if(!canOrbit || !event.isPrimary || event.button!==0)return;
+    if((launched && !canOrbit) || !event.isPrimary || event.button!==0)return;
     const key=editTarget(event,true);
     if(!key)return;
     const coords=renderExhibit.dragCoordinates(true),start=coords(event.clientX,event.clientY);
@@ -1168,7 +1168,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
   stationSurface.addEventListener('pointermove',event=>{
     if(stationDrag?.id===event.pointerId){adjustFromPointer(stationDrag,event);updateStationValue();return;}
-    if(!canOrbit || event.pointerType==='touch')return;
+    if((launched && !canOrbit) || event.pointerType==='touch')return;
     const hit=editTarget(event,true);
     if(hit!==stationHover){stationHover=hit;updateStationValue();paintCues();}
     stationSurface.style.cursor=hit==='y0'?'ns-resize':hit?'grab':'';
@@ -1178,6 +1178,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
   stationSurface.addEventListener('pointerleave',()=>{
     if(stationHover){stationHover=null;updateStationValue();paintCues();}
+  });
+  const stationToggle=document.getElementById('toggleRigInset');
+  stationToggle.hidden=!renderExhibit;
+  stationToggle.addEventListener('click',()=>{
+    renderExhibit.stationOpen=document.getElementById('rigInset').hidden;
+    stationHover=null;drawTrajectory();
   });
   stationLaunch.addEventListener('click',()=>btnLaunch.click());
   let graphPress;

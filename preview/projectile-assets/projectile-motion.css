@@ -215,3 +215,8 @@ html:not([data-theme=tech]) .initial-readings span{-webkit-text-stroke:1.5px #31
 .launch-sound svg{width:23px;height:23px;pointer-events:none}
 .launch-sound input:checked + svg .sound-off,.launch-sound input:not(:checked) + svg .sound-waves{display:none}
 .launch-sound:focus-within{outline:2px solid currentColor;outline-offset:-2px}
+
+#toggleRigInset{position:absolute;bottom:8px;left:8px;z-index:5;display:grid;place-items:center;width:44px;height:44px;padding:0}
+#toggleRigInset[hidden]{display:none}
+#toggleRigInset[aria-pressed=true]{background:var(--selected);color:var(--on)}
+.rig-inset-footer{min-height:44px;padding-left:49px}

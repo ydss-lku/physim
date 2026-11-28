@@ -455,7 +455,9 @@ function createProjectileExhibit(canvas) {
     const depth=-activeRig.position.clone().applyMatrix4(flightCamera.matrixWorldInverse).z;
     const pixelsPerMetre=h*flightCamera.projectionMatrix.elements[5]*size/(2*Math.max(1,depth));
     const keepOpen=stationCanvas.hasPointerCapture(stationPointer.value);
-    stationPanel.hidden=ready || (!keepOpen && pixelsPerMetre*3.5>(stationPanel.hidden?95:112));
+    const autoOpen=!ready && (keepOpen || pixelsPerMetre*3.5<=(stationPanel.hidden?95:112));
+    stationPanel.hidden=!(render.stationOpen ?? autoOpen);
+    stationToggle.setAttribute('aria-pressed',String(!stationPanel.hidden));
     if(!stationPanel.hidden){
       const width=stationCanvas.clientWidth,height=stationCanvas.clientHeight;
       const thetaRad=(setup?setup.theta:theta)*Math.PI/180;
@@ -490,6 +492,7 @@ function createProjectileExhibit(canvas) {
   const stationCam=new T.OrthographicCamera(-1,1,1,-1,.1,200000);
   const stationPanel=document.getElementById('rigInset'),stationCanvas=document.getElementById('rigInsetCanvas');
   const stationBackdrop=new T.Color(0x364b54);
+  const stationToggle=document.getElementById('toggleRigInset');
   const stationPointer={value:-1};
   render.stationPointer=stationPointer;
   function drawStation(){
