@@ -350,6 +350,53 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     probe.style.left=Math.max(2,Math.min(rect.width-width-2,anchor.x+width+15<rect.width?anchor.x+12:anchor.x-width-12))+'px';
     probe.style.top=Math.max(2,Math.min(rect.height-height-2,anchor.y-height/2))+'px';
   }
+  const sceneSettings=document.createElement('details');
+  sceneSettings.className='scene-settings';sceneSettings.open=true;
+  sceneSettings.innerHTML=`<summary><span lang="en">Launch settings</span><span lang="zh-HK">發射設定</span></summary>
+    <div class="scene-gestures">
+      <label class="height-gesture"><output></output><input type="range" aria-label="Launch height / 發射高度"></label>
+      <div class="angle-gesture"><output></output><svg viewBox="0 0 68 88" role="slider" tabindex="0" aria-label="Launch angle / 發射角度">
+        <path class="dial-track" d="M16 8 A36 36 0 0 1 16 80"/><path class="dial-active"/>
+        <path class="dial-base" d="M9 44H59"/><g class="dial-arm"><path d="M16 44H52"/><circle cx="52" cy="44" r="5"/></g>
+        <circle cx="16" cy="44" r="2.5" fill="currentColor"/></svg></div>
+    </div><label class="speed-gesture"><output></output><input type="range" aria-label="Initial speed / 初速"></label>`;
+  trajCanvas.parentElement.append(sceneSettings);
+  const sceneHeight=sceneSettings.querySelector('.height-gesture input'),sceneSpeed=sceneSettings.querySelector('.speed-gesture input');
+  const sceneAngle=sceneSettings.querySelector('svg');
+  function changeSetting(source,value){
+    source.value=String(value);source.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  for(const [control,source] of [[sceneHeight,sliderY0],[sceneSpeed,sliderV0]]){
+    control.min=source.min;control.max=source.max;control.step=source.step||'1';
+    control.addEventListener('input',()=>changeSetting(source,control.value));
+  }
+  function dragAngle(event){
+    const cursor=new DOMPoint(event.clientX,event.clientY).matrixTransform(sceneAngle.getScreenCTM().inverse());
+    const degrees=Math.atan2(44-cursor.y,Math.max(.01,cursor.x-16))*180/Math.PI;
+    changeSetting(sliderTheta,Math.round(degrees));
+  }
+  let dialPointer=null;
+  sceneAngle.addEventListener('pointerdown',e=>{
+    if(e.button!==0||dialPointer!==null)return;
+    e.preventDefault();sceneAngle.focus();dialPointer=e.pointerId;sceneAngle.setPointerCapture(e.pointerId);dragAngle(e);
+  });
+  sceneAngle.addEventListener('pointermove',e=>{if(e.pointerId===dialPointer)dragAngle(e);});
+  sceneAngle.addEventListener('lostpointercapture',()=>{dialPointer=null;});
+  sceneAngle.addEventListener('keydown',e=>{
+    const delta={ArrowUp:1,ArrowRight:1,ArrowDown:-1,ArrowLeft:-1,PageUp:10,PageDown:-10}[e.key];
+    if(delta===undefined && e.key!=='Home' && e.key!=='End')return;
+    e.preventDefault();changeSetting(sliderTheta,e.key==='Home'?sliderTheta.min:e.key==='End'?sliderTheta.max:draft.theta+delta);
+  });
+  function syncSceneSettings(){
+    sceneHeight.value=draft.y0;sceneSpeed.value=draft.v0;
+    sceneSettings.querySelector('.height-gesture output').textContent='y₀ '+draft.y0+' m';
+    sceneSettings.querySelector('.angle-gesture output').textContent='θ '+draft.theta+'°';
+    sceneSettings.querySelector('.speed-gesture output').textContent='v₀ '+draft.v0+' m/s';
+    sceneAngle.querySelector('.dial-arm').setAttribute('transform','rotate('+(-draft.theta)+' 16 44)');
+    sceneAngle.querySelector('.dial-active').setAttribute('d',Number(sliderTheta.min)<0?'M16 8 A36 36 0 0 1 16 80':'M16 8 A36 36 0 0 1 52 44');
+    for(const [key,value] of [['min',sliderTheta.min],['max',sliderTheta.max],['now',draft.theta]])sceneAngle.setAttribute('aria-value'+key,value);
+    sceneAngle.setAttribute('aria-valuetext',draft.theta+'°');
+  }
   const previewLabel=document.createElement('output');
   previewLabel.className='launch-preview';previewLabel.hidden=true;
   trajCanvas.parentElement.append(previewLabel);
@@ -758,6 +805,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
 }
   function updateUI() {
+    syncSceneSettings();
     valTheta.textContent = `${draft.theta > 0 ? "+" : ""}${draft.theta}°`;
     valV0.textContent = `${draft.v0} m/s`;
     valY0.textContent = draft.y0;

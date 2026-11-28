@@ -166,3 +166,19 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 .landing-range[hidden]{display:none}
 @keyframes landing-range-in{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.landing-range{animation:none}}
+
+.scene-settings{position:absolute;z-index:3;top:8px;right:8px;width:146px;box-sizing:border-box;background:#142b31ed;border:1px solid #648e91;border-radius:4px;color:#e3faf6;font:600 12px/1.3 system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.scene-settings summary{padding:6px 8px;cursor:pointer}
+.scene-gestures{display:flex;justify-content:space-evenly;border-top:1px solid #507175;padding-top:5px}
+.scene-settings label,.scene-settings .angle-gesture{display:flex;align-items:center;flex-direction:column;gap:2px}
+.scene-settings output{color:inherit;background:none;padding:0}
+.scene-settings input[type=range]{accent-color:#81dcca;margin:0;touch-action:none}
+.scene-settings .height-gesture input{writing-mode:vertical-lr;direction:rtl;appearance:auto;width:30px;height:65px}
+.scene-settings .angle-gesture svg{width:59px;height:70px;touch-action:none;cursor:grab;color:#88e4d3}
+.scene-settings svg path{fill:none;stroke:currentColor;stroke-width:2}
+.scene-settings .dial-track,.scene-settings .dial-base{opacity:.26}
+.scene-settings .dial-arm circle{fill:#ffca78}
+.scene-settings .speed-gesture{padding:2px 9px 7px;align-items:stretch}
+.scene-settings .speed-gesture input{width:100%;height:19px}
+.scene-settings :focus-visible{outline:2px solid #ffc56c;outline-offset:1px}
+@media(max-width:650px){.scene-settings{width:134px}.scene-settings summary{padding:5px}}
