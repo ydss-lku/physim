@@ -259,6 +259,52 @@
     }
     byId('view2').onclick=()=>switchView(false);
     byId('view3').onclick=()=>switchView(true);
+    // Build armour from adjoining polygon rings in emitter-local coordinates.
+    // Forward is the palm normal; the centre of the emitter face is the ray origin.
+    const gloveFaces=[];
+    function armour(rings,colour,segments=8,axis='forward'){
+      const vertices=rings.map(([cx,cy,cz,rx,ry])=>Array.from({length:segments},(_,i)=>{
+        const t=2*Math.PI*i/segments;
+        return [cx+rx*Math.cos(t),cy+(axis==='forward'?ry*Math.sin(t):0),cz+(axis==='forward'?0:ry*Math.sin(t))];
+      }));
+      function face(points,fill){gloveFaces.push({points,fill});}
+      face(vertices[0],colour);
+      for(let j=1;j<vertices.length;j++)for(let i=0;i<segments;i++){
+        const k=(i+1)%segments;
+        face([vertices[j-1][i],vertices[j-1][k],vertices[j][k],vertices[j][i]],colour);
+      }
+      face(vertices.at(-1),colour);
+    }
+    armour([[0,-5,-30,8,7],[0,-4,-24,10,9],[0,-2,-14,7,7],[0,0,-8,12,11],[0,0,-3,11,10]],'#a82f32');
+    armour([[0,-4,-24,10.2,9.2],[0,-3,-21,9.5,8.6]],'#d79a49');
+    for(const [x,h] of [[-8,16],[-3,21],[2,23],[7,19],[11,10]]){
+      armour([[x,5,-6,2.7,3],[x,11,-6,2.8,3],[x*1.08,h,-4,2,2.2],[x*1.08,h+1,-2,1.4,1.5]],'#b84439',6,'up');
+    }
+    armour([[0,0,-3.2,7,7],[0,0,-1,6.5,6.5]],'#e8b664',12);
+    armour([[0,0,-1.1,4.6,4.6],[0,0,0,4.4,4.4]],'core',16);
+    function renderGlove(dx,dy,pitch,inverseYaw){
+      const group=byId('palmSides'), cs=Math.cos(pitch),sn=Math.sin(pitch);
+      function project([r,u,f]){
+        const forward=f*cs-u*sn;
+        const x=-dy*r+dx*forward,y=dx*r+dy*forward,z=u*cs+f*sn;
+        const lift=elevation(z);
+        const p=new DOMPoint(x+lift.x,y+lift.y,0,0).matrixTransform(inverseYaw);
+        return {x:p.x,y:p.y,depth:.34*x+.94*y+.6968*z};
+      }
+      const faces=gloveFaces.map(({points,fill})=>{
+        const pts=points.map(project);
+        return {pts,fill,key:pts.reduce((sum,p)=>sum+p.depth,0)/pts.length};
+      }).sort((a,b)=>a.key-b.key);
+      faces.forEach(({pts,fill},i)=>{
+        const path=group.children[i]||group.appendChild(document.createElementNS(group.namespaceURI,'path'));
+        const colour=fill==='core'?'var(--beam-colour,#ff6666)':fill;
+        path.setAttribute('d','M'+pts.map(p=>p.x.toFixed(2)+' '+p.y.toFixed(2)).join(' L')+' Z');
+        path.setAttribute('fill',colour);
+        path.setAttribute('stroke',fill==='core'?colour:'#652b31');
+        path.setAttribute('stroke-width','.38');
+        path.style.filter=fill==='core'?'drop-shadow(0 0 1px var(--beam-colour))':'';
+      });
+    }
     function draw() {
       const x = +byId('sx').value, y = +byId('sy').value;
       const degrees = +slider.value, tilt = +byId('tilt').value;
@@ -283,41 +329,21 @@
       const palmUp=elevation(1), localRotation=new DOMMatrix().rotate(-degrees);
       const rise=elevation(spatial?Math.sin(pitch):0).matrixTransform(localRotation);
       byId('standardSource').setAttribute('transform',spatial?'matrix(1 0 '+(-rise.x)+' '+(Math.cos(pitch)-rise.y)+' 0 0)':'translate(0 0)');
-      // The palm faces along the beam. Its right and up axes rotate with the source.
-      const tangent=new DOMPoint(Math.cos(degrees*rad),Math.sin(degrees*rad),0,0).matrixTransform(localRotation);
-      const vertical=new DOMPoint(palmUp.x*Math.cos(pitch)-dx*Math.sin(pitch),
-                                  palmUp.y*Math.cos(pitch)-dy*Math.sin(pitch),0,0).matrixTransform(localRotation);
-      palm.setAttribute('transform',spatial?'matrix('+[tangent.x,tangent.y,-vertical.x,-vertical.y,0,0].join(' ')+')':'translate(0 0)');
-      byId('depthGrip').setAttribute('display',spatial?'inline':'none'); byId('depthGrip').setAttribute('transform','translate('+(x+30)+' '+(y+28)+')');
+      const glove=byId('secret').getAttribute('aria-pressed')==='true';
+      palm.style.display=spatial?'none':'';
+      const mesh=byId('palmSides');
+      mesh.style.display=spatial&&glove?'':'none';
+      if(spatial&&glove) renderGlove(dx,dy,pitch,localRotation);
+      byId('depthGrip').setAttribute('display',spatial?'inline':'none');
+      byId('depthGrip').setAttribute('transform','translate('+(x+30)+' '+(y+28)+')');
       const depth=byId('sourceDepth');
-      const sides=byId('palmSides');
-      sides.style.display=spatial && byId('secret').getAttribute('aria-pressed')==='true'?'':'none';
-      depth.style.display=spatial?'':'none';
-      if(spatial){
-        const glove=byId('secret').getAttribute('aria-pressed')==='true';
-        const back=new DOMPoint(-dx*Math.cos(pitch)-palmUp.x*Math.sin(pitch),
-                                -dy*Math.cos(pitch)-palmUp.y*Math.sin(pitch),0,0);
-        const local=(glove?back:elevation(-1)).matrixTransform(localRotation);
-        if(glove){
-          const rim=[[-10,-4],[-6,-10],[6,-10],[11,-5],[9,8],[6,21],[-6,21],[-9,7]];
-          const points=rim.map(([u,v])=>[u*tangent.x-v*vertical.x,u*tangent.y-v*vertical.y]);
-          points.forEach(([ax,ay],i)=>{
-            const [bx,by]=points[(i+1)%points.length];
-            const face=sides.children[i] || sides.appendChild(document.createElementNS(sides.namespaceURI,'path'));
-            face.setAttribute('d','M'+ax+' '+ay+' L'+bx+' '+by+' l'+local.x*16+' '+local.y*16+' L'+(ax+local.x*16)+' '+(ay+local.y*16)+' Z');
-            face.setAttribute('fill',['#812a31','#ae6740','#76252a','#a33134'][i%4]);
-          });
-        }
+      depth.style.display=spatial&&!glove?'':'none';
+      if(spatial&&!glove){
+        const local=elevation(-1).matrixTransform(localRotation);
         if(!depth.childElementCount){
-          for(let n=8;n>=1;n--){const slice=document.createElementNS(depth.namespaceURI,'use');depth.append(slice);}
+          for(let n=8;n>=1;n--){const slice=document.createElementNS(depth.namespaceURI,'use');slice.setAttribute('href','#standardSource');depth.append(slice);}
         }
-        const shape=byId('secret').getAttribute('aria-pressed')==='true'?'#gauntlet':'#standardSource';
-        [...depth.children].forEach((slice,index)=>{
-          slice.setAttribute('href',shape);
-          const distance=(8-index)*(glove?2:1);
-          slice.style.filter=glove?'brightness('+(index===0?.85:.56+index*.035)+')':'';
-          slice.setAttribute('transform','translate('+local.x*distance+' '+local.y*distance+')');
-        });
+        [...depth.children].forEach((slice,index)=>slice.setAttribute('transform','translate('+local.x*(8-index)+' '+local.y*(8-index)+')'));
       }
       const up=elevation();
       byId('mirrorFace').setAttribute('d',spatial?'M'+left+' L'+right+' l'+up.x+' '+up.y+' L'+(left[0]+up.x)+' '+(left[1]+up.y)+' Z':'');
@@ -542,7 +568,7 @@
       const hex='#'+rgb.map(c=>c.toString(16).padStart(2,'0')).join('').toUpperCase();
       byId('filament').setAttribute('stroke',hex);
       byId('incident').parentElement.setAttribute('stroke',hex);
-      byId('core').setAttribute('fill',hex); byId('core').style.filter='drop-shadow(0 0 2px '+hex+')'; byId('halo').setAttribute('stroke',hex);byId('arrows').setAttribute('fill',hex);
+      byId('palmSides').style.setProperty('--beam-colour',hex); byId('core').setAttribute('fill',hex); byId('core').style.filter='drop-shadow(0 0 2px '+hex+')'; byId('halo').setAttribute('stroke',hex);byId('arrows').setAttribute('fill',hex);
       byId('colourValue').textContent='RGB '+rgb.join(', ')+' · '+hex;
     }
     for(const id of ['hue','sat']) byId(id).addEventListener('input',paint);
