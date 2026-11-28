@@ -239,9 +239,9 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 .viewport .flight-readouts #livePosTag{color:#f4f7fa;flex-basis:auto}
 @media(max-width:640px) and (orientation:portrait){
   .viewport .flight-readouts{inset:3px auto auto 3px;align-items:flex-start;gap:1px}
-  .viewport .flight-readouts>div{flex-wrap:nowrap;gap:5px;padding:1px 4px;font:500 clamp(11px,3vw,13px)/16px system-ui,sans-serif;font-variant-numeric:tabular-nums}
+  .viewport .flight-readouts>:is(.initial-readings,#livePosTag){flex-wrap:nowrap;gap:5px;padding:1px 4px;font:500 clamp(11px,3vw,13px)/16px system-ui,sans-serif;font-variant-numeric:tabular-nums}
   .viewport .flight-readouts strong{flex:none;min-width:0;white-space:nowrap}
 }
-@media(max-width:480px) and (orientation:portrait){
+@media(max-width:560px) and (orientation:portrait){
   .viewport #ballInset,.viewport .camera-choice{top:44px}
 }
