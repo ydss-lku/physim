@@ -195,3 +195,7 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 @media(max-width:600px){.launch-settings aside{grid-template-columns:minmax(0,1fr)}}
 
 .scale-ticks[data-slider=sliderV0] button[aria-pressed=true]{background:var(--selected);color:var(--on);font-weight:750;border-radius:3px}
+
+.initial-readings{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 1.25em;margin:0 0 8px;font-variant-numeric:tabular-nums}
+.initial-readings span{white-space:nowrap}
+.initial-readings output{font-weight:700}

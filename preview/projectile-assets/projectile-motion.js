@@ -42,6 +42,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const sliderTime = document.getElementById("sliderTime");
 
   const valTheta = document.getElementById("valTheta");
+  const sceneTheta=document.getElementById('sceneTheta');
+  const sceneV0=document.getElementById('sceneV0');
+  const sceneY0=document.getElementById('sceneY0');
   const speedPresets=document.querySelectorAll('[data-slider="sliderV0"] button');
   let displayedPresetSpeed;
   const valV0 = document.getElementById("valV0");
@@ -554,7 +557,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
     const preview=draft.theta!==state.theta || draft.v0!==state.v0 || draft.y0!==state.y0 ? draft : null;
     previewLabel.hidden=!preview;
-    if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽")+"  ·  θ "+preview.theta+"°   ·   v₀ "+preview.v0+" m/s   ·   y₀ "+preview.y0+" m";
+    if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽");
     const project=renderExhibit?renderExhibit({editable:!state.playing,editSpeed:draft.v0,ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
@@ -848,6 +851,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       for(const preset of speedPresets)preset.setAttribute('aria-pressed',String(Number(preset.value)===draft.v0));
       displayedPresetSpeed=draft.v0;
     }
+    sceneTheta.value=draft.theta+'°';
+    sceneV0.value=draft.v0+' m/s';
+    sceneY0.value=draft.y0+' m';
     valV0.textContent = `${draft.v0} m/s`;
     valY0.textContent = draft.y0;
 
