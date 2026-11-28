@@ -64,7 +64,7 @@
           <path id="incident"/><path id="reflected"/>
         </g>
         <g id="arrows" fill="#ffc2bf"></g>
-        <path id="mirrorTouch" fill="none" stroke="transparent" stroke-width="24" pointer-events="stroke" style="touch-action:none;cursor:ns-resize"/><g id="lamp"><circle r="22" fill="transparent"/><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g>
+        <path id="mirrorTouch" fill="none" stroke="transparent" stroke-width="24" pointer-events="stroke" style="touch-action:none;cursor:ns-resize"/><g id="lamp"><circle r="22" fill="transparent"/><g id="standardSource"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g><g id="gauntlet" display="none" stroke="#41242a" stroke-width="1.1" stroke-linejoin="round"><g fill="#b73839"><path d="M-10 -4 L-15 -14 Q-16 -18 -13 -18 L-6 -9 L-9 -22 Q-9 -25 -6 -24 L-2 -11 L-3 -25 Q-2 -28 1 -25 L3 -11 L4 -23 Q6 -26 8 -22 L7 -7 L11 -13 Q15 -15 14 -10 L10 2 L8 9 L6 21 L-6 21 L-8 9 Z"/></g><path fill="#d6a657" d="M-9 -4 L-3 -8 L6 -6 L9 0 L5 8 L-5 9 L-9 3 Z M-6 12 L6 11 L5 18 L-5 19 Z"/><path fill="none" d="M-12 -13 l3 -2 M-8 -17 l4 -1 M-3 -19 h4 M4 -17 h4 M-6 14 l11 -1"/><circle r="4.8" fill="#272932"/><circle id="core" r="3.4" stroke="none"/></g></g>
         <text pointer-events="none" id="incomingLabel">Incident ray</text>
         <text pointer-events="none" id="outgoingLabel">Reflected ray</text>
       </g>
@@ -78,7 +78,7 @@
       <label>Rotate source <output id="sourceAngle"></output><input id="rotation" type="range" min="-180" max="180" step="0.1" value="20"></label>
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
       <label>Mirror Y<input id="mirrorY" type="range" min="36" max="324" value="180"></label>
-      </details><label>Mirror length<input id="mirrorLength" type="range" min="80" max="620" value="308"></label>
+      <button id="secret" type="button" aria-label="Switch light source" aria-pressed="false">???</button></details><label>Mirror length<input id="mirrorLength" type="range" min="80" max="620" value="308"></label>
       <button id="reset" type="button">Restore defaults</button>
     </section>
   </main>
@@ -182,7 +182,7 @@
     }
     document.querySelectorAll('input').forEach(input => input.addEventListener('input',draw));
     byId('reset').addEventListener('click', () => {
-      camera = new DOMMatrix(); applyCamera(); byId('hue').value=355; byId('sat').value=80; paint(); selected = null;
+      camera = initialCamera(); applyCamera(); setGlove(false); byId('hue').value=355; byId('sat').value=80; paint(); selected = null;
       for (const input of document.querySelectorAll('.controls input')) input.value = input.defaultValue;
       draw();
     });
@@ -244,11 +244,19 @@
     });
     svg.addEventListener('lostpointercapture',()=>{clearTimeout(holdTimer);drag=null;});
     const world=byId('world'), fingers=new Map();
-    let camera=new DOMMatrix();
+    const minZoom=1.23;
+    function initialCamera(){return new DOMMatrix().translate(324,90).scale(minZoom).translate(-320,-180);}
+    let camera=initialCamera(); applyCamera();
+    function setGlove(active){
+      byId("gauntlet").setAttribute("display",active?"inline":"none");
+      byId("standardSource").setAttribute("display",active?"none":"inline");
+      byId("secret").setAttribute("aria-pressed",String(active));
+    }
+    byId("secret").onclick=()=>setGlove(byId("secret").getAttribute("aria-pressed")!=="true");
     function applyCamera(){world.setAttribute('transform',camera.toString().replace(/,/g,' '));}
     function transformView(from,to,angle,ratio){
       const scale=Math.hypot(camera.a,camera.b);
-      ratio=Math.min(6,Math.max(.3,scale*ratio))/scale;
+      ratio=Math.min(6,Math.max(minZoom,scale*ratio))/scale;
       camera=new DOMMatrix().translate(to.x,to.y).rotate(angle).scale(ratio).translate(-from.x,-from.y).multiply(camera);
       applyCamera();
     }
@@ -278,7 +286,7 @@
       const rgb=[channel(5),channel(3),channel(1)];
       const hex='#'+rgb.map(c=>c.toString(16).padStart(2,'0')).join('').toUpperCase();
       byId('incident').parentElement.setAttribute('stroke',hex);
-      byId('halo').setAttribute('stroke',hex);byId('arrows').setAttribute('fill',hex);
+      byId('core').setAttribute('fill',hex); byId('core').style.filter='drop-shadow(0 0 2px '+hex+')'; byId('halo').setAttribute('stroke',hex);byId('arrows').setAttribute('fill',hex);
       byId('colourValue').textContent='RGB '+rgb.join(', ')+' · '+hex;
     }
     for(const id of ['hue','sat']) byId(id).addEventListener('input',paint);
