@@ -808,7 +808,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   launchSound.preload='auto';
   launchSound.volume=.48;
   const airSound=new Audio('preview/projectile-assets/air-whistle.wav');
-  const impactSound=new Audio('preview/projectile-assets/quay-impact.mp3');
+  const impactSound=new Audio('preview/projectile-assets/quay-impact.mp3?v=attack61');
   airSound.loop=true;airSound.preservesPitch=false;airSound.preload='auto';
   impactSound.preload='auto';impactSound.volume=.38;
   function shapeWhistle(time,duration){
