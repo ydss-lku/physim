@@ -34,7 +34,8 @@ function createEarthCut(T,scene){
   const pos=new T.Float32BufferAttribute(positions,3);
   geo.setAttribute('position',pos);geo.setAttribute('kind',new T.Float32BufferAttribute(kinds,1));geo.setIndex(indices);
   const darkness={value:0},shadow={value:new T.Vector3()};
-  const marks={value:new T.Vector3()};
+  const marks={value:new T.Vector4()};
+  const revealDuration=.45;
   const loader=new T.TextureLoader();
   function surface(name){
     const map=loader.load('preview/projectile-assets/'+name+'.webp');
@@ -48,7 +49,7 @@ function createEarthCut(T,scene){
     s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nattribute float kind;varying float soilKind;varying vec3 soilPos;')
       .replace('#include <begin_vertex>','#include <begin_vertex>\nsoilKind=kind;soilPos=position;');
     s.fragmentShader=s.fragmentShader.replace('#include <common>',`#include <common>
-      uniform sampler2D meadow,bank;varying vec3 soilPos;varying float soilKind;uniform float darkness;uniform vec3 ballShadow;uniform vec3 marks;
+      uniform sampler2D meadow,bank;varying vec3 soilPos;varying float soilKind;uniform float darkness;uniform vec3 ballShadow;uniform vec4 marks;
       float earthHash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
       float soilNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
         return mix(mix(mix(earthHash(i),earthHash(i+vec3(1,0,0)),f.x),mix(earthHash(i+vec3(0,1,0)),earthHash(i+vec3(1,1,0)),f.x),f.y),
@@ -102,7 +103,7 @@ function createEarthCut(T,scene){
       earth=mix(earth,vec3(.026,.045,.055),rimBed*.80);
       earth=mix(earth,vec3(.89,.39,.055),rim*pigment);
       float age=marks.y-band/max(.00001,marks.z);
-      float reveal=smoothstep(0.,.65,age)*step(10.,band)*step(.01,radial.x);
+      float reveal=smoothstep(0.,${revealDuration},age)*step(band,marks.w)*step(10.,band)*step(.01,radial.x);
       earth*=mix(1.,.64,darkness);
       float inkMask=sector*reveal*(1.-smoothstep(.05,.20,soilKind));
       float groove=1.-smoothstep(.11+.04*major,.11+.04*major+aa,abs(radius-band));
@@ -258,20 +259,22 @@ function createEarthCut(T,scene){
     stones.computeBoundingSphere();
   }
   let previousDepth=NaN,previousOrigin=NaN;
-  return function update(size,field,contact,wheelX,ball,night,originX,time,vx){
+  return function update(size,field,contact,wheelX,ball,night,originX,time,vx,landedAge){
     const wheelLevel=(contact-field)/size;
     const depth=Math.min(-.35,wheelLevel);
     const rise=wheelLevel-depth;
     pedestal.visible=rise>.001;pedestal.scale.y=Math.max(.001,rise);
     pedestal.position.set(-.65,depth+rise/2,0);
-    marks.value.set((originX-wheelX)/size,time,vx);
-    const reached=Math.floor(time*vx/10);
+    // The final range gates eligibility; only the paint animation advances after impact.
+    const reached=Math.floor((time*vx+1e-9)/10);
+    const revealTime=time+Math.min(revealDuration,Math.max(0,landedAge));
+    marks.value.set((originX-wheelX)/size,revealTime,vx,reached*10);
     while(labels.length<reached)labels.push(makeLabel((labels.length+1)*10));
     labels.forEach((label,index)=>{
       const radius=(index+1)*10;
       label.visible=index<reached;
       if(!label.visible)return;
-      const fade=Math.min(1,Math.max(0,(time-radius/vx)/.65));
+      const fade=Math.min(1,Math.max(0,(revealTime-radius/vx)/revealDuration));
       label.material.opacity=fade*fade*(3-2*fade);
       label.position.x=marks.value.x;
     });
