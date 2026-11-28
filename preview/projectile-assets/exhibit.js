@@ -129,8 +129,54 @@ function createProjectileExhibit(canvas) {
     cachedAngle=theta;
     return bounds;
   }
+  // Reuse camera-facing particles in both views, anchored to the contact point.
+  const burst=new T.Group();scene.add(burst);burst.visible=false;
+  function puffTexture(smoke){
+    const c=document.createElement('canvas');c.width=c.height=96;
+    const ctx=c.getContext('2d');
+    for(let i=0;i<(smoke?9:1);i++){
+      const a=i*2.4,r=smoke?Math.sqrt(i)*7:0;
+      const x=48+Math.cos(a)*r,y=48+Math.sin(a)*r;
+      const g=ctx.createRadialGradient(x,y,0,x,y,smoke?22:46);
+      g.addColorStop(0,smoke?'rgba(255,255,255,.66)':'#fff8cb');
+      g.addColorStop(.35,smoke?'rgba(255,255,255,.44)':'#ffad39');
+      g.addColorStop(1,smoke?'rgba(255,255,255,0)':'rgba(255,67,8,0)');
+      ctx.fillStyle=g;ctx.fillRect(0,0,96,96);
+    }
+    const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;return texture;
+  }
+  const flashMap=puffTexture(false),dustMap=puffTexture(true);
+  function particle(map,color,bright){
+    const sprite=new T.Sprite(new T.SpriteMaterial({map,color,transparent:true,depthWrite:false,
+      blending:bright?T.AdditiveBlending:T.NormalBlending,toneMapped:false}));
+    burst.add(sprite);return sprite;
+  }
+  const core=particle(flashMap,0xffffff,true);
+  const sparks=Array.from({length:13},()=>particle(flashMap,0xffd486,true));
+  const dust=Array.from({length:6},()=>particle(dustMap,0x8b8581,false));
+  function drawImpact(age,size){
+    burst.visible=age>=0 && age<1;
+    if(!burst.visible)return;
+    burst.position.copy(ball.position);burst.position.y-=ball.scale.y;
+    burst.scale.setScalar(size);
+    core.position.y=.24;
+    core.scale.setScalar(.55+2.2*Math.sin(Math.min(1,age/.24)*Math.PI*.64));
+    core.material.opacity=Math.max(0,1-age/.25);
+    sparks.forEach((spark,i)=>{
+      const a=i*2.4,speed=.85+(i%5)*.43;
+      const up=.10+(1.7+i%4*.68)*age-4.4*age*age;
+      spark.position.set(Math.cos(a)*speed*age,Math.max(0,up),Math.sin(a)*speed*age);
+      spark.scale.setScalar(.075+.04*(i%3));spark.material.opacity=up>0?Math.max(0,1-age/.62):0;
+    });
+    dust.forEach((puff,i)=>{
+      const a=i*2.4;
+      puff.position.set(Math.cos(a)*age*(.56+i*.15),.17+age*(.46+i*.16),Math.sin(a)*age*.8);
+      puff.scale.setScalar(.45+age*(1.1+i*.16));puff.material.rotation=a+.28*age;
+      puff.material.opacity=.43*Math.min(1,age/.13)*(1-age)**1.4;
+    });
+  }
   function ease(t){t=Math.max(0,Math.min(1,t));return t*t*t*(10+t*(-15+6*t));}
-  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready,preview}){
+  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready,preview,impactAge}){
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
@@ -194,6 +240,7 @@ function createProjectileExhibit(canvas) {
       (Math.abs(q.y-aim.y)+.24*size)/(tan*spread)));
     flightCamera.position.set(aim.x,aim.y,distance).applyQuaternion(flightCamera.quaternion).add(rig.position);
     flightCamera.zoom=view.zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
+    drawImpact(impactAge,size);
     pendingSetup.visible=false;
     if(inset){
       const iw=inset.w, ih=inset.h;

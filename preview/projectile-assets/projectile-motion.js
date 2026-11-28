@@ -392,6 +392,21 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     ribbon(.52,.44,4,[[0,'#fffde5'],[.68,'#ffe484'],[1,'#ffbf3800']]);
     ctx.restore();
   }
+  let impactStart=null,impactFrame=0;
+  function clearImpact(){
+    if(impactFrame)cancelAnimationFrame(impactFrame);
+    impactFrame=0;impactStart=null;
+  }
+  function beginImpact(){
+    clearImpact();
+    if(!renderExhibit)return;
+    impactStart=performance.now();
+    function fade(now){
+      if(now-impactStart>=1000){clearImpact();drawTrajectory();return;}
+      drawTrajectory();impactFrame=requestAnimationFrame(fade);
+    }
+    impactFrame=requestAnimationFrame(fade);
+  }
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
@@ -434,7 +449,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const preview=draft.theta!==state.theta || draft.v0!==state.v0 || draft.y0!==state.y0 ? draft : null;
     previewLabel.hidden=!preview;
     if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽")+"  ·  θ "+preview.theta+"°   ·   v₀ "+preview.v0+" m/s   ·   y₀ "+preview.y0+" m";
-    const project=renderExhibit?renderExhibit({ready,preview,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
+    const project=renderExhibit?renderExhibit({ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
     trajectoryView = {p,project};
@@ -788,6 +803,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
     if (state.t >= p.T) {
       state.t = p.T;
+      beginImpact();
       if(soundSwitch.checked){
         impactSound.currentTime=0;
         impactSound.play().catch(()=>{});
@@ -839,6 +855,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function togglePauseResume() {
     const firing=needsLaunch() || (!state.playing && state.t >= calcPhysics(state.theta,state.v0,state.y0,state.g).T);
     if (firing) {
+      clearImpact();
       stopAnimationLoop();
       Object.assign(state,draft);
       state.minTheta = state.y0 > 0 ? -90 : 0;
