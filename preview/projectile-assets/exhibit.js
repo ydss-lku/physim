@@ -162,44 +162,24 @@ function createProjectileExhibit(canvas) {
   const stainMap=new T.CanvasTexture(stamp);stainMap.colorSpace=T.SRGBColorSpace;
   const stain=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:stainMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,toneMapped:false}));
   stain.rotation.x=-Math.PI/2;scene.add(stain);stain.visible=false;
-  // A shallow rolling front: dark airborne grit inside, a lit crest, then clear air.
-  const waveGeometry=new T.PlaneGeometry(1,1,192,12);
-  const wave=new T.Mesh(waveGeometry,new T.ShaderMaterial({
-    transparent:true,depthWrite:false,side:T.DoubleSide,
-    uniforms:{phase:{value:0}},
-    vertexShader:`
-      uniform float phase;
-      varying vec2 sheet;
-      void main(){
-        sheet=uv;float a=uv.x*6.2831853, v=uv.y;
-        float lobes=.043*sin(7.*a+.8)+.023*sin(13.*a-phase)+.014*sin(23.*a);
-        float radius=mix(.55,1.,v)*(1.+lobes);
-        float roll=sin(v*3.14159)*(.063+.030*sin(9.*a+phase*3.));
-        gl_Position=projectionMatrix*modelViewMatrix*vec4(radius*cos(a),.007+roll,radius*sin(a),1.);
-      }`,
-    fragmentShader:`
-      uniform float phase;varying vec2 sheet;
-      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}
-      void main(){
-        float a=sheet.x*6.2831853,v=sheet.y;
-        vec2 p=vec2(cos(a),sin(a))*(7.+v*2.5);
-        float soot=.54*noise(p+phase)+.30*noise(3.*p-phase*2.)+.16*noise(8.*p);
-        float crest=.77+.19*(soot-.5);
-        float dust=smoothstep(.04,.55,v)*(1.-smoothstep(crest,1.,v));
-        float lip=exp(-pow((v-crest)/.095,2.));
-        float life=1.-smoothstep(.24,1.,phase);
-        float opacity=life*(dust*(.26+.68*soot)+lip*.42)*smoothstep(.12,.54,soot+.13*(1.-phase));
-        vec3 colour=mix(vec3(.18,.19,.20),vec3(.62,.48,.32),soot);
-        colour=mix(colour,vec3(1.,.71,.35),lip*(1.-phase));
-        gl_FragColor=vec4(colour,min(.85,opacity));
-      }`
-  }));
-  wave.frustumCulled=false;wave.name='Impact wave';scene.add(wave);
+  // Discrete wakes let clear deck show through between the rolling dust banks.
+  const wave=new T.Group();scene.add(wave);
+  const dustTexture=puffTexture(true);
+  const curls=Array.from({length:20},(_,i)=>{
+    const sprite=new T.Sprite(new T.SpriteMaterial({map:dustTexture,transparent:true,
+      depthWrite:false,color:i%2?0xafa18e:0x645f58,toneMapped:false}));
+    wave.add(sprite);return sprite;
+  });
+  const splinters=new T.Group();scene.add(splinters);
+  const chipShape=new T.IcosahedronGeometry(1,0);
+  const chipMaterials=[0x353d40,0x756d62,0x525e60].map(color=>new T.MeshStandardMaterial({color,roughness:.83,flatShading:true}));
+  const chips=Array.from({length:11},(_,i)=>{
+    const chip=new T.Mesh(chipShape,chipMaterials[i%3]);splinters.add(chip);return chip;
+  });
   const contactView=new T.Vector3();
   function frameStain(camera,height,size,age,landed){
     wave.visible=landed && age>=0 && age<1.65;
+    splinters.visible=wave.visible && age<1.12;
     stain.visible=landed;if(!landed)return;
     stain.position.copy(ball.position);stain.position.y-=ball.scale.y-.022*size;
     camera.updateMatrixWorld();
@@ -213,7 +193,28 @@ function createProjectileExhibit(canvas) {
       const start=Math.min(reach*.3,diameter*.48);
       wave.position.copy(stain.position);wave.position.y+=.012*size;
       wave.scale.setScalar(start+(reach-start)*(1-(1-progress)**3.4));
-      wave.material.uniforms.phase.value=progress;
+      curls.forEach((puff,i)=>{
+        const cluster=Math.floor(i/4),j=i%4;
+        const a=[.14,1.65,2.58,4.03,5.42][cluster]+j*.095;
+        const t=Math.max(0,age-.055-.025*j),roll=t*(5.9+cluster*.22)+j*.82;
+        const radius=.76+.13*Math.sin(cluster*3.7)+j*.028+.075*Math.sin(roll);
+        puff.position.set(radius*Math.cos(a),.044+.07*(1-Math.cos(roll)),radius*Math.sin(a));
+        const width=(.18+.13*j/3+.17*progress);
+        puff.scale.set(width,width*(.62+.12*Math.sin(roll)),1);
+        puff.material.rotation=a+.68*Math.sin(roll);
+        puff.material.opacity=Math.min(1,t/.11)*(.68-.065*j)*(1-progress**1.6);
+      });
+      splinters.position.copy(stain.position);
+      splinters.scale.setScalar(Math.max(19*pixel,Math.min(size,33*pixel)));
+      chips.forEach((chip,i)=>{
+        const a=i*2.4+.27,t=Math.max(0,age-.009*(i%4));
+        const airtime=.46+.063*(i%7),u=Math.min(1,t/airtime);
+        const radius=u*(.80+.26*(i%5));
+        chip.position.set(Math.cos(a)*radius,.055+4*u*(1-u)*(.55+.20*(i%5)),Math.sin(a)*radius);
+        chip.rotation.set(i+u*5.6,a+u*3.8,i*.7+u*4);
+        const fade=Math.max(0,1-Math.max(0,t-airtime)/.20);
+        chip.scale.set(.23*fade,.088*fade,(.10+i%3*.026)*fade);
+      });
       burst.scale.setScalar(Math.max(size,Math.min(13,height*.017)*pixel));
     }
   }
