@@ -36,6 +36,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   // ====== DOM 元素 ======
   const sliderTheta = document.getElementById("sliderTheta");
+  const angleAnalysis=document.getElementById('angleAnalysis');
   const sliderV0 = document.getElementById("sliderV0");
   const sliderY0 = document.getElementById("sliderY0");
   const sliderTime = document.getElementById("sliderTime");
@@ -542,7 +543,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function drawTrajectory() {
     const {ctx,w,h} = setupCanvas(trajCanvas);
     const p = calcPhysics(state.theta,state.v0,state.y0,state.g);
-    const reference = state.mode === "analysis" && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
+    const reference = angleAnalysis.open && state.showCompare ? calcPhysics(45,state.v0,state.y0,state.g) : null;
     canOrbit=Boolean(renderExhibit && launched && p.T>0 && state.t>=p.T && !state.playing);
     trajCanvas.classList.toggle('can-orbit',canOrbit);
     if(!canOrbit && (view.active || fingers.size))resetView();
@@ -897,7 +898,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     livePosTag.textContent = `t = ${curT.toFixed(2)} s ｜ x = ${cur.x.toFixed(1)} m, y = ${cur.y.toFixed(1)} m`;
 
     drawTrajectory();
-    if (state.mode === "analysis") {
+    if (angleAnalysis.open) {
       if (state.chart === "r") drawAngleChart(rCanvas, "R");
       else drawAngleChart(hCanvas, "H");
     }
@@ -1257,20 +1258,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   for (const button of main.querySelectorAll("button[data-chart]")) {
     button.addEventListener("click", () => selectChart(button.dataset.chart));
   }
-  for (const button of main.querySelectorAll("button[data-mode]")) {
-    button.addEventListener("click", () => {
-      state.mode = main.dataset.mode = button.dataset.mode;
-      if (state.mode === "analysis" && state.playing) {
-        state.playing = false;
-        stopAnimationLoop();
-      }
-      for (const choice of main.querySelectorAll("button[data-mode]")) {
-        choice.setAttribute("aria-pressed", String(choice === button));
-      }
-      updatePlayButtons();
-      updateUI();
-    });
-  }
+  angleAnalysis.addEventListener('toggle',updateUI);
   syncAngleRange();
   selectChart(state.chart);
   const ro = new ResizeObserver(() => updateUI());

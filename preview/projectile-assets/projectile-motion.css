@@ -38,11 +38,11 @@ details{padding:0 12px}summary{padding:10px 0;min-height:44px;font-weight:bold}.
 .modebar [aria-pressed=true],.chartbar [aria-pressed=true]{background:var(--selected);color:var(--on)}
 main:not([data-mode=analysis]) .analysis-only,main:not([data-mode=velocity]) .velocity-only,main:not([data-mode=trajectory]) .trajectory-only,
 main[data-mode=analysis] :is(.toolbar,.timeline,#livePosTag),main[data-mode=velocity] :is(.overlays,#livePosTag){display:none}
-main[data-mode=analysis] .plots{display:block;margin:0}
-main[data-mode=analysis] .plots>section{padding:0;border:0;background:none}
-main[data-mode=analysis] .plot{height:clamp(245px,25vw,320px)}
+#angleAnalysis .plots{display:block;margin:0}
+#angleAnalysis .plots>section{padding:0;border:0;background:none}
+#angleAnalysis .plot{height:clamp(245px,25vw,320px)}
 main[data-mode=analysis] .viewport{height:165px;max-width:360px}
-main[data-mode=analysis] .compare{margin-top:4px}
+#angleAnalysis .compare{margin-top:4px}
 .metrics{grid-template-columns:repeat(auto-fit,minmax(75px,1fr))}
 .settings{margin-top:12px}.settings summary{width:fit-content;min-width:44px;text-align:center;font-size:21px}.settings .choices,.settings .gravity{margin:8px 0}
 
