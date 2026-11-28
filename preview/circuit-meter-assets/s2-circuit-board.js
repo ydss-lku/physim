@@ -16,7 +16,8 @@ const tools = {
   reset:['Reset','重設','Clear board','清空電路板','M5 10a10 10 0 1 1 1 9 M5 3v7h7']
 };
 const stateText = {noCell:['No cell fitted','未裝上電池'],open:['Open circuit','開路'],closed:['Current flowing','有電流通過'],short:['Short circuit. Break the direct connection between the cell terminals.','短路。請斷開直接連通電池兩極的支路。']};
-let experiment='simple', parts=preset(experiment), tool='use', schematic=false;
+let experiment=matchMedia('(min-width:900px)').matches?'empty':'simple';
+let parts=preset(experiment), tool='use', schematic=false;
 const history=[];
 let selectedResistor=null;
 const resistance=el('ohms');
