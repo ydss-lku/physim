@@ -222,4 +222,4 @@ html:not([data-theme=tech]) .initial-readings span{-webkit-text-stroke:1.5px #31
 .rig-inset-footer{min-height:44px;padding-left:49px}
 
 .flight-charts .flight-chart.speed-chart,html[data-theme=tech] .flight-chart.speed-chart{color:var(--resultant)}
-.speed-chart svg{aspect-ratio:360 / 128}
+
