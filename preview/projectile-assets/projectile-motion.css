@@ -202,3 +202,10 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 .initial-readings span{white-space:nowrap}
 html:not([data-theme=tech]) .initial-readings span{-webkit-text-stroke:1.5px #314a4b;paint-order:stroke fill}
 .initial-readings output{font-weight:700;color:inherit}
+
+#rigInset{position:absolute;left:8px;bottom:8px;width:clamp(155px,29%,245px);z-index:4;overflow:hidden;border:1px solid #728f93;border-radius:4px;background:#172b31}
+#rigInset[hidden]{display:none}
+#rigInsetCanvas{position:static;display:block;width:100%;height:auto;aspect-ratio:2/1;touch-action:none}
+.rig-inset-footer{display:flex;align-items:center;justify-content:space-between;padding-left:5px;min-height:28px}
+#rigInsetValue{font:600 12px/1.25 system-ui;font-variant-numeric:tabular-nums}
+#rigInsetLaunch{min-height:30px;padding:3px 9px;border-radius:0;background:var(--selected);color:var(--on)}

@@ -451,6 +451,27 @@ function createProjectileExhibit(canvas) {
     pendingSetup.visible=Boolean(setup);
     frameStain(flightCamera,h,size,impactAge,landed);
     if(fetchEnabled && landed)showFetch(impactAge,size,h);
+    const activeRig=setup?pendingSetup:rig;
+    const depth=-activeRig.position.clone().applyMatrix4(flightCamera.matrixWorldInverse).z;
+    const pixelsPerMetre=h*flightCamera.projectionMatrix.elements[5]*size/(2*Math.max(1,depth));
+    const keepOpen=stationCanvas.hasPointerCapture(stationPointer.value);
+    stationPanel.hidden=ready || (!keepOpen && pixelsPerMetre*3.5>(stationPanel.hidden?95:112));
+    if(!stationPanel.hidden){
+      const width=stationCanvas.clientWidth,height=stationCanvas.clientHeight;
+      const thetaRad=(setup?setup.theta:theta)*Math.PI/180;
+      const tip=1.86+editSpeed*.16;
+      const right=Math.max(2,tip*Math.cos(thetaRad)+.7),left=-3.8;
+      const top=Math.max(1.4,tip*Math.sin(thetaRad)+.6),bottom=Math.min(-1.8,tip*Math.sin(thetaRad)-.5);
+      const span=Math.max(top-bottom,(right-left)*height/width);
+      stationCam.left=-span*size*width/height/2;stationCam.right=-stationCam.left;
+      stationCam.top=span*size/2;stationCam.bottom=-stationCam.top;
+      stationCam.position.copy(activeRig.position);
+      stationCam.position.x+=(left+right)*size/2;
+      stationCam.position.y+=(top+bottom)*size/2;
+      stationCam.position.z+=45*size;
+      stationCam.updateProjectionMatrix();stationCam.updateMatrixWorld();
+      drawStation();
+    }
     renderer.render(scene,flightCamera);
     return function project(horizontal,height){
       v.set(mx+horizontal*size,my+(height-flight.y0)*size,0).project(flightCamera);
@@ -466,41 +487,67 @@ function createProjectileExhibit(canvas) {
   }
   const flightCamera=new T.PerspectiveCamera(38,1,.1,200000);
   const portraitCamera=new T.PerspectiveCamera(34,1,.1,200000);
+  const stationCam=new T.OrthographicCamera(-1,1,1,-1,.1,200000);
+  const stationPanel=document.getElementById('rigInset'),stationCanvas=document.getElementById('rigInsetCanvas');
+  const stationBackdrop=new T.Color(0x364b54);
+  const stationPointer={value:-1};
+  render.stationPointer=stationPointer;
+  function drawStation(){
+    if(stationPanel.hidden)return;
+    const width=stationCanvas.clientWidth,height=stationCanvas.clientHeight,ratio=renderer.getPixelRatio();
+    const sw=Math.floor(width*ratio),sh=Math.floor(height*ratio);
+    if(!sw||!sh)return;
+    if(stationCanvas.width!==sw||stationCanvas.height!==sh){stationCanvas.width=sw;stationCanvas.height=sh;}
+    renderer.setViewport(0,0,width,height);renderer.setScissor(0,0,width,height);renderer.setScissorTest(true);
+    const background=scene.background;scene.background=stationBackdrop;
+    const showRig=rig.visible,showPlatform=platform.visible;
+    if(pendingSetup.visible){rig.visible=false;platform.visible=false;}
+    renderer.render(scene,stationCam);
+    rig.visible=showRig;platform.visible=showPlatform;scene.background=background;
+    stationCanvas.getContext('2d').drawImage(renderer.domElement,0,renderer.domElement.height-sh,sw,sh,0,0,sw,sh);
+    renderer.setScissorTest(false);renderer.setViewport(0,0,previousWidth,previousHeight);
+  }
   const platform=scene.getObjectByName('Launch platform');
+  stationCam.layers.set(2);
+  for(const group of [platform,rig,pendingSetup,angleGuide,initialVector])
+    group.traverse(object=>object.layers.enable(2));
+  scene.traverse(object=>{if(object.isLight)object.layers.enable(2);});
   const picker=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,0,1),0);
-  function aimRay(x,y,cam){
-    const r=canvas.getBoundingClientRect();
+  function aimRay(x,y,cam,surface=canvas){
+    const r=surface.getBoundingClientRect();
     picker.setFromCamera(new T.Vector2(2*(x-r.left)/r.width-1,1-2*(y-r.top)/r.height),cam);
   }
-  render.pickControl=function(x,y){
-    aimRay(x,y,flightCamera);
+  render.pickControl=function(x,y,station=false){
+    const surface=station?stationCanvas:canvas;
+    aimRay(x,y,station?stationCam:flightCamera,surface);
     const parts=rig.visible?[[barrel,'theta'],[platform,'y0']]:[[platform,'y0']];
     if(pendingSetup.visible)parts.unshift([pendingBarrel,'theta'],[pendingPlatform,'y0']);
     for(const [object,key] of parts){
       if(picker.intersectObject(object,true).length)return key;
     }
     // The floor can cover the sides of a fully lowered platform.
-    const guide=render.controlAnchor();
-    const r=canvas.getBoundingClientRect();
+    const guide=render.controlAnchor(station);
+    const r=surface.getBoundingClientRect();
     if(Math.hypot(x-r.left-guide.base.x,y-r.top-guide.base.y)<11)return 'y0';
     return null;
   };
-  render.controlAnchor=function(){
-    const root=pendingSetup.visible?pendingSetup:rig,rect=canvas.getBoundingClientRect();
+  render.controlAnchor=function(station=false){
+    const cam=station?stationCam:flightCamera;
+    const root=pendingSetup.visible?pendingSetup:rig,rect=(station?stationCanvas:canvas).getBoundingClientRect();
     function screen(x,y,z){
-      const pt=root.localToWorld(new T.Vector3(x,y,z)).project(flightCamera);
+      const pt=root.localToWorld(new T.Vector3(x,y,z)).project(cam);
       return {x:(pt.x+1)*rect.width/2,y:(1-pt.y)*rect.height/2};
     }
     const angle=(pendingSetup.visible?pendingBarrel:barrel).rotation.z;
-    const tip=initialVector.cone.getWorldPosition(new T.Vector3()).project(flightCamera);
+    const tip=initialVector.cone.getWorldPosition(new T.Vector3()).project(cam);
     const speedTip={x:(tip.x+1)*rect.width/2,y:(1-tip.y)*rect.height/2};
     return {speedTip,liftBadge:screen(-3,-.358,.64),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),.38),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
   };
-  render.dragCoordinates=function(){
-    const cam=flightCamera.clone(),root=pendingSetup.visible?pendingSetup:rig;
+  render.dragCoordinates=function(station=false){
+    const cam=(station?stationCam:flightCamera).clone(),root=pendingSetup.visible?pendingSetup:rig;
     const centre=root.position.clone(),scale=root.scale.x;
     return (x,y)=>{
-      aimRay(x,y,cam);
+      aimRay(x,y,cam,station?stationCanvas:canvas);
       const pt=picker.ray.intersectPlane(plane,new T.Vector3());
       if(!pt)return null;
       pt.sub(centre).divideScalar(scale);
@@ -557,7 +604,7 @@ function createProjectileExhibit(canvas) {
     arcMaterial.opacity=level('theta',1);
     for(const material of liftCueMaterials)material.opacity=level('y0',.94);
     initialVector.line.material.opacity=initialVector.cone.material.opacity=level('v0',.98);
-    renderer.render(scene,flightCamera);
+    drawStation();renderer.render(scene,flightCamera);
   };
   render.impactDurationMs=fetchEnabled?4750:1650;
   render.cameraFrame=()=>lastFrame;

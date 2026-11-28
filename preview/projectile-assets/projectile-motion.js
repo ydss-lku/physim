@@ -375,20 +375,23 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function changeSetting(source,value){
     source.value=String(value);source.dispatchEvent(new Event('input',{bubbles:true}));
   }
+  const stationSurface=document.getElementById('rigInsetCanvas'),stationLaunch=document.getElementById('rigInsetLaunch');
+  const stationValue=document.getElementById('rigInsetValue');
+  let stationDrag=null,stationHover=null;
   let modelDrag=null,hoverCue=null;
   const angleValue=document.createElement('output');
   angleValue.className='rig-angle-value';angleValue.hidden=true;
   trajCanvas.parentElement.append(angleValue);
   let arcPoints=[];
-  function editTarget(event){
-    const {muzzle,speedTip:end,liftBadge}=renderExhibit.controlAnchor();
-    const rect=trajCanvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+  function editTarget(event,station=false){
+    const {muzzle,speedTip:end,liftBadge,onArc}=renderExhibit.controlAnchor(station);
+    const rect=(station?stationSurface:trajCanvas).getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
     if(Math.hypot(x-liftBadge.x,y-liftBadge.y)<16)return 'y0';
-    if(arcPoints.some(p=>Math.hypot(x-p.x,y-p.y)<9))return 'theta';
+    if((station?Array.from({length:17},(_,i)=>onArc((i/16-.5)*1.1,1.5)):arcPoints).some(p=>Math.hypot(x-p.x,y-p.y)<9))return 'theta';
     const dx=end.x-muzzle.x,dy=end.y-muzzle.y;
     const t=Math.max(.15,Math.min(1,((x-muzzle.x)*dx+(y-muzzle.y)*dy)/(dx*dx+dy*dy||1)));
     if(Math.hypot(x-muzzle.x-t*dx,y-muzzle.y-t*dy)<10)return 'v0';
-    return renderExhibit.pickControl(event.clientX,event.clientY);
+    return renderExhibit.pickControl(event.clientX,event.clientY,station);
   }
   function placeRigHints(w,h){
     angleValue.hidden=true;
@@ -511,7 +514,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function paintCues(){
     const phase=(performance.now()-cueStart)*2*Math.PI/1500;
     const opacity=reducedMotion.matches?1:.85+.15*Math.cos(phase);
-    renderExhibit.setCueOpacity(cueTimer || !launched || canOrbit ? opacity : 1,modelDrag?.key ?? hoverCue);
+    renderExhibit.setCueOpacity(cueTimer || !launched || canOrbit ? opacity : 1,stationDrag?.key ?? modelDrag?.key ?? stationHover ?? hoverCue);
   }
   function syncCues(enabled){
     if(enabled && !cueTimer){
@@ -570,6 +573,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     hideProbe();
     trajectoryView = {p,project};
     placeRange(p,project,w,h);
+    stationLaunch.disabled=!canOrbit || btnLaunch.disabled;
+    if(!canOrbit)stationHover=null;
+    updateStationValue();
     placeRigHints(w,h);
     syncCues(Boolean(renderExhibit && (!launched || canOrbit)));
     ctx.clearRect(0,0,w,h);
@@ -1131,6 +1137,49 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const change=Math.max(-.10,Math.min(.10,-pixels*gain));
     zoomView(Math.exp(change));
   },{passive:false});
+  function adjustFromPointer(drag,event){
+      const {key,coords,start,value}=drag,pt=coords(event.clientX,event.clientY);
+      if(pt){
+        if(key==='v0'){
+          const angle=draft.theta*Math.PI/180;
+          const along=(pt.horizontal-start.horizontal)*Math.cos(angle)+(pt.height-start.height)*Math.sin(angle);
+          changeSetting(sliderV0,Math.round(value+along/.16));
+          return;
+        }
+        const delta=key==='y0'?pt.height-start.height:((pt.angle-start.angle+540)%360)-180;
+        changeSetting(key==='y0'?sliderY0:sliderTheta,Math.round(value+delta));
+      }
+  }
+  function updateStationValue(){
+    const key=stationDrag?.key ?? stationHover;
+    stationValue.textContent=key?({theta:'θ '+draft.theta+'°',y0:'y₀ '+draft.y0+' m',v0:'v₀ '+draft.v0+' m/s'})[key]:'';
+    if(key)stationValue.style.color=renderExhibit.cueColors[key];
+  }
+  stationSurface.addEventListener('pointerdown',event=>{
+    if(!canOrbit || !event.isPrimary || event.button!==0)return;
+    const key=editTarget(event,true);
+    if(!key)return;
+    const coords=renderExhibit.dragCoordinates(true),start=coords(event.clientX,event.clientY);
+    if(!start)return;
+    stationDrag={id:event.pointerId,key,coords,start,value:draft[key]};
+    renderExhibit.stationPointer.value=event.pointerId;
+    stationSurface.setPointerCapture(event.pointerId);
+    event.preventDefault();updateStationValue();paintCues();
+  });
+  stationSurface.addEventListener('pointermove',event=>{
+    if(stationDrag?.id===event.pointerId){adjustFromPointer(stationDrag,event);updateStationValue();return;}
+    if(!canOrbit || event.pointerType==='touch')return;
+    const hit=editTarget(event,true);
+    if(hit!==stationHover){stationHover=hit;updateStationValue();paintCues();}
+    stationSurface.style.cursor=hit==='y0'?'ns-resize':hit?'grab':'';
+  });
+  stationSurface.addEventListener('lostpointercapture',()=>{
+    stationDrag=stationHover=null;renderExhibit.stationPointer.value=-1;updateStationValue();paintCues();
+  });
+  stationSurface.addEventListener('pointerleave',()=>{
+    if(stationHover){stationHover=null;updateStationValue();paintCues();}
+  });
+  stationLaunch.addEventListener('click',()=>btnLaunch.click());
   let graphPress;
   trajCanvas.addEventListener("pointerdown", event => {
     hideProbe();
@@ -1163,17 +1212,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   });
   trajCanvas.addEventListener("pointermove", event => {
     if(modelDrag && event.pointerId===modelDrag.id){
-      const {key,coords,start,value}=modelDrag,pt=coords(event.clientX,event.clientY);
-      if(pt){
-        if(key==='v0'){
-          const angle=draft.theta*Math.PI/180;
-          const along=(pt.horizontal-start.horizontal)*Math.cos(angle)+(pt.height-start.height)*Math.sin(angle);
-          changeSetting(sliderV0,Math.round(value+along/.16));
-          return;
-        }
-        const delta=key==='y0'?pt.height-start.height:((pt.angle-start.angle+540)%360)-180;
-        changeSetting(key==='y0'?sliderY0:sliderTheta,Math.round(value+delta));
-      }
+      adjustFromPointer(modelDrag,event);
       return;
     }
     if(!event.buttons && event.pointerType!=="touch" && renderExhibit && !state.playing){
