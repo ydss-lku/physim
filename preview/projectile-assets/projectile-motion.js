@@ -479,7 +479,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(!renderExhibit)return;
     impactStart=performance.now();
     function fade(now){
-      if(now-impactStart>=4750){impactFrame=0;drawTrajectory();return;}
+      if(now-impactStart>=renderExhibit.impactDurationMs){impactFrame=0;drawTrajectory();return;}
       drawTrajectory();impactFrame=requestAnimationFrame(fade);
     }
     impactFrame=requestAnimationFrame(fade);

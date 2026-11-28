@@ -193,13 +193,14 @@ function createProjectileExhibit(canvas) {
     const chip=new T.Mesh(chipShape,chipMaterials[i%3]);splinters.add(chip);return chip;
   });
   // Use the original three-frame, direction-specific Pompom artwork from Spelling Bee-ker.
-  const catMaps=['pompom-walk.webp','pompom-walk-left.webp'].map(name=>{
+  const fetchEnabled=false;
+  const catMaps=(fetchEnabled?['pompom-walk.webp','pompom-walk-left.webp']:[]).map(name=>{
     const texture=new T.TextureLoader().load('preview/projectile-assets/'+name);
     texture.repeat.set(1/3,1);
     if(T.sRGBEncoding)texture.encoding=T.sRGBEncoding;
     return texture;
   });
-  const cat=new T.Sprite(new T.SpriteMaterial({map:catMaps[0],transparent:true,depthWrite:false}));
+  const cat=new T.Sprite(new T.SpriteMaterial({map:catMaps[0]??null,transparent:true,depthWrite:false}));
   cat.name='Pompom';cat.center.set(.5,.015);scene.add(cat);
   const fetchedBall=ball.clone();
   fetchedBall.name='Retrieved ball';scene.add(fetchedBall);
@@ -433,7 +434,7 @@ function createProjectileExhibit(canvas) {
     }
     pendingSetup.visible=Boolean(setup);
     frameStain(flightCamera,h,size,impactAge,landed);
-    if(landed)showFetch(impactAge,size,h);
+    if(fetchEnabled && landed)showFetch(impactAge,size,h);
     renderer.render(scene,flightCamera);
     return function project(horizontal,height){
       v.set(mx+horizontal*size,my+(height-flight.y0)*size,0).project(flightCamera);
@@ -511,6 +512,7 @@ function createProjectileExhibit(canvas) {
     initialVector.line.material.opacity=initialVector.cone.material.opacity=level('v0',.98);
     renderer.render(scene,flightCamera);
   };
+  render.impactDurationMs=fetchEnabled?4750:1650;
   render.cameraFrame=()=>lastFrame;
   render.cannonBounds=cannonBounds;
   return render;
