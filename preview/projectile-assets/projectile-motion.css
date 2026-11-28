@@ -143,8 +143,8 @@ main .observation .viewport{height:clamp(265px,28vw,380px)}
 #ballInset{background:linear-gradient(#bbcdd2,#edead9)}html[data-theme=tech] #ballInset{background:linear-gradient(#192d38,#364850)}
 
 html[data-theme=tech] .flight-chart{color:var(--horizontal)}html[data-theme=tech] .flight-chart+ .flight-chart{color:var(--vertical)}
-main .observation .viewport,#ballInset{background:#c9d7dc url("flight-sky-day.webp") center 45% / cover}
-html[data-theme=tech] main .observation .viewport,html[data-theme=tech] #ballInset{background:#263849 url("flight-sky-night.webp") center 45% / cover}
+main .observation .viewport,#ballInset{background:#c9d7dc url("harbour-day.webp") center 45% / cover}
+html[data-theme=tech] main .observation .viewport,html[data-theme=tech] #ballInset{background:#263849 url("harbour-dusk.webp") center 45% / cover}
 
 @media(max-width:520px){.dial-bank{justify-content:space-around;gap:4px}.dial{flex-direction:column;gap:0}.vector-symbol{height:25px}.vector-reading{line-height:18px}}
 

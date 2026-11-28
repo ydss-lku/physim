@@ -97,11 +97,18 @@ function createEarthCut(T,scene){
       float sector=1.-smoothstep(-edgeAA,edgeAA,side);
       earth*=mix(.84,1.,sector);
       float rim=1.-smoothstep(.028,.028+edgeAA,abs(side));
-      earth=mix(earth,vec3(.76,.79,.68),rim*.8);
+      float rimBed=1.-smoothstep(.12,.12+edgeAA,abs(side));
+      float pigment=.80+.17*crumb;
+      earth=mix(earth,vec3(.026,.045,.055),rimBed*.80);
+      earth=mix(earth,vec3(.89,.39,.055),rim*pigment);
       float age=marks.y-band/max(.00001,marks.z);
       float reveal=smoothstep(0.,.65,age)*step(10.,band)*step(.01,radial.x);
       earth*=mix(1.,.64,darkness);
-      earth=mix(earth,vec3(.86,.89,.80),stroke*(.64+.3*major)*sector*reveal*(1.-smoothstep(.05,.20,soilKind)));
+      float inkMask=sector*reveal*(1.-smoothstep(.05,.20,soilKind));
+      float groove=1.-smoothstep(.11+.04*major,.11+.04*major+aa,abs(radius-band));
+      earth=mix(earth,vec3(.018,.048,.059),groove*inkMask*.82);
+      vec3 enamel=mix(vec3(.11,.50,.52),vec3(.20,.73,.69),major);
+      earth=mix(earth,enamel,stroke*inkMask*pigment);
       diffuseColor.rgb*=earth;`)
       .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       vec3 ex=dFdx(vViewPosition),ey=dFdy(vViewPosition);
@@ -163,8 +170,10 @@ function createEarthCut(T,scene){
     canvas.width=512;canvas.height=128;
     const ctx=canvas.getContext('2d');
     ctx.font='600 96px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle='#fffdf0';ctx.fillText(radius+' m',256,67);
-    const map=new T.CanvasTexture(canvas);map.anisotropy=4;
+    ctx.lineJoin='round';ctx.lineWidth=8;ctx.strokeStyle='#15383f';
+    ctx.strokeText(radius+' m',256,67);
+    ctx.fillStyle=radius%20===0?'#93eadb':'#80d8d3';ctx.fillText(radius+' m',256,67);
+    const map=new T.CanvasTexture(canvas);map.anisotropy=4;map.colorSpace=T.SRGBColorSpace;
     // Lay the lettering on a narrow annular strip, following the paint on the turf.
     const height=1.22*Math.min(3.1,1.35+radius*.024),width=height*4;
     // Centre the inscription on the sector bisector.
