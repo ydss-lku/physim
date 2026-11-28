@@ -104,7 +104,7 @@ function createProjectileExhibit(canvas) {
   }
   const arcEdges=angleGuide.children.map(mesh=>outlineGuide(mesh,mesh===arcTube?
     new T.TorusGeometry(1.5,.082,8,32,1.1):null));
-  const speedShaft=new T.Mesh(new T.CylinderGeometry(.032,.032,1,10),initialVector.cone.material);
+  const speedShaft=new T.Mesh(new T.CylinderGeometry(.085,.085,1,16),initialVector.cone.material);
   initialVector.add(speedShaft);
   const speedEdges=[outlineGuide(speedShaft),outlineGuide(initialVector.cone)];
   const ball=part(scene,new T.SphereGeometry(1,48,32),alloy);
@@ -354,8 +354,8 @@ function createProjectileExhibit(canvas) {
     pendingPlatform.getObjectByName('Lift direction').visible=editable;
     initialVector.visible=editable;
     const length=editSpeed*.16;
-    speedShaft.position.y=length/2;speedShaft.scale.y=length;
-    initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
+
+
     platform.getObjectByName('Lift direction').visible=editable&&!setup;
     if(setup){
       const tilt=setup.theta*Math.PI/180;
@@ -407,6 +407,15 @@ function createProjectileExhibit(canvas) {
     }
     flightCamera.position.copy(cameraLocal).applyQuaternion(flightCamera.quaternion).add(rig.position);
     flightCamera.zoom=zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
+    // Maintain a usable silhouette in a wide landing shot without moving the tip.
+    const tipDepth=-initialVector.getWorldPosition(new T.Vector3()).applyMatrix4(flightCamera.matrixWorldInverse).z;
+    const metrePerPixel=2*tipDepth/(h*size*flightCamera.projectionMatrix.elements[5]);
+    const shaftRadius=Math.max(.085,2.8*metrePerPixel);
+    const headLength=Math.min(length*.45,Math.max(.68,12*metrePerPixel));
+    initialVector.setLength(length,headLength,Math.max(shaftRadius*4,.58));
+    speedShaft.position.y=(length-headLength)/2;
+    speedShaft.scale.set(shaftRadius/.085,length-headLength,shaftRadius/.085);
+    initialVector.line.visible=false;
     lastFrame={yaw,pitch,zoom,offset:flightCamera.position.clone().sub(ground).divideScalar(size)};
 
     cat.visible=fetchedBall.visible=false;ball.visible=true;
@@ -496,6 +505,37 @@ function createProjectileExhibit(canvas) {
     theta:'#'+arcMaterial.color.getHexString(),
     y0:'#'+liftCueMaterials[0].color.getHexString(),
     v0:'#'+initialVector.cone.material.color.getHexString()
+  };
+  const speedFinishes={
+    teal:[0x42ebca,0x318f91],ice:[0x9de6ff,0x5289b2],copper:[0xffb878,0xb76949]
+  };
+  render.setSpeedFinish=function(name){
+    const [core,rim]=speedFinishes[name]||speedFinishes.teal;
+    initialVector.cone.material.color.setHex(core);
+    for(const edge of speedEdges)edge.color.setHex(rim);
+    render.cueColors.v0='#'+initialVector.cone.material.color.getHexString();
+  };
+  // Erase only the arrow's projected faces from the transparent trajectory layer.
+  render.clearSpeedSilhouette=function(ctx,w,h){
+    if(!initialVector.visible)return;
+    ctx.save();ctx.globalCompositeOperation='destination-out';ctx.fillStyle='#fff';
+    for(const mesh of [speedShaft,initialVector.cone]){
+      const outline=mesh.children[0],geometry=outline.geometry,positions=geometry.attributes.position;
+      const vertices=[];
+      for(let i=0;i<positions.count;i++){
+        const v=new T.Vector3().fromBufferAttribute(positions,i).applyMatrix4(outline.matrixWorld).project(flightCamera);
+        vertices.push([(1+v.x)*w/2,(1-v.y)*h/2]);
+      }
+      const indices=geometry.index;
+      ctx.beginPath();
+      for(let i=0;i<(indices?indices.count:positions.count);i+=3){
+        const [a,b,c]=[0,1,2].map(j=>vertices[indices?indices.getX(i+j):i+j]);
+        if((b[0]-a[0])*(c[1]-a[1])<(b[1]-a[1])*(c[0]-a[0]))continue;
+        ctx.moveTo(...a);ctx.lineTo(...b);ctx.lineTo(...c);ctx.closePath();
+      }
+      ctx.fill();
+    }
+    ctx.restore();
   };
   render.setCueOpacity=function(opacity,active){
     function level(key,base){

@@ -225,6 +225,16 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   let renderExhibit;
   try { renderExhibit=createProjectileExhibit(document.getElementById('exhibitCanvas')); }
   catch(error) { console.warn('Using the 2D flight view',error); }
+  const speedFinish=document.getElementById('speedFinish');
+  if(speedFinish && renderExhibit){
+    try{speedFinish.value=localStorage.getItem('projectile-speed-finish')||'teal';}catch{}
+    renderExhibit.setSpeedFinish(speedFinish.value);
+    speedFinish.addEventListener('change',()=>{
+      renderExhibit.setSpeedFinish(speedFinish.value);
+      try{localStorage.setItem('projectile-speed-finish',speedFinish.value);}catch{}
+      drawTrajectory();
+    });
+  }
   const view={launchFrame:null,active:false,yaw:0,pitch:0,zoom:1};
   const fingers=new Map();
   let canOrbit=false;
@@ -602,6 +612,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(launched && state.t>0 && state.t<p.T){
       drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h,fieldRadius,project);
     }
+    renderExhibit?.clearSpeedSilhouette(ctx,w,h);
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
 
