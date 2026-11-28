@@ -192,6 +192,44 @@ function createProjectileExhibit(canvas) {
   const chips=Array.from({length:11},(_,i)=>{
     const chip=new T.Mesh(chipShape,chipMaterials[i%3]);splinters.add(chip);return chip;
   });
+  // Use the original three-frame, direction-specific Pompom artwork from Spelling Bee-ker.
+  const catMaps=['pompom-walk.webp','pompom-walk-left.webp'].map(name=>{
+    const texture=new T.TextureLoader().load('preview/projectile-assets/'+name);
+    texture.repeat.set(1/3,1);
+    if(T.sRGBEncoding)texture.encoding=T.sRGBEncoding;
+    return texture;
+  });
+  const cat=new T.Sprite(new T.SpriteMaterial({map:catMaps[0],transparent:true,depthWrite:false}));
+  cat.name='Pompom';cat.center.set(.5,.015);scene.add(cat);
+  const fetchedBall=ball.clone();
+  fetchedBall.name='Retrieved ball';scene.add(fetchedBall);
+  function showFetch(age,size,height){
+    cat.visible=fetchedBall.visible=false;
+    if(age<.7)return;
+    const depth=-ball.position.clone().applyMatrix4(flightCamera.matrixWorldInverse).z;
+    const pixel=2*depth/(height*flightCamera.projectionMatrix.elements[5]);
+    const length=Math.max(1.8*size,32*pixel);
+    const direction=flightCamera.matrixWorld.elements[0]>=0?1:-1;
+    const approach=Math.min(1,(age-.7)/1.8),carry=Math.max(0,Math.min(1,(age-2.85)/1.8));
+    const turn=age>=2.85,face=(turn?-1:1)*direction;
+    const grip=.41*length,run=3.4*length;
+    const centreX=ball.position.x-grip-run*(1-approach+carry);
+    const ground=ball.position.y-ball.scale.y;
+    const crouch=Math.sin(Math.PI*Math.min(1,Math.max(0,(age-2.5)/.35)));
+    const tex=catMaps[face>0?0:1];
+    const stride=Math.floor((approach+carry)*run/(length*.38)*3)%3;
+    tex.offset.x=stride/3;cat.material.map=tex;
+    cat.visible=true;cat.position.set(centreX,ground,0);
+    cat.scale.set(length,length*(1-.16*crouch),1);
+    if(age>=2.68){
+      fetchedBall.visible=true;ball.visible=false;
+      const blend=Math.min(1,(age-2.68)/.35);
+      const mouth=turn?centreX-grip:centreX+grip;
+      fetchedBall.position.set(ball.position.x+(mouth-ball.position.x)*blend,
+        ground+ball.scale.y+(.32*length-ball.scale.y)*blend,.04*size);
+      fetchedBall.scale.copy(ball.scale);
+    }
+  }
   const contactView=new T.Vector3();
   function frameStain(camera,height,size,age,landed){
     wave.visible=landed && age>=0 && age<1.65;
@@ -370,6 +408,7 @@ function createProjectileExhibit(canvas) {
     flightCamera.zoom=zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
     lastFrame={yaw,pitch,zoom,offset:flightCamera.position.clone().sub(ground).divideScalar(size)};
 
+    cat.visible=fetchedBall.visible=false;ball.visible=true;
     drawImpact(landed?impactAge:-1,size);
     pendingSetup.visible=false;
     if(inset){
@@ -394,6 +433,7 @@ function createProjectileExhibit(canvas) {
     }
     pendingSetup.visible=Boolean(setup);
     frameStain(flightCamera,h,size,impactAge,landed);
+    if(landed)showFetch(impactAge,size,h);
     renderer.render(scene,flightCamera);
     return function project(horizontal,height){
       v.set(mx+horizontal*size,my+(height-flight.y0)*size,0).project(flightCamera);
