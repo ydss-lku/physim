@@ -83,6 +83,7 @@ function createProjectileExhibit(canvas) {
   key.shadow.mapSize.set(2048,2048);key.shadow.normalBias=.4;scene.add(key);
   scene.add(new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
   const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
+  const placeHarbour=createHarbour(T,scene);
   const updateEarth=createEarthCut(T,scene);
   let previousWidth=0, previousHeight=0, previousRatio=0;
   let cachedAngle, bounds;
@@ -124,6 +125,7 @@ function createProjectileExhibit(canvas) {
     rig.position.set(mx-1.86*Math.cos(angle)*size,my-1.86*Math.sin(angle)*size,0);
     ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
+    placeHarbour(rig.position.x,my-flight.y0*size-ball.scale.x,size,document.documentElement.dataset.theme==="tech");
     updateEarth(size,my-flight.y0*size-ball.scale.x,rig.position.y-1.118*size,rig.position.x,ball,document.documentElement.dataset.theme==="tech",mx,flight.time,flight.vx);
     const phase=ready?0:Math.min(1,flight.time/Math.max(.001,flight.T));
     const sweep=ease(phase/.62),settle=ease((phase-.56)/.44);
