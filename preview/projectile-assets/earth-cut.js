@@ -19,13 +19,18 @@ function createLaunchLift(T,preview=false){
       posts.push(part(new T.CylinderGeometry(r,r,1,16),stage===1?chrome:steel,x,0,z));
     }
   }
-  part(new T.BoxGeometry(.33,.64,.18),steel,-1.56,.3,.99);
-  for(const z of [.88,1.10]){
-    part(new T.CylinderGeometry(.028,.028,.26,8),paint,-1.56,.3,z);
-    for(const sign of [-1,1]){
-      const tip=part(new T.ConeGeometry(.09,.15,8),paint,-1.56,.3+sign*.18,z);
-      if(sign<0)tip.rotation.z=Math.PI;
-    }
+  const guideMaterial=new T.MeshStandardMaterial({color:0xffffff,emissive:0x999999,
+    transparent:true,opacity:.78,depthWrite:false,roughness:.34});
+  const guide=new T.Group();
+  guide.name='Lift direction';
+  guide.position.set(-2.35,.76,.64);
+  lift.add(guide);
+  guide.add(new T.Mesh(new T.CylinderGeometry(.052,.052,1.18,16),guideMaterial));
+  for(const sign of [-1,1]){
+    const head=new T.Mesh(new T.ConeGeometry(.18,.43,20),guideMaterial);
+    head.position.y=sign*.78;
+    if(sign<0)head.rotation.z=Math.PI;
+    guide.add(head);
   }
   lift.setRise=function(rise){
     const travel=Math.max(0,rise-.37);

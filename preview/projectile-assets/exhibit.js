@@ -254,7 +254,7 @@ function createProjectileExhibit(canvas) {
     });
   }
   function ease(t){t=Math.max(0,Math.min(1,t));return t*t*t*(10+t*(-15+6*t));}
-  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready,preview,impactAge}){
+  function render({w,h,start,muzzleY,x,y,theta,size,view,flight,inset,ready,preview,impactAge,editSpeed,editable}){
     const ratio=Math.min(devicePixelRatio||1,2);
     if(w!==previousWidth || h!==previousHeight || ratio!==previousRatio){
       renderer.setPixelRatio(ratio);
@@ -285,8 +285,14 @@ function createProjectileExhibit(canvas) {
       const q=new T.Vector3(x,y,z).sub(rig.position).applyQuaternion(inverse);
       points.push(q);bounds.expandByPoint(q);
     }
-    const setup=preview || (ready?{theta,y0:flight.y0,v0:0}:null);
+    const setup=preview || (ready?{theta,y0:flight.y0,v0:editSpeed}:null);
     rig.visible=!ready;platform.visible=!ready;
+    const vectorParent=setup?pendingBarrel:barrel;
+    if(initialVector.parent!==vectorParent)vectorParent.add(initialVector);
+    initialVector.visible=editable;
+    const length=editSpeed*.16;
+    initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
+    platform.getObjectByName('Lift direction').visible=editable&&!setup;
     if(setup){
       const tilt=setup.theta*Math.PI/180;
       const field=my-flight.y0*size-ball.scale.x;
@@ -297,9 +303,6 @@ function createProjectileExhibit(canvas) {
       const wheelBottom=-1.118;
       const rise=Math.max(.07,wheelBottom-(floor-pendingSetup.position.y)/size);
       pendingPlatform.setRise(rise);pendingPlatform.position.set(-.65,wheelBottom,0);
-      initialVector.visible=Boolean(preview);
-      const length=Math.max(.01,setup.v0*.16);
-      initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
       const extent=new T.Box3().setFromObject(pendingSetup);
       for(const x of [extent.min.x,extent.max.x])for(const y of [extent.min.y,extent.max.y])for(const z of [extent.min.z,extent.max.z])include(x,y,z);
     }
@@ -389,7 +392,7 @@ function createProjectileExhibit(canvas) {
       return {x:(pt.x+1)*rect.width/2,y:(1-pt.y)*rect.height/2};
     }
     const angle=(pendingSetup.visible?pendingBarrel:barrel).rotation.z;
-    return {liftBadge:screen(-2.21,-.818,1.10),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),0),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
+    return {speedPoint:v=>screen((1.86+v*.16)*Math.cos(angle),(1.86+v*.16)*Math.sin(angle),0),liftBadge:screen(-3,-.358,.64),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),0),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
   };
   render.dragCoordinates=function(){
     const cam=flightCamera.clone(),root=pendingSetup.visible?pendingSetup:rig;
@@ -399,7 +402,7 @@ function createProjectileExhibit(canvas) {
       const pt=picker.ray.intersectPlane(plane,new T.Vector3());
       if(!pt)return null;
       pt.sub(centre).divideScalar(scale);
-      return {height:pt.y,angle:Math.atan2(pt.y,pt.x)*180/Math.PI};
+      return {horizontal:pt.x,height:pt.y,angle:Math.atan2(pt.y,pt.x)*180/Math.PI};
     };
   };
   render.cannonBounds=cannonBounds;

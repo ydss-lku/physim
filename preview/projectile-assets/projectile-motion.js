@@ -349,20 +349,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     probe.style.left=Math.max(2,Math.min(rect.width-width-2,anchor.x+width+15<rect.width?anchor.x+12:anchor.x-width-12))+'px';
     probe.style.top=Math.max(2,Math.min(rect.height-height-2,anchor.y-height/2))+'px';
   }
-  const speedTag=document.createElement('label');
-  speedTag.className='rig-speed';
-  speedTag.innerHTML='<output></output><input type="range" aria-label="Initial speed / 初速">';
-  trajCanvas.parentElement.append(speedTag);
-  const sceneSpeed=speedTag.querySelector('input');
-  sceneSpeed.min=sliderV0.min;sceneSpeed.max=sliderV0.max;
   function changeSetting(source,value){
     source.value=String(value);source.dispatchEvent(new Event('input',{bubbles:true}));
   }
-  sceneSpeed.addEventListener('input',()=>changeSetting(sliderV0,sceneSpeed.value));
-  let speedDragging=false,modelDrag=null;
-  sceneSpeed.addEventListener('pointerdown',()=>{speedDragging=true;});
-  sceneSpeed.addEventListener('lostpointercapture',()=>{speedDragging=false;});
-  window.addEventListener('pointerup',()=>{speedDragging=false;});
+  let modelDrag=null;
   const dragHints={};
   for(const [key,glyph] of [['theta','<path class="pivot-arc"/><path class="pivot-tick"/>'],['y0','<path d="M15 4v24 M9 10l6-7 6 7 M9 22l6 7 6-7"/>']]){
     const icon=document.createElement('span');icon.className='rig-hint';icon.setAttribute('aria-hidden','true');
@@ -383,16 +373,21 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const r=icon.getBoundingClientRect();
       if(event.clientX>=r.left && event.clientX<=r.right && event.clientY>=r.top && event.clientY<=r.bottom)return key;
     }
+    const {muzzle,speedPoint}=renderExhibit.controlAnchor(),end=speedPoint(draft.v0);
+    const rect=trajCanvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+    const dx=end.x-muzzle.x,dy=end.y-muzzle.y;
+    const t=Math.max(.15,Math.min(1,((x-muzzle.x)*dx+(y-muzzle.y)*dy)/(dx*dx+dy*dy||1)));
+    if(Math.hypot(x-muzzle.x-t*dx,y-muzzle.y-t*dy)<10)return 'v0';
     return renderExhibit.pickControl(event.clientX,event.clientY);
   }
-  function placeSpeedBar(w,h){
+  function placeRigHints(w,h){
     const hide=!renderExhibit || state.playing;
-    speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=hide;
+    dragHints.theta.hidden=dragHints.y0.hidden=hide;
     angleValue.hidden=true;
     if(hide)return;
     const {muzzle,rear,pivot,base,onArc,liftBadge}=renderExhibit.controlAnchor();
     if(pivot.x<0||pivot.x>w||pivot.y<0||pivot.y>h){
-      speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=true;return;
+      dragHints.theta.hidden=dragHints.y0.hidden=true;return;
     }
     dragHints.y0.style.opacity="0";
     function placeHint(icon,x,y){
@@ -400,17 +395,22 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       icon.style.top=Math.max(1,Math.min(h-32,y-16))+'px';
     }
     // Project a circle in the barrel's own rotation plane, including its perspective foreshortening.
-    const radius=Math.max(2.25,Math.min(6,58/Math.max(1,Math.hypot(muzzle.x-pivot.x,muzzle.y-pivot.y)/1.86)));
-    arcPoints=Array.from({length:25},(_,i)=>onArc((i/24-.5)*.80,radius));
+    const radius=1.5;
+    arcPoints=Array.from({length:25},(_,i)=>onArc((i/24-.5)*1.1,radius));
     const tip=arcPoints[12],tick=onArc(0,radius*1.09);
-    const ox=Math.min(...arcPoints.map(p=>p.x),tick.x)-3,oy=Math.min(...arcPoints.map(p=>p.y),tick.y)-3;
+    const ox=Math.min(...arcPoints.map(p=>p.x),tick.x)-8,oy=Math.min(...arcPoints.map(p=>p.y),tick.y)-8;
     const icon=dragHints.theta,svg=icon.firstElementChild;
-    const aw=Math.max(...arcPoints.map(p=>p.x),tick.x)-ox+3,ah=Math.max(...arcPoints.map(p=>p.y),tick.y)-oy+3;
+    const aw=Math.max(...arcPoints.map(p=>p.x),tick.x)-ox+8,ah=Math.max(...arcPoints.map(p=>p.y),tick.y)-oy+8;
     Object.assign(icon.style,{left:ox+'px',top:oy+'px',width:aw+'px',height:ah+'px'});
     svg.setAttribute('viewBox',[0,0,aw,ah].join(' '));
     const local=p=>(p.x-ox)+' '+(p.y-oy);
     svg.firstElementChild.setAttribute('d',arcPoints.map((p,i)=>(i?'L':'M')+local(p)).join(' '));
-    svg.lastElementChild.setAttribute('d','M'+local(tip)+'L'+local(tick));
+    function arrowHead(end,inside){
+      const dx=end.x-inside.x,dy=end.y-inside.y,len=Math.hypot(dx,dy)||1;
+      const side=k=>local({x:end.x-(5*dx+k*3*dy)/len,y:end.y-(5*dy-k*3*dx)/len});
+      return 'M'+side(1)+'L'+local(end)+'L'+side(-1);
+    }
+    svg.lastElementChild.setAttribute('d',arrowHead(arcPoints[0],arcPoints[1])+arrowHead(arcPoints[24],arcPoints[23]));
     if(modelDrag?.key==='theta'){
       angleValue.hidden=false;angleValue.textContent=draft.theta+'°';
       const dx=tick.x-pivot.x,dy=tick.y-pivot.y,len=Math.hypot(dx,dy)||1;
@@ -424,20 +424,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,liftBadge.x-angleValue.offsetWidth/2))+'px';
       angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,liftBadge.y-angleValue.offsetHeight-15))+'px';
     }
-    sceneSpeed.value=draft.v0;
-    speedTag.querySelector('output').textContent='v₀ '+draft.v0+' m/s';
-    if(speedDragging)return;
-    const width=speedTag.offsetWidth,height=speedTag.offsetHeight;
-    const bottom=Math.max(base.y,rear.y,pivot.y,muzzle.y)+22;
-    const left=Math.min(base.x,rear.x,pivot.x,muzzle.x)-38;
-    const right=Math.max(base.x,rear.x,pivot.x,muzzle.x)+38;
-    let x=base.x-width/2,y=bottom;
-    if(bottom+height>h-4){
-      x=right+width<w?right:left-width;y=base.y+6-height/2;
-      if(x<4){x=base.x-width/2;y=Math.min(muzzle.y,pivot.y)-height-45;}
+    if(modelDrag?.key==='v0'){
+      const end=renderExhibit.controlAnchor().speedPoint(draft.v0);
+      angleValue.hidden=false;angleValue.textContent='v₀ = '+draft.v0+' m/s';
+      angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,end.x+8))+'px';
+      angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,end.y+8))+'px';
     }
-    speedTag.style.left=Math.max(4,Math.min(w-width-4,x))+'px';
-    speedTag.style.top=Math.max(4,Math.min(h-height-4,y))+'px';
   }
   const previewLabel=document.createElement('output');
   previewLabel.className='launch-preview';previewLabel.hidden=true;
@@ -563,12 +555,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const preview=draft.theta!==state.theta || draft.v0!==state.v0 || draft.y0!==state.y0 ? draft : null;
     previewLabel.hidden=!preview;
     if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽")+"  ·  θ "+preview.theta+"°   ·   v₀ "+preview.v0+" m/s   ·   y₀ "+preview.y0+" m";
-    const project=renderExhibit?renderExhibit({ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
+    const project=renderExhibit?renderExhibit({editable:!state.playing,editSpeed:draft.v0,ready,preview,impactAge:impactStart===null?-1:(performance.now()-impactStart)/1000,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
     trajectoryView = {p,project};
     placeRange(p,project,w,h);
-    placeSpeedBar(w,h);
+    placeRigHints(w,h);
     ctx.clearRect(0,0,w,h);
     const styles = getComputedStyle(document.querySelector(".shell"));
     const colors = ["--horizontal","--vertical","--resultant"].map(key=>styles.getPropertyValue(key).trim());
@@ -1127,7 +1119,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
         const coords=renderExhibit.dragCoordinates(),start=coords(event.clientX,event.clientY);
         if(start){
           modelDrag={id:event.pointerId,key,coords,start,value:draft[key]};
-          placeSpeedBar(trajCanvas.clientWidth,trajCanvas.clientHeight);
+          placeRigHints(trajCanvas.clientWidth,trajCanvas.clientHeight);
           trajCanvas.setPointerCapture(event.pointerId);event.preventDefault();return;
         }
       }
@@ -1150,6 +1142,12 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(modelDrag && event.pointerId===modelDrag.id){
       const {key,coords,start,value}=modelDrag,pt=coords(event.clientX,event.clientY);
       if(pt){
+        if(key==='v0'){
+          const angle=draft.theta*Math.PI/180;
+          const along=(pt.horizontal-start.horizontal)*Math.cos(angle)+(pt.height-start.height)*Math.sin(angle);
+          changeSetting(sliderV0,Math.round(value+along/.16));
+          return;
+        }
         const delta=key==='y0'?pt.height-start.height:((pt.angle-start.angle+540)%360)-180;
         changeSetting(key==='y0'?sliderY0:sliderTheta,Math.round(value+delta));
       }
@@ -1157,7 +1155,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
     if(!event.buttons && renderExhibit && !state.playing){
       const hit=editTarget(event);
-      trajCanvas.style.cursor=hit==='y0'?'ns-resize':hit==='theta'?'grab':'';
+      trajCanvas.style.cursor=hit==='y0'?'ns-resize':hit?'grab':'';
     }
     const previous=fingers.get(event.pointerId);
     if(previous){
