@@ -220,3 +220,6 @@ html:not([data-theme=tech]) .initial-readings span{-webkit-text-stroke:1.5px #31
 #toggleRigInset[hidden]{display:none}
 #toggleRigInset[aria-pressed=true]{background:var(--selected);color:var(--on)}
 .rig-inset-footer{min-height:44px;padding-left:49px}
+
+.observation .speed-chart{border-top:1px solid var(--line);color:var(--resultant)}
+.speed-chart svg{height:clamp(105px,11vw,135px)}

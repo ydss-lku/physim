@@ -624,16 +624,6 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const x=toPxX(pos.x), y=toPxY(pos.y);
     // A common speed scale makes all three vectors comparable throughout the flight.
 
-    [[p.vx,0],[0,pos.vy],[p.vx,pos.vy]].forEach(([vx,vy],i)=>{
-      const length=Math.hypot(vx,vy);
-      const dial=document.querySelectorAll(".dial")[i];
-      const needle=dial.querySelector(".needle");
-      const tip=46*length/maxSpeed, head=Math.min(7,tip*.45);
-      needle.setAttribute("d",length<1e-8?"":"M0 1.5 L"+(tip-head)+" 1.5 v3 l"+head+" -4.5 -"+head+" -4.5 v3 H0 Z");
-      needle.setAttribute("transform","rotate("+Math.atan2(-vy,vx)*180/Math.PI+")");
-      const reading=[vx,vy,length][i];
-      dial.querySelector("output").textContent=(Math.abs(reading)<1e-8?0:reading).toFixed(2);
-    });
     if(inset)drawCloseUp(inset.ctx,inset.w,inset.h,p.vx,pos.vy,maxSpeed,colors,{model:p,pos,scale,fieldRadius});
     if(renderExhibit)return;
     ctx.beginPath();ctx.arc(x,y,6,0,2*Math.PI);ctx.fillStyle=chartInk.field;ctx.fill();ctx.strokeStyle=chartInk.ink;ctx.lineWidth=2.5;ctx.stroke();
@@ -819,7 +809,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   // ====== 更新介面數據與重繪 ======
   const flightPhase=document.getElementById('flightPhase');
-  const flightCharts=[...document.querySelectorAll('.flight-chart')];
+  const flightCharts=[...document.querySelectorAll('.flight-charts .flight-chart')];
   document.getElementById('jumpPeak')?.addEventListener('click',()=>{
     state.playing=false;
     stopAnimationLoop();
@@ -827,6 +817,25 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     updatePlayButtons();
     updateUI();
   });
+  const speedChart=document.querySelector('.speed-chart');
+  function drawSpeedChart(p,t){
+    const speedAt=time=>Math.hypot(p.vx,p.vy0-state.g*time);
+    const ceiling=Math.max(5,5*Math.ceil(Math.max(speedAt(0),speedAt(p.T))/5));
+    const x=time=>48+353*(p.T?time/p.T:0),y=time=>91-74*speedAt(time)/ceiling;
+    const times=[0];
+    if(t>0){
+      for(let i=1;i<=64;i++)times.push(t*i/64);
+      const apex=p.vy0/state.g;
+      if(apex>0 && apex<t){times.push(apex);times.sort((a,b)=>a-b);}
+    }
+    speedChart.querySelector('.trace').setAttribute('d',times.map((time,i)=>(i?'L':'M')+x(time).toFixed(2)+' '+y(time).toFixed(2)).join(' '));
+    const dot=speedChart.querySelector('circle');
+    dot.setAttribute('cx',x(t));dot.setAttribute('cy',y(t));
+    speedChart.querySelector('.upper').textContent=ceiling;
+    speedChart.querySelector('.mid').textContent=ceiling/2;
+    speedChart.querySelector('.end-time').textContent=p.T.toFixed(2);
+    speedChart.querySelector('output').textContent=speedAt(t).toFixed(2)+' m/s';
+  }
   function updateFlightPanels(p,t,vy){
   if(!flightPhase) return;
   const stage = !launched ? ["Ready to launch","準備發射"] : !p.T ? ['No flight','沒有飛行階段'] : !t ? ['Launch','發射一刻'] : t>=p.T ? ['At impact','觸地一刻'] : Math.abs(vy)<1e-8 ? ['Highest point','最高點'] : vy>0 ? ['Rising','上升中'] : ['Falling','下降中'];
