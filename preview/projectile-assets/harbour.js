@@ -67,12 +67,54 @@ function createHarbour(T,scene){
       pose.position.copy(roofCentre);pose.rotation.set(side*.27,0,0);pose.scale.set(23,.32,6.5);pose.updateMatrix();batches.get(steel).push(pose.matrix.clone());
     }
   }
-  for(const x of [-46,-85,-130])shed(x,4);
-  for(const [x,z,len] of [[15,-43,55],[116,-108,88],[144,120,94],[305,19,92],[-92,65,76]]){
+  function span(a,b,width,height){
+    const start=new T.Vector3(...a),end=new T.Vector3(...b);
+    const direction=end.clone().sub(start),length=direction.length();
+    const side=new T.Vector3(-direction.z,0,direction.x).normalize();
+    function at(t,lateral,up){
+      const v=start.clone().lerp(end,t).addScaledVector(side,lateral);
+      return [v.x,v.y+up,v.z];
+    }
+    const bays=Math.ceil(length/5);
+    for(const edge of [-width/2,width/2]){
+      beam(steel,at(0,edge,0),at(1,edge,0),.27);
+      beam(cladding,at(0,edge,height),at(1,edge,height),.19);
+      for(let i=0;i<bays;i++){
+        beam(steel,at(i/bays,edge,i%2?height:0),at((i+1)/bays,edge,i%2?0:height),.16);
+      }
+    }
+    for(let i=0;i<=bays;i++)beam(steel,at(i/bays,-width/2,0),at(i/bays,width/2,0),.2);
+  }
+  for(const x of [-86,-130])shed(x,4);
+  // Open-sided fitting bay. The yard rails pass along its loading face.
+  for(const x of [-59,-52,-45,-38]){
+    for(const z of [1,12])block(steel,x,1.4,z,.37,6.8,.37);
+    beam(cladding,[x,4.8,.8],[x,6,6.5],.32);
+    beam(cladding,[x,6,6.5],[x,4.8,12.2],.32);
+  }
+  for(const z of [3.55,9.45]){
+    pose.position.set(-48.5,5.42,z);pose.rotation.set(z<6?-.2:.2,0,0);
+    pose.scale.set(23,.19,6.2);pose.updateMatrix();batches.get(steel).push(pose.matrix.clone());
+  }
+  for(const z of [-7.2,-5.4])block(steel,-70,-1.92,z,111,.13,.13);
+  for(let x=-124;x<-15;x+=2.2)block(0x534d45,x,-1.995,-6.3,.27,.12,2.75);
+  for(const x of [-35,-31])for(const z of [-7.2,-5.4])block(steel,x,-1.62,z,.77,.53,.35);
+  block(warm,-33,-1.21,-6.3,6,.37,2.9);
+  for(const x of [-54,-44])block(0x635641,x,-1.65,4,1,.7,4);
+  span([-56,-1.25,4],[-42,-1.25,4],2.9,1.65);
+  // The diagonal approach links the rail yard to the crane berth.
+  const approachA=[-47,-2.05,-14],approachB=[-10,-3.95,-43];
+  span(approachA,approachB,4.5,1.7);
+  for(let i=0;i<46;i++){
+    const t=(i+.5)/46;
+    block(cladding,-47+37*t,-2.05-1.9*t,-14-29*t,1.09,.20,4.55,Math.atan2(29,37));
+    if(i%10===5)block(steel,-47+37*t,-7.7,-14-29*t,.70,10,.70);
+  }
+  for(const [x,z,len] of [[15,-43,55],[-101,21,53]]){
     const startCounts=new Map([...batches].map(([k,v])=>[k,v.length]));
-    quay(x,z,len);crane(x-12,z);
-    for(let j=0;j<6;j++)cargo(x+3+(j%3)*6.3,-12.60,z-2+Math.floor(j/3)*2.7,[0x835948,0x476d72,0x69786a][j%3]);
-    cargo(x+3,-10.05,z-2,0x526b7a);
+    quay(x,z,len);if(z<0)crane(x-12,z);
+    for(let j=0;j<(z<0?6:2);j++)cargo(x+3+(j%3)*6.3,-12.60,z-2+Math.floor(j/3)*2.7,[0x835948,0x476d72,0x69786a][j%3]);
+    if(z<0)cargo(x+3,-10.05,z-2,0x526b7a);
     for(let i=-len/2+2;i<len/2;i+=6){
       block(0x293a40,x+i,-15.9,z+6.7,.85,2.9,.58);
       block(warm,x+i,-13.62,z+5.7,.54,.52,.54);
@@ -94,10 +136,13 @@ function createHarbour(T,scene){
     for(const side of [-1,1])for(let i=-6;i<=4;i+=2)block(steel,x+i,-5.48,z+side*2.62,.85,.89,.42);
     beam(cladding,[x,-1.8,z],[x,.5,z],.12);
   }
-  tug(14,-53);tug(-62,20);
-  for(let i=0;i<90;i++){
-    const a=i*2.39996,r=coastRadius(a)+25+(i%7)*19,x=82+Math.cos(a)*r,z=Math.sin(a)*r;
-    const w=6+(i*7%13),h=12+(i*17%45),base=-1.8;
+  tug(14,-53);tug(-101,31);
+  for(let i=0;i<72;i++){
+    const cluster=Math.floor(i/12),slot=i%12;
+    const a=cluster*1.04+.06*(slot%4)+.022*Math.sin(i*4);
+    const r=coastRadius(a)+28+Math.floor(slot/4)*32;
+    const x=82+Math.cos(a)*r,z=Math.sin(a)*r;
+    const w=8+(i*7%11),h=(slot<4?6:18)+(i*17%(slot<4?6:34)),base=-1.8;
     block(0x48585d,x,base+1.1,z,w+4,2.2,w*.76+4);
     block(cladding,x,base+h/2+2,z,w,h,w*.76);
     block(steel,x,base+h+2.5,z,w*.72,2,w*.60);
