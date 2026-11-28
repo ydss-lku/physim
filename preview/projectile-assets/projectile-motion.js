@@ -798,8 +798,18 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     }
   }
 
+  const launchSound=new Audio('preview/projectile-assets/harbour-launch.mp3');
+  launchSound.preload='auto';
+  launchSound.volume=.48;
+  const soundSwitch=document.getElementById('launchSound');
+  try{soundSwitch.checked=localStorage.getItem('projectile-launch-sound')!=='off';}catch{}
+  soundSwitch.addEventListener('change',()=>{
+    if(!soundSwitch.checked)launchSound.pause();
+    try{localStorage.setItem('projectile-launch-sound',soundSwitch.checked?'on':'off');}catch{}
+  });
   function togglePauseResume() {
-    if (needsLaunch() || (!state.playing && state.t >= calcPhysics(state.theta,state.v0,state.y0,state.g).T)) {
+    const firing=needsLaunch() || (!state.playing && state.t >= calcPhysics(state.theta,state.v0,state.y0,state.g).T);
+    if (firing) {
       stopAnimationLoop();
       Object.assign(state,draft);
       state.minTheta = state.y0 > 0 ? -90 : 0;
@@ -820,6 +830,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       if (state.t >= p.T - 1e-6) state.t = 0;
       stopAnimationLoop();
       state.playing = true;
+      if(firing && soundSwitch.checked){
+        launchSound.currentTime=0;
+        launchSound.play().catch(()=>{});
+      }
       animFrameId = requestAnimationFrame(animate);
     }
     updatePlayButtons();
