@@ -47,8 +47,8 @@ function createHarbour(T,scene){
   const bank=new T.BufferGeometry();bank.setAttribute('position',new T.Float32BufferAttribute(shore,3));bank.setIndex(faces);bank.computeVertexNormals();
   district.add(new T.Mesh(bank,land));
   // A continuous quay connects the rear of the flight deck to the western waterfront.
-  block(0x565f5c,-122,-8,0,244,12,32);
-  for(const z of [-16,16])block(cladding,-122,-2.25,z,244,.6,.9);
+  block(0x565f5c,-125,-8,0,238,12,32);
+  for(const z of [-16,16])block(cladding,-125,-2.25,z,238,.6,.9);
   function cargo(x,y,z,tint){
     block(tint,x,y,z,6.05,2.55,2.44);
     for(const side of [-1,1]){
@@ -132,7 +132,7 @@ function createHarbour(T,scene){
         float glint=smoothstep(.46,1.54,swell+.55*ripple)*(1.-smoothstep(.12,.95,fwidth(q.y)));
         float lane=.5+.5*sin(q.x*.12+q.y*.034+sin(q.y*.09));
         diffuseColor.rgb=mix(vec3(.013,.055,.073),vec3(.054,.137,.147),.5+.5*drift/1.57)
-          +glint*mix(vec3(.073,.15,.165),vec3(.25,.145,.064),pow(lane,5.));`); 
+          +glint*(.18+.42*lane)*mix(vec3(.045,.078,.091),vec3(.14,.09,.054),pow(lane,5.));`); 
   };
   const sea=new T.Mesh(new T.CircleGeometry(1300,96),water);
   sea.rotation.x=-Math.PI/2;sea.position.y=-6.6;district.add(sea);
