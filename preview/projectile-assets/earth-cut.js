@@ -1,4 +1,42 @@
 // Local terrain coordinates are independent of the camera zoom.
+function createLaunchLift(T,preview=false){
+  const lift=new T.Group();
+  function material(color){
+    return new T.MeshStandardMaterial({color,metalness:.5,roughness:.4,transparent:preview,opacity:preview ? .5 : 1,depthWrite:!preview});
+  }
+  const steel=material(0x405662),chrome=material(0xb1c8cb),paint=material(0xffb640);
+  function part(shape,finish,x,y,z){
+    const mesh=new T.Mesh(shape,finish);
+    mesh.position.set(x,y,z);mesh.castShadow=!preview;mesh.receiveShadow=true;lift.add(mesh);return mesh;
+  }
+  function plate(w,h,d,finish,y){return part(new T.BoxGeometry(w,h,d),finish,0,y,0);}
+  plate(3.5,.18,2.24,steel,-.09);
+  plate(3.44,.04,2.19,paint,-.19);
+  const foot=plate(3.65,.16,2.4,steel,0),posts=[];
+  for(const x of [-1.28,1.28])for(const z of [-.76,.76]){
+    for(let stage=0;stage<3;stage++){
+      const r=.25-stage*.052;
+      posts.push(part(new T.CylinderGeometry(r,r,1,16),stage===1?chrome:steel,x,0,z));
+    }
+  }
+  part(new T.BoxGeometry(.33,.64,.18),steel,-1.56,.3,.99);
+  for(const z of [.88,1.10]){
+    part(new T.CylinderGeometry(.028,.028,.26,8),paint,-1.56,.3,z);
+    for(const sign of [-1,1]){
+      const tip=part(new T.ConeGeometry(.09,.15,8),paint,-1.56,.3+sign*.18,z);
+      if(sign<0)tip.rotation.z=Math.PI;
+    }
+  }
+  lift.setRise=function(rise){
+    const travel=Math.max(0,rise-.37);
+    foot.position.y=-.29-travel;
+    posts.forEach((post,i)=>{
+      post.scale.y=travel/3+.08;
+      post.position.y=-.21-travel+(i%3+.5)*travel/3;
+    });
+  };
+  return lift;
+}
 function createEarthCut(T,scene){
   const root=new T.Group();
   scene.add(root);
@@ -163,8 +201,7 @@ function createEarthCut(T,scene){
   }
   const rg=new T.BufferGeometry();rg.setAttribute('position',new T.Float32BufferAttribute(roots,3));
   const rootlets=new T.LineSegments(rg,new T.LineBasicMaterial({color:0x655039}));rootlets.visible=false;root.add(rootlets);
-  const pedestal=new T.Mesh(new T.BoxGeometry(3.35,1,2.1),new T.MeshStandardMaterial({color:0x384852,roughness:1}));
-  pedestal.name='Launch platform';pedestal.castShadow=true;pedestal.receiveShadow=true;root.add(pedestal);
+  const pedestal=createLaunchLift(T);pedestal.name='Launch platform';root.add(pedestal);
   const labels=[];
   function makeLabel(radius){
     const canvas=document.createElement('canvas');
@@ -263,8 +300,8 @@ function createEarthCut(T,scene){
     const wheelLevel=(contact-field)/size;
     const depth=Math.min(-.35,wheelLevel);
     const rise=wheelLevel-depth;
-    pedestal.scale.y=Math.max(.16,rise);
-    pedestal.position.set(-.65,wheelLevel-pedestal.scale.y/2+.012,0);
+    pedestal.setRise(rise);
+    pedestal.position.set(-.65,wheelLevel,0);
     // The final range gates eligibility; only the paint animation advances after impact.
     const reached=Math.floor((time*vx+1e-9)/10);
     const revealTime=time+Math.min(revealDuration,Math.max(0,landedAge));

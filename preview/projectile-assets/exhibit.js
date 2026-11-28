@@ -83,9 +83,7 @@ function createProjectileExhibit(canvas) {
     }
     mesh.material=previewMaterials.get(mesh.material);mesh.castShadow=false;mesh.receiveShadow=false;
   });
-  const platformGeometry=new T.BoxGeometry(3.35,1,2.1);
-  const pendingPlatform=new T.Mesh(platformGeometry,new T.MeshBasicMaterial({color:0x68ddcd,transparent:true,opacity:.19,depthWrite:false}));
-  pendingPlatform.add(new T.LineSegments(new T.EdgesGeometry(platformGeometry),new T.LineBasicMaterial({color:0x93f4e6,transparent:true,opacity:.65})));
+  const pendingPlatform=createLaunchLift(T,true);
   const pendingSetup=new T.Group();pendingSetup.add(pendingRig,pendingPlatform);scene.add(pendingSetup);
   const initialVector=new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(1.86,0,0),1,0x70ebe0);
   initialVector.line.material.transparent=initialVector.cone.material.transparent=true;
@@ -288,7 +286,7 @@ function createProjectileExhibit(canvas) {
       points.push(q);bounds.expandByPoint(q);
     }
     const setup=preview || (ready?{theta,y0:flight.y0,v0:0}:null);
-    rig.visible=!ready;
+    rig.visible=!ready;platform.visible=!ready;
     if(setup){
       const tilt=setup.theta*Math.PI/180;
       const field=my-flight.y0*size-ball.scale.x;
@@ -298,7 +296,7 @@ function createProjectileExhibit(canvas) {
       pendingBarrel.rotation.z=tilt;
       const wheelBottom=-1.118;
       const rise=Math.max(.07,wheelBottom-(floor-pendingSetup.position.y)/size);
-      pendingPlatform.scale.y=rise;pendingPlatform.position.set(-.65,wheelBottom-rise/2,0);
+      pendingPlatform.setRise(rise);pendingPlatform.position.set(-.65,wheelBottom,0);
       initialVector.visible=Boolean(preview);
       const length=Math.max(.01,setup.v0*.16);
       initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
@@ -391,7 +389,7 @@ function createProjectileExhibit(canvas) {
       return {x:(pt.x+1)*rect.width/2,y:(1-pt.y)*rect.height/2};
     }
     const angle=(pendingSetup.visible?pendingBarrel:barrel).rotation.z;
-    return {onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),0),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
+    return {liftBadge:screen(-2.21,-.818,1.10),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),0),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
   };
   render.dragCoordinates=function(){
     const cam=flightCamera.clone(),root=pendingSetup.visible?pendingSetup:rig;

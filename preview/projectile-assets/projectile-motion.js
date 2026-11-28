@@ -390,11 +390,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=hide;
     angleValue.hidden=true;
     if(hide)return;
-    const {muzzle,rear,pivot,base,onArc}=renderExhibit.controlAnchor();
+    const {muzzle,rear,pivot,base,onArc,liftBadge}=renderExhibit.controlAnchor();
     if(pivot.x<0||pivot.x>w||pivot.y<0||pivot.y>h){
       speedTag.hidden=dragHints.theta.hidden=dragHints.y0.hidden=true;return;
     }
-    const rearSide=rear.x<=pivot.x?-1:1;
+    dragHints.y0.style.opacity="0";
     function placeHint(icon,x,y){
       icon.style.left=Math.max(1,Math.min(w-30,x-15))+'px';
       icon.style.top=Math.max(1,Math.min(h-32,y-16))+'px';
@@ -417,7 +417,13 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,tick.x+dx/len*15-angleValue.offsetWidth/2))+'px';
       angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,tick.y+dy/len*15-angleValue.offsetHeight/2))+'px';
     }
-    placeHint(dragHints.y0,rear.x+rearSide*21,base.y-4);
+    placeHint(dragHints.y0,liftBadge.x,liftBadge.y);
+    if(modelDrag?.key==='y0'){
+      angleValue.textContent='y₀ = '+draft.y0+' m';
+      angleValue.hidden=false;
+      angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,liftBadge.x-angleValue.offsetWidth/2))+'px';
+      angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,liftBadge.y-angleValue.offsetHeight-15))+'px';
+    }
     sceneSpeed.value=draft.v0;
     speedTag.querySelector('output').textContent='v₀ '+draft.v0+' m/s';
     if(speedDragging)return;
