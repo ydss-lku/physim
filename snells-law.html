@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-night-layout="refraction" data-page="snells-law" data-style="paper" lang="zh-HK"><meta name="yd-site-build" content="snell-controls-20261128"><head>
+<html data-night-layout="refraction" data-page="snells-law" data-style="paper" lang="zh-HK"><meta name="yd-site-build" content="snell-laser-20261128"><head>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="YD Physics">
 <meta property="og:title" content="Snell’s Law | Simulation">
@@ -157,9 +157,36 @@ function extendToEdge(point){
  const factor=Math.min(tx,ty);
  return {x:cx+dx*factor,y:cy+dy*factor};
 }
+// The aperture stays on the same incident direction; reserve room for the housing.
+function sourcePoint(){
+ const a=state.sourceAngle*D,ux=Math.cos(a),uy=Math.sin(a);
+ const edge=Math.min((geom.w/2-18)/Math.max(Math.abs(ux),1e-9),(geom.h/2-18)/Math.max(Math.abs(uy),1e-9));
+ const distance=Math.max(24,Math.min(geom.L,edge-54));
+ return {x:geom.cx+distance*ux,y:geom.cy+distance*uy};
+}
+function sourceBounds(source){
+ const a=Math.atan2(geom.cy-source.y,geom.cx-source.x),c=Math.cos(a),s=Math.sin(a);
+ const corners=[[-54,-18],[3,-18],[3,18],[-54,18]].map(([x,y])=>({x:source.x+x*c-y*s,y:source.y+x*s+y*c}));
+ return {l:Math.min(...corners.map(p=>p.x)),r:Math.max(...corners.map(p=>p.x)),t:Math.min(...corners.map(p=>p.y)),b:Math.max(...corners.map(p=>p.y))};
+}
+function drawLightSource(source){
+ ctx.save();ctx.translate(source.x,source.y);ctx.rotate(Math.atan2(geom.cy-source.y,geom.cx-source.x));
+ // Compact classroom laser: metal housing, grip grooves and a narrow emitting aperture.
+ const metal=ctx.createLinearGradient(0,-14,0,14);
+ metal.addColorStop(0,paper?'#cbd2cf':'#76898e');metal.addColorStop(.24,paper?'#f0f1e8':'#43565e');metal.addColorStop(.55,paper?'#aab7b3':'#25363e');metal.addColorStop(1,paper?'#718580':'#152229');
+ ctx.beginPath();ctx.moveTo(-50,-9);ctx.lineTo(-45,-14);ctx.lineTo(-16,-14);ctx.lineTo(-9,-8);ctx.lineTo(-9,8);ctx.lineTo(-16,14);ctx.lineTo(-45,14);ctx.lineTo(-50,9);ctx.closePath();
+ ctx.fillStyle=metal;ctx.fill();ctx.strokeStyle=paper?'#425c56':'#a6bdc2';ctx.lineWidth=1.2;ctx.stroke();
+ ctx.fillStyle=paper?'#566c65':'#0b171e';ctx.fillRect(-10,-8,9,16);
+ ctx.strokeStyle=paper?'#6c8279':'#8a9c9e';ctx.lineWidth=1;ctx.strokeRect(-10,-8,9,16);
+ for(let x=-40;x<=-28;x+=4){ctx.beginPath();ctx.moveTo(x,-8);ctx.lineTo(x,8);ctx.strokeStyle=paper?'#6b7c75':'#11252e';ctx.stroke();}
+ ctx.fillStyle=paper?'#be8b2c':'#e2c348';ctx.fillRect(-18,-9,4,18);
+ ctx.fillStyle=paper?'#334e45':'#111e25';ctx.fillRect(-2,-5,3,10);
+ ctx.fillStyle=paper?'#98472e':'#fff4b0';ctx.fillRect(-1,-2,2,4);
+ ctx.restore();
+}
 function sceneGeometry(){
  const {L}=geom,effective=state.rotation+(result.side===2?180:0),i=state.i*D,r=(result.r??0)*D,side=state.i<0?-1:1;
- return {effective,source:{x:geom.cx+L*Math.cos(state.sourceAngle*D),y:geom.cy+L*Math.sin(state.sourceAngle*D)},reflected:extendToEdge(world(L*Math.sin(i),-L*Math.cos(i),effective)),refracted:extendToEdge(world(side*L*Math.sin(r),L*Math.cos(r),effective)),normal:world(0,-L,effective),handle:world(Math.min(geom.w,geom.h)*.42,0)};
+ return {effective,source:sourcePoint(),reflected:extendToEdge(world(L*Math.sin(i),-L*Math.cos(i),effective)),refracted:extendToEdge(world(side*L*Math.sin(r),L*Math.cos(r),effective)),normal:world(0,-L,effective),handle:world(Math.min(geom.w,geom.h)*.42,0)};
 }
 const diagramFont=()=>paper?'system-ui':'Oxanium, "Microsoft JhengHei", sans-serif';
 let paper=document.documentElement.dataset.style==='paper';
@@ -219,8 +246,10 @@ function positionMedia(){
    const corners=[[x,y],[x+bw,y],[x,y+bh],[x+bw,y+bh]];
    const margin=Math.min(...corners.map(([px,py])=>sgn*(-Math.sin(phi)*(px-cx)+Math.cos(phi)*(py-cy))));
    const g=sceneGeometry();
-   const hitsHandle=[g.source,g.handle,{x:cx,y:cy}].some(p=>p.x+23>x&&p.x-23<x+bw&&p.y+23>y&&p.y-23<y+bh);
-   if(margin<15||hitsHandle)continue;
+   const sourceBox=sourceBounds(g.source);
+   const hitsSource=x<sourceBox.r+8&&x+bw>sourceBox.l-8&&y<sourceBox.b+8&&y+bh>sourceBox.t-8;
+   const hitsHandle=[g.handle,{x:cx,y:cy}].some(p=>p.x+23>x&&p.x-23<x+bw&&p.y+23>y&&p.y-23<y+bh);
+   if(margin<15||hitsHandle||hitsSource)continue;
    const score=margin+(x===12?18:0);if(!best||score>best.score)best={x,y,score};
   }
   if(!best){const p=world(0,sgn*Math.min(w,h)*.32);best={x:clamp(p.x-bw/2,8,w-bw-8),y:clamp(p.y-bh/2,8,h-bh-8)};}
@@ -243,7 +272,7 @@ function draw(){
  const normal=world(0,-Math.min(w,h)*.43,g.effective);label('Normal 法線',normal.x,normal.y,'#b4cadd',12);
  if($('protractor').checked){const radius=Math.min(w,h)*.29;for(let deg=0;deg<360;deg+=5){const ang=(deg-90+state.rotation)*D,major=deg%30===0;line(cx+(radius-(major?10:5))*Math.cos(ang),cy+(radius-(major?10:5))*Math.sin(ang),cx+radius*Math.cos(ang),cy+radius*Math.sin(ang),'#638399',1);if(major){const num=deg<=90?deg:deg<=180?180-deg:deg<=270?deg-180:360-deg;ctx.font='10px '+diagramFont();ctx.fillStyle=paper?'#485c50':'#a2bdcf';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(num+'°',cx+(radius+14)*Math.cos(ang),cy+(radius+14)*Math.sin(ang));}}}
  ray(g.source.x,g.source.y,cx,cy);
- ctx.beginPath();ctx.arc(g.source.x,g.source.y,8,0,Math.PI*2);ctx.fillStyle='#0c263a';ctx.fill();ctx.strokeStyle='#a6f4ff';ctx.lineWidth=3;ctx.stroke();
+ drawLightSource(g.source);
  const ir=Math.min(50,L*.34),rr=Math.min(74,L*.53),normalAngle=g.effective-90;
  if(Math.abs(state.i)>1e-8)arc(normalAngle,normalAngle-state.i,ir,'i = '+Math.abs(state.i).toFixed(1)+'°');else{const p=world(-48,-48,g.effective);label('i = 0°',p.x,p.y);}
  if(!result.grazing){
@@ -257,7 +286,7 @@ function draw(){
  ctx.beginPath();ctx.arc(g.handle.x,g.handle.y,10,0,Math.PI*2);ctx.fillStyle='#132b3d';ctx.fill();ctx.strokeStyle='#f1c878';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#ffe1a5';ctx.font='16px '+diagramFont();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('↻',g.handle.x,g.handle.y);
  if($('ray-labels').checked){
  const blocked=[...document.querySelectorAll('.medium')].map(el=>({l:el.offsetLeft,r:el.offsetLeft+el.offsetWidth,t:el.offsetTop,b:el.offsetTop+el.offsetHeight}));
- blocked.push({l:cx-45,r:cx+45,t:cy-45,b:cy+45});
+ blocked.push({l:cx-45,r:cx+45,t:cy-45,b:cy+45},sourceBounds(g.source));
  drawRayName(g.source,'Incident ray','入射線','#87391f',blocked);
  if(!result.grazing&&(result.tir||($('reflection').checked&&Math.abs(result.nIn-result.nOut)>1e-10))){
   drawRayName(g.reflected,result.tir?'Reflected ray (TIR)':'Reflected ray',result.tir?'反射線（全內反射）':'反射線','#6c407a',blocked);
@@ -266,7 +295,7 @@ function draw(){
  }
  canvas.dataset.reflectance=result.grazing?'':String(result.R);
  canvas.dataset.transmittance=result.grazing?'':String(result.T);
- canvas.setAttribute('aria-label',`Ray diagram. Interface rotation ${state.rotation.toFixed(1)} degrees clockwise. Incident from medium ${result.side}; i ${Math.abs(state.i).toFixed(1)} degrees. ${result.grazing?'Ray along interface.':state.mode==='find-r'&&!state.revealed?'Predict r.':result.tir?'Total internal reflection.':'r '+result.r.toFixed(1)+' degrees.'} Drag blue handle to move the ray, gold handle to rotate interface. Arrow keys move the ray; Alt plus arrow rotates interface.`);
+ canvas.setAttribute('aria-label',`Ray diagram. Interface rotation ${state.rotation.toFixed(1)} degrees clockwise. Incident from medium ${result.side}; i ${Math.abs(state.i).toFixed(1)} degrees. ${result.grazing?'Ray along interface.':state.mode==='find-r'&&!state.revealed?'Predict r.':result.tir?'Total internal reflection.':'r '+result.r.toFixed(1)+' degrees.'} Drag the laser source to move the ray, gold handle to rotate interface. Arrow keys move the ray; Alt plus arrow rotates interface.`);
 }
 
 const mediumChoices={air:{n:1,name:'Air · 空氣'},water:{n:1.33,name:'Water · 水'},glass:{n:1.5,name:'Glass · 玻璃'},diamond:{n:2.42,name:'Diamond · 鑽石'}};
