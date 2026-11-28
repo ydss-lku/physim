@@ -164,7 +164,13 @@ function createProjectileExhibit(canvas) {
     }
     const aim=bounds.getCenter(v);
     const spread=.57+.29*ease(phase/.35),tan=Math.tan(flightCamera.fov*Math.PI/360);
-    let distance=0;
+    // The reference frames a 1.58 m wheel at roughly 8.5% of viewport height.
+    // Reserve room ahead of and above the carriage while the shot is still wide.
+    const minimumHeight=Math.max(18.6,28/flightCamera.aspect)*size;
+    const lead=1-ease(phase/.65);
+    aim.x+=minimumHeight*flightCamera.aspect*.24*lead;
+    aim.y+=minimumHeight*.23*lead;
+    let distance=minimumHeight/(2*tan);
     for(const q of points)distance=Math.max(distance,q.z+Math.max(
       (Math.abs(q.x-aim.x)+.24*size)/(tan*spread*w/h),
       (Math.abs(q.y-aim.y)+.24*size)/(tan*spread)));
