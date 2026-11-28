@@ -85,25 +85,28 @@ function createProjectileExhibit(canvas) {
   });
   const pendingPlatform=createLaunchLift(T,true);
   const pendingSetup=new T.Group();pendingSetup.add(pendingRig,pendingPlatform);scene.add(pendingSetup);
-  const initialVector=new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(1.86,0,0),1,0x20e3cc);
+  const initialVector=new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(1.86,0,0),1,adjustmentPurple);
+  initialVector.cone.material.toneMapped=initialVector.line.material.toneMapped=false;
   initialVector.line.material.transparent=initialVector.cone.material.transparent=true;
   initialVector.line.material.opacity=initialVector.cone.material.opacity=.85;
   pendingBarrel.add(initialVector);
-  const arcMaterial=new T.MeshBasicMaterial({color:0xffb83c,transparent:true,depthWrite:false});
+  const arcMaterial=new T.MeshBasicMaterial({color:adjustmentPurple,toneMapped:false,transparent:true,depthWrite:false});
   const angleGuide=new T.Group();
   angleGuide.position.z=.38;
-  const arcTube=new T.Mesh(new T.TorusGeometry(1.5,.054,8,32,1.1),arcMaterial);
-  arcTube.rotation.z=-.55;
-  angleGuide.add(arcTube);
+  const arcRadius=2.27,innerAngle=.25,outerAngle=.76;
+  const arcEdges=[];
   for(const sign of [-1,1]){
-    const a=sign*.55;
-    const head=new T.Mesh(new T.ConeGeometry(.105,.25,12),arcMaterial);
-    head.position.set(1.5*Math.cos(a),1.5*Math.sin(a),0);
+    const tubeGeometry=r=>new T.TorusGeometry(arcRadius,r,8,20,outerAngle-innerAngle);
+    const tube=new T.Mesh(tubeGeometry(.054),arcMaterial);
+    tube.rotation.z=sign<0?-outerAngle:innerAngle;
+    angleGuide.add(tube);
+    arcEdges.push(outlineGuide(tube,tubeGeometry(.078)));
+    const a=sign*outerAngle;
+    const head=new T.Mesh(new T.ConeGeometry(.14,.34,12),arcMaterial);
+    head.position.set(arcRadius*Math.cos(a),arcRadius*Math.sin(a),0);
     head.rotation.z=a+(sign<0?Math.PI:0);
-    angleGuide.add(head);
+    angleGuide.add(head);arcEdges.push(outlineGuide(head));
   }
-  const arcEdges=angleGuide.children.map(mesh=>outlineGuide(mesh,mesh===arcTube?
-    new T.TorusGeometry(1.5,.082,8,32,1.1):null));
   const speedShaft=new T.Mesh(new T.CylinderGeometry(.085,.085,1,16),initialVector.cone.material);
   initialVector.add(speedShaft);
   const speedEdges=[outlineGuide(speedShaft),outlineGuide(initialVector.cone)];
@@ -563,14 +566,9 @@ function createProjectileExhibit(canvas) {
     y0:'#'+liftCueMaterials[0].color.getHexString(),
     v0:'#'+initialVector.cone.material.color.getHexString()
   };
-  const speedFinishes={
-    teal:[0x42ebca,0x318f91],ice:[0x9de6ff,0x5289b2],copper:[0xffb878,0xb76949]
-  };
-  render.setSpeedFinish=function(name){
-    const [core,rim]=speedFinishes[name]||speedFinishes.teal;
-    initialVector.cone.material.color.setHex(core);
-    for(const edge of speedEdges)edge.color.setHex(rim);
-    render.cueColors.v0='#'+initialVector.cone.material.color.getHexString();
+  render.angleGuidePoints=function(onArc){
+    return [-1,1].flatMap(sign=>Array.from({length:11},(_,i)=>
+      onArc(sign*(innerAngle+(outerAngle-innerAngle)*i/10),arcRadius)));
   };
   // Erase only the arrow's projected faces from the transparent trajectory layer.
   render.clearSpeedSilhouette=function(ctx,w,h){

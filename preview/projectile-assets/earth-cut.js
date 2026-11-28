@@ -1,7 +1,8 @@
 // Local terrain coordinates are independent of the camera zoom.
+const adjustmentPurple=0xdd79ff;
 function outlineGuide(mesh,geometry){
   const outline=new THREE.Mesh(geometry||mesh.geometry,new THREE.MeshBasicMaterial({
-    color:0x10212c,side:THREE.BackSide,transparent:true,depthWrite:false
+    color:0x543468,side:THREE.BackSide,transparent:true,depthWrite:false
   }));
   if(!geometry)outline.scale.set(1.4,1.09,1.4);
   mesh.add(outline);
@@ -27,8 +28,8 @@ function createLaunchLift(T,preview=false){
       posts.push(part(new T.CylinderGeometry(r,r,1,16),stage===1?chrome:steel,x,0,z));
     }
   }
-  const guideMaterial=new T.MeshStandardMaterial({color:0xffffff,emissive:0x999999,
-    transparent:true,opacity:.78,depthWrite:false,roughness:.34});
+  const guideMaterial=new T.MeshBasicMaterial({color:adjustmentPurple,toneMapped:false,
+    transparent:true,opacity:.78,depthWrite:false});
   const guide=new T.Group();
   guide.name='Lift direction';
   guide.position.set(-2.35,.76,.64);

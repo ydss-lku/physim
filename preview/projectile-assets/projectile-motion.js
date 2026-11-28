@@ -230,22 +230,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   let renderExhibit;
   try { renderExhibit=createProjectileExhibit(document.getElementById('exhibitCanvas')); }
   catch(error) { console.warn('Using the 2D flight view',error); }
-  const speedFinish=document.getElementById('speedFinish');
-  if(speedFinish && renderExhibit){
-    try{speedFinish.value=localStorage.getItem('projectile-speed-finish')||'teal';}catch{}
-    function applySpeedFinish(){
-      renderExhibit.setSpeedFinish(speedFinish.value);
-      const colors=renderExhibit.cueColors;
-      sceneTheta.parentElement.style.color=colors.theta;
-      sceneV0.parentElement.style.color=colors.v0;
-      sceneY0.parentElement.style.color=colors.y0;
-    }
-    applySpeedFinish();
-    speedFinish.addEventListener('change',()=>{
-      applySpeedFinish();
-      try{localStorage.setItem('projectile-speed-finish',speedFinish.value);}catch{}
-      drawTrajectory();
-    });
+  if(renderExhibit){
+    const colors=renderExhibit.cueColors;
+    sceneTheta.parentElement.style.color=colors.theta;
+    sceneV0.parentElement.style.color=colors.v0;
+    sceneY0.parentElement.style.color=colors.y0;
   }
   const view={launchFrame:null,active:false,yaw:0,pitch:0,zoom:1};
   const fingers=new Map();
@@ -387,10 +376,11 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const {muzzle,speedTip:end,liftBadge,onArc}=renderExhibit.controlAnchor(station);
     const rect=(station?stationSurface:trajCanvas).getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
     if(Math.hypot(x-liftBadge.x,y-liftBadge.y)<16)return 'y0';
-    if((station?Array.from({length:17},(_,i)=>onArc((i/16-.5)*1.1,1.5)):arcPoints).some(p=>Math.hypot(x-p.x,y-p.y)<9))return 'theta';
+
     const dx=end.x-muzzle.x,dy=end.y-muzzle.y;
     const t=Math.max(.15,Math.min(1,((x-muzzle.x)*dx+(y-muzzle.y)*dy)/(dx*dx+dy*dy||1)));
     if(Math.hypot(x-muzzle.x-t*dx,y-muzzle.y-t*dy)<10)return 'v0';
+    if((station?renderExhibit.angleGuidePoints(onArc):arcPoints).some(p=>Math.hypot(x-p.x,y-p.y)<9))return 'theta';
     return renderExhibit.pickControl(event.clientX,event.clientY,station);
   }
   function placeRigHints(w,h){
@@ -398,8 +388,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(state.playing)hoverCue=null;
     if(!renderExhibit || state.playing)return;
     const {muzzle,pivot,onArc,liftBadge,speedTip}=renderExhibit.controlAnchor();
-    arcPoints=Array.from({length:25},(_,i)=>onArc((i/24-.5)*1.1,1.5));
-    const tick=onArc(0,1.64),focused=modelDrag?.key ?? hoverCue;
+    arcPoints=renderExhibit.angleGuidePoints(onArc);
+    const tick=arcPoints[arcPoints.length-1],focused=modelDrag?.key ?? hoverCue;
     if(focused)angleValue.style.color=renderExhibit.cueColors[focused];
     if(focused==='theta'){
       angleValue.hidden=false;angleValue.textContent=draft.theta+'°';
