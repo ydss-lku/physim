@@ -95,7 +95,7 @@ function createEarthCut(T,scene){
     return {value:map};
   }
   const meadow=surface('meadow'),bank=surface('bank');
-  const mat=new T.MeshStandardMaterial({side:T.DoubleSide,roughness:1,envMapIntensity:.16});
+  const mat=new T.MeshStandardMaterial({side:T.DoubleSide,roughness:.74,metalness:.18,envMapIntensity:.45});
   mat.onBeforeCompile=s=>{
     s.uniforms.meadow=meadow;s.uniforms.bank=bank;s.uniforms.marks=marks;s.uniforms.darkness=darkness;s.uniforms.ballShadow=shadow;
     s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nattribute float kind;varying float soilKind;varying vec3 soilPos;')
@@ -122,15 +122,28 @@ function createEarthCut(T,scene){
       float worn=1.-smoothstep(3.,10.,length(uv*vec2(.85,.7))+3.*(meadowVariation-.5));
       float soil=smoothstep(.18,.9,soilKind)*max(worn,smoothstep(1.,1.75,soilKind));
       vec2 deck=vec2(p.z,-p.x);
-      vec2 plateUV=vec2(deck.x/5.4+mod(floor(deck.y/2.7),2.)*.5,deck.y/2.7);
+      vec2 plateUV=vec2(deck.x/7.2+mod(floor(deck.y/3.6),2.)*.5,deck.y/3.6);
       vec2 border=.5-abs(fract(plateUV)-.5);
-      float gap=min(border.x*5.4,border.y*2.7);
+      float gap=min(border.x*7.2,border.y*3.6);
       float seamAA=max(.012,fwidth(gap));
       float plate=smoothstep(.015,.015+seamAA,gap);
       float tile=earthHash(vec3(floor(plateUV),.5));
-      vec3 steel=mix(vec3(.055,.087,.106),vec3(.145,.195,.205),tile*.55+crumb*.45);
-      vec3 earth=mix(vec3(.019,.027,.034),steel,plate);
-      earth=mix(earth,mix(vec3(.058,.067,.077),vec3(.18,.20,.21),clay.r),soil*.77);
+      float closeDetail=1.-smoothstep(.035,.22,length(fwidth(p.xz)));
+      float brush=soilNoise(vec3(p.x*1.8,p.z*37.,tile))*closeDetail;
+      float salt=soilNoise(vec3(uv*.42,3.))+soilNoise(vec3(uv*2.3,7.))*.22;
+      float mill=soilNoise(vec3(uv*.085,9.));
+      vec3 steel=mix(vec3(.048,.095,.112),vec3(.125,.186,.19),.40*mill+.30*tile+.30*broad);
+      steel*=.92+.13*brush+.08*crumb;
+      steel=mix(steel,vec3(.20,.235,.216),smoothstep(.82,1.02,salt)*.20);
+      float lip=1.-smoothstep(.025,.085+seamAA,gap);
+      steel=mix(steel,vec3(.21,.245,.23),lip*(.18+.5*crumb)*closeDetail);
+      float seamRead=1.-smoothstep(.07,.33,length(fwidth(p.xz)));
+      vec3 earth=mix(steel,mix(steel*.56,steel,plate),seamRead);
+      vec2 corner=border*vec2(7.2,3.6)-vec2(.19,.16);
+      float rivet=length(corner);
+      earth*=1.-.48*(1.-smoothstep(.038,.068+seamAA,rivet))*closeDetail;
+      earth+=vec3(.12,.14,.14)*(1.-smoothstep(.012,.035+seamAA,length(corner-vec2(.009))))*closeDetail;
+      earth=mix(earth,mix(vec3(.055,.074,.078),vec3(.18,.175,.14),clay.r),soil*.75);
       float lane=abs(abs(p.z)-1.85);
       float dash=1.-smoothstep(.55,.61,fract((p.x+p.z*.55)*.68));
       float paint=(1.-smoothstep(.06,.06+fwidth(lane),lane))*dash*(1.-smoothstep(2.,5.,abs(p.x)));
@@ -153,16 +166,18 @@ function createEarthCut(T,scene){
       float rimBed=1.-smoothstep(.12,.12+edgeAA,abs(side));
       float pigment=.80+.17*crumb;
       earth=mix(earth,vec3(.026,.045,.055),rimBed*.80);
-      earth=mix(earth,vec3(.89,.39,.055),rim*pigment);
+      earth=mix(earth,vec3(.65,.32,.095),rim*pigment*.81);
       float age=marks.y-band/max(.00001,marks.z);
       float reveal=smoothstep(0.,${revealDuration},age)*step(band,marks.w)*step(10.,band)*step(.01,radial.x);
-      earth*=mix(1.,.64,darkness);
+      earth*=mix(1.,.86,darkness);
       float inkMask=sector*reveal*(1.-smoothstep(.05,.20,soilKind));
       float groove=1.-smoothstep(.11+.04*major,.11+.04*major+aa,abs(radius-band));
       earth=mix(earth,vec3(.018,.048,.059),groove*inkMask*.82);
       vec3 enamel=mix(vec3(.11,.50,.52),vec3(.20,.73,.69),major);
       earth=mix(earth,enamel,stroke*inkMask*pigment);
       diffuseColor.rgb*=earth;`)
+      .replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+        roughnessFactor=clamp(.57+.23*mill+.12*salt-.17*lip*closeDetail,.38,.95);`)
       .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
       vec3 ex=dFdx(vViewPosition),ey=dFdy(vViewPosition);
       vec3 east=cross(ey,normal),north=cross(normal,ex);
@@ -259,8 +274,19 @@ function createEarthCut(T,scene){
   for(let i=zs.length-2;i>=0;i--)rim.push((rows.length-1)*zs.length+i);
   for(let row=rows.length-2;row>0;row--)rim.push(row*zs.length);
   const cliffGeometry=new T.BufferGeometry(),cliffPoints=[],cliffColors=[],cliffUV=[];
-  const levels=[[0,0,0x70838a],[.065,.004,0x35444f],[.12,.004,0x2ca7a0],[.16,.018,0x202e39],[.28,.018,0x74838a],[.33,.056,0x23303a],[.67,.17,0x52606c],[.82,.23,0x263038],[1,.47,0x393e49]];
+  const levels=[[0,0,0x70838a],[.065,.004,0x35444f],[.12,.004,0x586f70],[.16,.018,0x202e39],[.28,.018,0x475e65],[.33,.056,0x23303a],[.67,.17,0x52606c],[.82,.23,0x263038],[1,.47,0x393e49]];
   const rock=new T.MeshStandardMaterial({vertexColors:true,metalness:.54,roughness:.52,flatShading:true,side:T.DoubleSide});
+  rock.onBeforeCompile=shader=>{
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 pierPoint;').replace('#include <begin_vertex>','#include <begin_vertex>\npierPoint=position;');
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 pierPoint;').replace('#include <color_fragment>',`#include <color_fragment>
+      float run=pierPoint.x+.71*pierPoint.z;
+      float rib=abs(fract(run*.34)-.5);
+      float groove=1.-smoothstep(.025,.045+fwidth(run)*.34,rib);
+      float runoff=.5+.5*sin(run*2.3+sin(run*1.55));
+      float tides=1.-smoothstep(-5.9,-3.8,pierPoint.y+.16*runoff);
+      diffuseColor.rgb*=.89+.13*runoff-.28*groove;
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.036,.071,.064),tides*.60);`);
+  };
   const cliff=new T.Mesh(cliffGeometry,rock);root.add(cliff);cliff.receiveShadow=true;
   function buildCliff(){
     cliffPoints.length=cliffColors.length=cliffUV.length=0;
@@ -273,7 +299,7 @@ function createEarthCut(T,scene){
       const xx=x+(86-x)*shift,zz=z*(1-shift);
       const yy=pos.getY(j)-drop*depth;
       cliffPoints.push(xx,yy,zz);
-      const color=new T.Color(tint).multiplyScalar(1.8+.22*seam);
+      const color=new T.Color(tint).multiplyScalar(1.05+.12*seam);
       cliffColors.push(color.r,color.g,color.b);
       cliffUV.push((xx*.71+zz*.53)*.37,yy*.37);
     }

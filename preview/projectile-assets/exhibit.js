@@ -6,7 +6,7 @@ function createProjectileExhibit(canvas) {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.toneMapping = T.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.22;
+  renderer.toneMappingExposure = 1.06;
   const scene = new T.Scene();
   const rig = new T.Group(), barrel = new T.Group();
   scene.add(rig);
@@ -76,9 +76,9 @@ function createProjectileExhibit(canvas) {
   pendingRig.traverse(mesh=>{
     if(!mesh.isMesh)return;
     if(!previewMaterials.has(mesh.material)){
-      const tint=mesh.material.color.clone().lerp(new T.Color(0x59e9d9),.65);
+      const tint=mesh.material.color.clone().lerp(new T.Color(0x63bbad),.29);
       previewMaterials.set(mesh.material,new T.MeshStandardMaterial({color:tint,roughness:.55,
-        emissive:tint,emissiveIntensity:.21,transparent:true,opacity:.48,depthWrite:false,
+        emissive:tint,emissiveIntensity:.08,transparent:true,opacity:.72,depthWrite:true,
         polygonOffset:true,polygonOffsetFactor:-2}));
     }
     mesh.material=previewMaterials.get(mesh.material);mesh.castShadow=false;mesh.receiveShadow=false;
@@ -113,12 +113,13 @@ function createProjectileExhibit(canvas) {
     belt.rotation.x=Math.PI/2;
   }
   const insert=part(ball,new T.TorusGeometry(1,.036,8,64),enamel);insert.rotation.x=Math.PI/2;
-  const key=new T.DirectionalLight(0xffdaaa,2.55);
+  const key=new T.DirectionalLight(0xffd3a3,2.45);
   key.position.set(-260,420,340); key.castShadow=true;
   Object.assign(key.shadow.camera,{left:-450,right:450,top:350,bottom:-350,near:1,far:1200});
   key.shadow.mapSize.set(2048,2048);key.shadow.normalBias=.4;scene.add(key);
-  scene.add(new T.HemisphereLight(0xe4f5ff,0x795940,1.35));
-  const rim=new T.DirectionalLight(0xa5d6ff,1.8);rim.position.set(140,180,-250);scene.add(rim);
+  scene.add(new T.HemisphereLight(0xc4deef,0x645444,.84));
+  const rim=new T.DirectionalLight(0xafcfe4,.94);rim.position.set(140,180,-250);scene.add(rim);
+  const sunOffset=new T.Vector3(-38,34,-49);scene.add(key.target);
   const placeHarbour=createHarbour(T,scene);
   const updateEarth=createEarthCut(T,scene);
   let previousWidth=0, previousHeight=0, previousRatio=0;
@@ -327,6 +328,12 @@ function createProjectileExhibit(canvas) {
     rig.position.set(mx-1.86*Math.cos(angle)*size,my-1.86*Math.sin(angle)*size,0);
     ball.scale.setScalar(Math.max(4,.235*size));
     ball.position.set(x-w/2,h/2-y,0);
+    // Keep the sun shadow texels in metres as the flight framing changes scale.
+    key.target.position.copy(rig.position);
+    key.position.copy(rig.position).addScaledVector(sunOffset,size);
+    const shadowCamera=key.shadow.camera;
+    Object.assign(shadowCamera,{left:-22*size,right:22*size,top:20*size,bottom:-20*size,near:size,far:130*size});
+    shadowCamera.updateProjectionMatrix();key.shadow.normalBias=.012*size;
     placeHarbour(rig.position.x,my-flight.y0*size-ball.scale.x,size,document.documentElement.dataset.theme==="tech");
     const landed=!ready && flight.T>0 && flight.time>=flight.T;
     const landedAge=landed?(impactAge<0?Infinity:impactAge):0;
@@ -336,7 +343,7 @@ function createProjectileExhibit(canvas) {
     const opening=view.launchFrame;
     const yaw=(opening ? opening.yaw*(1-settle) : -.71+.36*sweep+.35*settle)+view.yaw;
     const sidePitch=25*Math.PI/180;
-    const pitch=(opening ? opening.pitch+(sidePitch-opening.pitch)*settle : .48-.18*sweep+(sidePitch-.30)*settle)-view.pitch;
+    const pitch=(opening ? opening.pitch+(sidePitch-opening.pitch)*settle : .245+.005*sweep+(sidePitch-.25)*settle)-view.pitch;
     flightCamera.rotation.set(-pitch,yaw,0,'YXZ');
     flightCamera.aspect=w/h;
     const inverse=flightCamera.quaternion.clone().invert();
@@ -377,13 +384,13 @@ function createProjectileExhibit(canvas) {
       include(mx+flight.vx*t*size,my+(flight.vy0*t-flight.g*t*t/2)*size,0);
     }
     const aim=bounds.getCenter(v);
-    const spread=.57+.29*ease(phase/.35),tan=Math.tan(flightCamera.fov*Math.PI/360);
+    const spread=.71+.15*ease(phase/.35),tan=Math.tan(flightCamera.fov*Math.PI/360);
     // The reference frames a 1.58 m wheel at roughly 8.5% of viewport height.
     // Reserve room ahead of and above the carriage while the shot is still wide.
     const minimumHeight=Math.max(18.6,28/flightCamera.aspect)*size;
     const lead=1-ease(phase/.65);
-    aim.x+=minimumHeight*flightCamera.aspect*.24*lead;
-    aim.y+=minimumHeight*.23*lead;
+    aim.x+=minimumHeight*flightCamera.aspect*.21*lead;
+    aim.y+=minimumHeight*.17*lead;
     let distance=minimumHeight/(2*tan);
     for(const q of points)distance=Math.max(distance,q.z+Math.max(
       (Math.abs(q.x-aim.x)+.24*size)/(tan*spread*w/h),
