@@ -830,14 +830,14 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const mx=x(minimumTime),my=y(minimumTime);
       guides.querySelector('path').setAttribute('d',`M49 ${my}H${mx}V100`);
       const speedLabel=guides.querySelector('.min-speed'),timeLabel=guides.querySelector('.min-time');
+      const marker=guides.querySelector('.min-dot');
+      marker.setAttribute('cx',mx);
+      marker.setAttribute('cy',my);
       speedLabel.setAttribute('y',my+3);
       speedLabel.textContent=speedAt(minimumTime).toFixed(2);
       timeLabel.setAttribute('x',mx);
       timeLabel.setAttribute('text-anchor',mx<70?'start':mx>300?'end':'middle');
       timeLabel.textContent=minimumTime.toFixed(2)+' s';
-    }
-    for(const [selector,tickY] of [['.upper',16],['.mid',58],['.zero-speed',100]]){
-      speedChart.querySelector(selector).style.visibility=reveal&&Math.abs(y(minimumTime)-tickY)<12?'hidden':'visible';
     }
     const times=[0];
     if(t>0){
@@ -846,12 +846,22 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       if(apex>0 && apex<t){times.push(apex);times.sort((a,b)=>a-b);}
     }
     speedChart.querySelector('.trace').setAttribute('d',times.map((time,i)=>(i?'L':'M')+x(time).toFixed(2)+' '+y(time).toFixed(2)).join(' '));
-    const dot=speedChart.querySelector('circle');
+    const dot=speedChart.querySelector('svg > circle');
     dot.setAttribute('cx',x(t));dot.setAttribute('cy',y(t));
     speedChart.querySelector('.upper').textContent=ceiling;
     speedChart.querySelector('.mid').textContent=ceiling/2;
     speedChart.querySelector('.end-time').textContent=p.T.toFixed(2);
     speedChart.querySelector('output').textContent=speedAt(t).toFixed(2)+' m/s';
+    for(const tick of speedChart.querySelectorAll('.upper,.mid,.zero-speed,.start-time,.end-time')){
+      let crowded=false;
+      if(reveal){
+        const timeTick=tick.matches('.start-time,.end-time');
+        const a=tick.getBBox(),b=guides.querySelector(timeTick?'.min-time':'.min-speed').getBBox();
+        crowded=timeTick ? a.x<b.x+b.width+3 && b.x<a.x+a.width+3
+                         : a.y<b.y+b.height+2 && b.y<a.y+a.height+2;
+      }
+      tick.style.visibility=crowded?'hidden':'visible';
+    }
   }
   function updateFlightPanels(p,t,vy){
   if(!flightPhase) return;

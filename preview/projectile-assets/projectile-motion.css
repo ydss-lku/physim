@@ -245,3 +245,7 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 @media(max-width:560px) and (orientation:portrait){
   .viewport #ballInset,.viewport .camera-choice{top:44px}
 }
+
+.speed-chart .minimum[display="inline"]{animation:minimum-reveal .32s ease-out both}
+@keyframes minimum-reveal{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.speed-chart .minimum[display="inline"]{animation:none}}
