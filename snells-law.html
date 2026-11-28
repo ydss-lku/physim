@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-night-layout="refraction" data-page="snells-law" data-style="paper" lang="zh-HK"><meta name="yd-site-build" content="snell-handle-glow-20261117"><head>
+<html data-night-layout="refraction" data-page="snells-law" data-style="paper" lang="zh-HK"><meta name="yd-site-build" content="snell-controls-20261128"><head>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="YD Physics">
 <meta property="og:title" content="Snell’s Law | Simulation">
@@ -15,7 +15,7 @@
 <meta name="twitter:image" content="https://ydss-lku.github.io/physim/assets/share/snells-law.jpg">
 <meta charset="utf-8"><link rel="stylesheet" href="assets/author-credit.css"><script src="assets/optical-beam.js"></script><script src="assets/language-copy.js"></script><script src="assets/language.js?v=afd2e35"></script><script defer src="assets/control-icons.js"></script><link rel="stylesheet" href="cyberpunk-assets/augmented-ui.min.css"><link rel="stylesheet" href="assets/night-collection.css"><script src="assets/night-theme.js"></script><script defer src="assets/night-collection.js"></script><meta name="viewport" content="width=device-width,initial-scale=1"><title data-en="Snell’s law · YD Physics" data-zh="史涅耳定律 · YD Physics">Snell’s law · YD Physics</title>
 <style>
-:root{--ink:#17354f;--muted:#587084;--line:#dbe5ec;--blue:#215b98;--teal:#007d78;--red:#c93d50;--paper:#f2f5f7}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button,select{cursor:pointer}button{color:var(--ink);background:white;border:1px solid var(--line);border-radius:9px;min-height:40px;padding:8px 13px;font-weight:600}button:hover{background:#edf3f8;border-color:#91abc1}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #e7a52e;outline-offset:3px}button:disabled{opacity:.45;cursor:not-allowed}header{max-width:1500px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 30px 16px}.eyebrow{color:var(--teal);font-size:11px;font-weight:800;letter-spacing:2px}h1{font-size:29px;line-height:1.2;margin:6px 0}h1 span{font-size:18px;font-weight:500;color:var(--muted)}.brand{display:flex;align-items:center;gap:15px}.brand img{width:92px;height:64px;object-fit:contain;mix-blend-mode:multiply}.credit{font-size:11px;color:var(--muted);line-height:1.7}.credit strong{color:var(--ink)}main{max-width:1500px;margin:auto;padding:0 30px 24px}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 348px;gap:18px;align-items:start}.card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 3px 14px #17354f05}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}.toolbar strong{font-size:14px}.tools{display:flex;gap:14px;flex-wrap:wrap;font-size:12px}.tools label{display:flex;align-items:center;gap:5px;cursor:pointer}input[type=checkbox]{accent-color:var(--teal);width:16px;height:16px}.plot{position:relative;height:clamp(420px,65vh,660px);min-width:0}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.medium{position:absolute;left:18px;pointer-events:none;font-size:12px;color:var(--muted);line-height:1.7}.medium strong{display:block;font-size:16px;color:var(--ink)}.medium.top{top:17px}.medium.bottom{bottom:17px}.legend{display:flex;gap:17px;flex-wrap:wrap;padding:10px 18px;font-size:12px;border-top:1px solid var(--line);color:var(--muted)}.legend span:before{content:"";display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;background:var(--red)}.legend .refract:before{background:var(--teal)}.legend .reflect:before{background:#946527}.note{padding:13px 18px;background:#f8fafc;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.panel{padding:17px}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#edf2f6;padding:4px;border-radius:11px;margin-bottom:17px}.tabs button{border:0;background:transparent;font-size:12px;padding:8px 3px;line-height:1.5}.tabs button[aria-pressed=true]{background:var(--ink);color:white;box-shadow:0 2px 5px #17354f22}.tabs small{display:block;font-weight:400}.section-title{font-size:11px;letter-spacing:1.2px;color:var(--muted);font-weight:750;margin:0 0 10px}.preset{width:100%;padding:9px;background:white;border:1px solid var(--line);border-radius:8px;font-size:13px;margin-bottom:13px}.control{margin:14px 0 18px}.control-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.control-head label{font-size:13px;font-weight:650}.control-head label small{display:block;color:var(--muted);font-size:11px;font-weight:400}.number{display:flex;align-items:center;gap:4px}.number input{width:79px;border:1px solid var(--line);border-radius:7px;padding:6px;color:var(--blue);background:#f7fafc;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.number span{font-size:12px}input[type=range]{width:100%;accent-color:var(--blue);height:24px;margin:8px 0 0;cursor:pointer}.scale{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}.actions{display:flex;gap:7px;margin:8px 0 14px}.actions button{flex:1;font-size:12px}.result{background:#eef6f5;border:1px solid #cce3df;border-radius:11px;padding:15px;margin-top:14px}.result-label{font-size:12px;color:var(--muted)}#answer{font-size:30px;line-height:1.25;font-weight:750;margin:5px 0;color:#006b65;overflow-wrap:anywhere}#answer.long{font-size:20px}.primary{background:var(--ink);color:white;border-color:var(--ink);width:100%;margin-top:10px}.primary:hover{background:#285470;color:white}#working{font-size:12px;line-height:1.7;margin-top:9px;overflow-wrap:anywhere;white-space:pre-line}.law{text-align:center;font-size:17px;font-family:Georgia,serif;padding:12px 0 1px}.law small{display:block;font:11px system-ui;color:var(--muted);margin-top:5px}#status{font-size:13px;font-weight:700;margin-bottom:4px}.status-box{padding:15px 18px;border-top:1px solid var(--line)}#explanation{font-size:13px;color:var(--muted);min-height:39px}details{margin-top:15px;background:white;border:1px solid var(--line);border-radius:12px;padding:13px 18px;font-size:13px}summary{cursor:pointer;font-weight:650}.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px;color:var(--muted)}.help-grid h3{font-size:13px;color:var(--ink);margin-bottom:5px}.help-grid p{margin:5px 0 12px}.footer{display:flex;justify-content:space-between;gap:12px;margin-top:13px;font-size:11px;color:var(--muted)}[hidden]{display:none!important}#error{color:#a43036;font-size:12px;margin-top:8px}#mode-hint{font-size:12px;color:var(--muted);margin:0 0 14px}.reset{padding:4px 10px;min-height:32px;font-size:11px}
+:root{--ink:#17354f;--muted:#587084;--line:#dbe5ec;--blue:#215b98;--teal:#007d78;--red:#c93d50;--paper:#f2f5f7}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button,select{cursor:pointer}button{color:var(--ink);background:white;border:1px solid var(--line);border-radius:9px;min-height:40px;padding:8px 13px;font-weight:600}button:hover{background:#edf3f8;border-color:#91abc1}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #e7a52e;outline-offset:3px}button:disabled{opacity:.45;cursor:not-allowed}header{max-width:1500px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 30px 16px}.eyebrow{color:var(--teal);font-size:11px;font-weight:800;letter-spacing:2px}h1{font-size:29px;line-height:1.2;margin:6px 0}h1 span{font-size:18px;font-weight:500;color:var(--muted)}.brand{display:flex;align-items:center;gap:15px}.brand img{width:92px;height:64px;object-fit:contain;mix-blend-mode:multiply}.credit{font-size:11px;color:var(--muted);line-height:1.7}.credit strong{color:var(--ink)}main{max-width:1500px;margin:auto;padding:0 30px 24px}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 348px;gap:18px;align-items:start}.card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 3px 14px #17354f05}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}.toolbar strong{font-size:14px}.tools{display:flex;gap:14px;flex-wrap:wrap;font-size:12px}.tools label{display:flex;align-items:center;gap:5px;cursor:pointer}input[type=checkbox]{accent-color:var(--teal);width:16px;height:16px}.plot{position:relative;height:clamp(420px,65vh,660px);min-width:0}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.medium{position:absolute;left:18px;pointer-events:none;font-size:12px;color:var(--muted);line-height:1.7}.medium strong{display:block;font-size:16px;color:var(--ink)}.medium.top{top:17px}.medium.bottom{bottom:17px}.legend{display:flex;gap:17px;flex-wrap:wrap;padding:10px 18px;font-size:12px;border-top:1px solid var(--line);color:var(--muted)}.legend span:before{content:"";display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;background:var(--red)}.legend .refract:before{background:var(--teal)}.legend .reflect:before{background:#946527}.note{padding:13px 18px;background:#f8fafc;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.panel{padding:17px}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#edf2f6;padding:4px;border-radius:11px;margin-bottom:17px}.tabs button{border:0;background:transparent;font-size:12px;padding:8px 3px;line-height:1.5}.tabs button[aria-pressed=true]{background:var(--ink);color:white;box-shadow:0 2px 5px #17354f22}.tabs small{display:block;font-weight:400}.section-title{font-size:11px;letter-spacing:1.2px;color:var(--muted);font-weight:750;margin:0 0 10px}.preset{width:100%;padding:9px;background:white;border:1px solid var(--line);border-radius:8px;font-size:13px;margin-bottom:13px}.control{margin:14px 0 18px}.control-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.control-head label{font-size:13px;font-weight:650}.control-head label small{display:block;color:var(--muted);font-size:11px;font-weight:400}.number{display:flex;align-items:center;gap:4px}.number input{width:79px;border:1px solid var(--line);border-radius:7px;padding:6px;color:var(--blue);background:#f7fafc;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}.number span{font-size:12px}input[type=range]{width:100%;accent-color:var(--blue);height:24px;margin:8px 0 0;cursor:pointer}.scale{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}.actions{display:flex;gap:7px;margin:8px 0 14px}.actions button{flex:1;font-size:12px}.result{background:#eef6f5;border:1px solid #cce3df;border-radius:11px;padding:15px;margin-top:14px}.result-label{font-size:12px;color:var(--muted)}#answer{font-size:30px;line-height:1.25;font-weight:750;margin:5px 0;color:#006b65;overflow-wrap:anywhere}#answer.long{font-size:20px}.primary{background:var(--ink);color:white;border-color:var(--ink);width:100%;margin-top:10px}.primary:hover{background:#285470;color:white}#working{font-size:12px;line-height:1.7;margin-top:9px;overflow-wrap:anywhere;white-space:pre-line}.law{text-align:center;font-size:17px;font-family:Georgia,serif;padding:12px 0 1px}.law small{display:block;font:11px inherit;color:var(--muted);margin-top:5px}#status{font-size:13px;font-weight:700;margin-bottom:4px}.status-box{padding:15px 18px;border-top:1px solid var(--line)}#explanation{font-size:13px;color:var(--muted);min-height:39px}details{margin-top:15px;background:white;border:1px solid var(--line);border-radius:12px;padding:13px 18px;font-size:13px}summary{cursor:pointer;font-weight:650}.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:25px;color:var(--muted)}.help-grid h3{font-size:13px;color:var(--ink);margin-bottom:5px}.help-grid p{margin:5px 0 12px}.footer{display:flex;justify-content:space-between;gap:12px;margin-top:13px;font-size:11px;color:var(--muted)}[hidden]{display:none!important}#error{color:#a43036;font-size:12px;margin-top:8px}#mode-hint{font-size:12px;color:var(--muted);margin:0 0 14px}.reset{padding:4px 10px;min-height:32px;font-size:11px}
 @media(min-width:1100px){.panel{position:sticky;top:14px}}@media(max-width:980px){header,main{padding-left:18px;padding-right:18px}.workspace{grid-template-columns:minmax(0,1fr) 310px}.brand .credit{display:none}.plot{height:520px}}@media(max-width:720px){header{padding:17px 14px;gap:8px}h1{font-size:23px}h1 span{display:block;font-size:15px;margin-top:5px}.eyebrow{font-size:9px}.brand img{width:77px;height:55px}main{padding:0 10px 18px}.workspace{grid-template-columns:1fr;gap:12px}.plot{height:440px}.toolbar{padding:12px}.tools{gap:9px;font-size:11px}.medium{left:12px;font-size:11px}.medium strong{font-size:14px}.legend{gap:11px;font-size:11px;padding:10px 12px}.help-grid{grid-template-columns:1fr;gap:0}.footer{flex-direction:column;gap:3px}.panel{padding:15px}.note{font-size:11px}.status-box{padding:12px}.credit-mobile{display:block}}@media(prefers-reduced-motion:no-preference){button{transition:background .12s,border-color .12s}}
 
 /* Dark optical bench: luminous rays, quiet controls, readable measurements. */
@@ -57,18 +57,18 @@ html body footer.physics-byline{display:block;position:static;grid-column:1/-1;b
 [data-style=paper] input{accent-color:#35644e}
 html[data-style=tech] body #logo{filter:grayscale(1) invert(1) brightness(1.25)!important;mix-blend-mode:screen!important}
 </style><link rel="stylesheet" href="assets/simulation-layout.css">
-</head><body>
-<header><div><div class="eyebrow">INTERACTIVE OPTICS</div><h1>Refraction Lab <span>折射實驗室</span></h1></div></header>
-<main><div class="workspace"><section class="card" aria-label="Ray diagram 光線圖"><div class="toolbar"><strong>Ray diagram <span style="font-weight:400;color:var(--muted)">光線圖</span></strong><div class="tools"><label><input type="checkbox" id="ray-labels" checked><span>Ray labels<small lang="zh-HK" style="display:block">光線名稱</small></span></label><label><input type="checkbox" id="protractor">Protractor 量角器</label><label><input type="checkbox" id="reflection">Reflection 反射線</label></div></div>
-<div class="plot"><canvas id="canvas" tabindex="0" role="img" aria-label="Refraction ray diagram. Drag the incident ray or use left and right arrow keys to change the angle."></canvas><div class="medium top"><span id="medium1-name">Air · 空氣</span><strong id="medium1"></strong></div><div class="medium bottom"><span id="medium2-name">Glass · 玻璃</span><strong id="medium2"></strong></div></div>
-<div class="legend"><span>Incident 入射</span><span class="refract">Refracted 折射</span><span class="reflect">Reflected 反射</span></div>
+<link rel="stylesheet" href="assets/snells-controls.css"></head><body>
+<header><div><h1>Refraction Lab <span>折射實驗室</span></h1></div></header>
+<main><div class="workspace"><section class="card" aria-label="Ray diagram 光線圖"><div class="toolbar"><strong>Ray diagram <span style="font-weight:400;color:var(--muted)">光線圖</span></strong><div class="tools"><label><input type="checkbox" id="ray-labels" checked><span>Ray labels<small lang="zh-HK" style="display:block">光線名稱</small></span></label><label><input type="checkbox" id="protractor">Protractor 量角器</label><label><input type="checkbox" id="reflection" checked>Reflection 反射線</label></div></div>
+<div class="plot"><canvas id="canvas" tabindex="0" role="img" aria-label="Refraction ray diagram. Drag the incident ray or use left and right arrow keys to change the angle."></canvas><div class="medium top"><select id="medium1-select" aria-label="Medium 1 material 介質1選擇"><option value="custom" data-en="Medium 1" data-zh="介質一">Medium 1; 介質一</option><option value="air" data-en="Air" data-zh="空氣">Air; 空氣</option><option value="water" data-en="Water" data-zh="水">Water; 水</option><option value="glass" data-en="Glass" data-zh="玻璃">Glass; 玻璃</option><option value="diamond" data-en="Diamond" data-zh="鑽石">Diamond; 鑽石</option></select><span id="medium1-name" hidden></span><strong id="medium1"></strong></div><div class="medium bottom"><select id="medium2-select" aria-label="Medium 2 material 介質2選擇"><option value="custom" data-en="Medium 2" data-zh="介質二">Medium 2; 介質二</option><option value="air" data-en="Air" data-zh="空氣">Air; 空氣</option><option value="water" data-en="Water" data-zh="水">Water; 水</option><option value="glass" data-en="Glass" data-zh="玻璃">Glass; 玻璃</option><option value="diamond" data-en="Diamond" data-zh="鑽石">Diamond; 鑽石</option></select><span id="medium2-name" hidden></span><strong id="medium2"></strong></div></div>
+
 <div class="status-box" hidden><div id="status"></div><div id="explanation"></div></div></section>
 <aside class="card panel"><div class="tabs" role="group" aria-label="Mode 模式"><button data-mode="explore" aria-pressed="true">Explore<small>探索</small></button><button data-mode="find-r" aria-pressed="false">Find r<small>求折射角</small></button><button data-mode="find-n" aria-pressed="false">Find n₂<small>求折射率</small></button></div><p id="mode-hint"></p>
-<div id="preset-area"><label class="section-title" for="preset">MATERIAL PAIR · 介質組合</label><select id="preset" class="preset" hidden><option value="air-glass">Air → Glass; 空氣 → 玻璃</option><option value="air-water">Air → Water; 空氣 → 水</option><option value="glass-air">Glass → Air; 玻璃 → 空氣</option><option value="water-air">Water → Air; 水 → 空氣</option><option value="air-diamond">Air → Diamond; 空氣 → 鑽石</option><option value="equal">Equal indices; 相同折射率</option><option value="custom">Custom; 自訂</option></select><div class="material-menu"><button id="material-toggle" type="button" aria-expanded="false" aria-controls="material-options" aria-label="Material selection 介質選擇"><span id="material-selected" class="material-row"></span><span aria-hidden="true">⌄</span></button><div id="material-options" hidden role="group" aria-label="Material options 介質選項"><button type="button" data-material="air-glass" class="material-row"><span>Air → Glass</span><span>;</span><span lang="zh-HK">空氣 → 玻璃</span></button><button type="button" data-material="air-water" class="material-row"><span>Air → Water</span><span>;</span><span lang="zh-HK">空氣 → 水</span></button><button type="button" data-material="glass-air" class="material-row"><span>Glass → Air</span><span>;</span><span lang="zh-HK">玻璃 → 空氣</span></button><button type="button" data-material="water-air" class="material-row"><span>Water → Air</span><span>;</span><span lang="zh-HK">水 → 空氣</span></button><button type="button" data-material="air-diamond" class="material-row"><span>Air → Diamond</span><span>;</span><span lang="zh-HK">空氣 → 鑽石</span></button><button type="button" data-material="equal" class="material-row"><span>Equal indices</span><span>;</span><span lang="zh-HK">相同折射率</span></button><button type="button" data-material="custom" class="material-row"><span>Custom</span><span>;</span><span lang="zh-HK">自訂</span></button></div></div></div>
+<div id="preset-area"><label class="section-title" for="preset">Media · 介質</label><select id="preset" class="preset" hidden><option value="air-glass">Air → Glass; 空氣 → 玻璃</option><option value="air-water">Air → Water; 空氣 → 水</option><option value="glass-air">Glass → Air; 玻璃 → 空氣</option><option value="water-air">Water → Air; 水 → 空氣</option><option value="air-diamond">Air → Diamond; 空氣 → 鑽石</option><option value="equal">Equal indices; 相同折射率</option><option value="custom">Custom; 自訂</option></select><div class="material-menu"><button id="material-toggle" type="button" aria-expanded="false" aria-controls="material-options" aria-label="Material selection 介質選擇"><span id="material-selected" class="material-row"></span><span aria-hidden="true">⌄</span></button><div id="material-options" hidden role="group" aria-label="Material options 介質選項"><button type="button" data-material="air-glass" class="material-row"><span>Air → Glass</span><span>;</span><span lang="zh-HK">空氣 → 玻璃</span></button><button type="button" data-material="air-water" class="material-row"><span>Air → Water</span><span>;</span><span lang="zh-HK">空氣 → 水</span></button><button type="button" data-material="glass-air" class="material-row"><span>Glass → Air</span><span>;</span><span lang="zh-HK">玻璃 → 空氣</span></button><button type="button" data-material="water-air" class="material-row"><span>Water → Air</span><span>;</span><span lang="zh-HK">水 → 空氣</span></button><button type="button" data-material="air-diamond" class="material-row"><span>Air → Diamond</span><span>;</span><span lang="zh-HK">空氣 → 鑽石</span></button><button type="button" data-material="equal" class="material-row"><span>Equal indices</span><span>;</span><span lang="zh-HK">相同折射率</span></button><button type="button" data-material="custom" class="material-row"><span>Custom</span><span>;</span><span lang="zh-HK">自訂</span></button></div></div></div>
 <div class="control" id="n1-control"><div class="control-head"><label for="n1-number">Refractive index n₁<small>介質 1 折射率</small></label><div class="number"><input id="n1-number" type="number" min="1" max="2.5" step="0.01" value="1" aria-label="Refractive index n1"></div></div><input id="n1-range" aria-label="Adjust n1" type="range" min="1" max="2.5" step="0.01" value="1"><div class="scale"><span>1.00</span><span>2.50</span></div></div>
 <div class="control" id="n2-control"><div class="control-head"><label for="n2-number">Refractive index n₂<small>介質 2 折射率</small></label><div class="number"><input id="n2-number" type="number" min="1" max="2.5" step="0.01" value="1.5" aria-label="Refractive index n2"></div></div><input id="n2-range" aria-label="Adjust n2" type="range" min="1" max="2.5" step="0.01" value="1.5"><div class="scale"><span>1.00</span><span>2.50</span></div></div>
 <div class="control"><div class="control-head"><label for="i-number">Angle of incidence i<small>入射角</small></label><div class="number"><input id="i-number" type="number" min="0" max="89.9" step="0.1" value="45" aria-label="Angle of incidence"><span>°</span></div></div><input id="i-range" aria-label="Move incident ray across either side of the normal" type="range" min="-89.9" max="89.9" step="0.1" value="45"><div class="scale"><span>One side 法線一側</span><span>0°</span><span>Other side 另一側</span></div></div>
-<div class="rotation-control"><div class="control-head"><label for="rotation-number">Interface rotation<small>交界面旋轉（順時針為正）</small></label><div class="number"><input id="rotation-number" type="number" min="-180" max="180" step="0.1" value="0" aria-label="Interface rotation in degrees clockwise"><span>°</span></div></div><input id="rotation-range" type="range" min="-180" max="180" step="0.1" value="0" aria-label="Rotate interface while keeping incident direction fixed"><div class="scale"><span>−180°</span><span>0°</span><span>+180°</span></div><div class="rotation-hint">Incident direction stays fixed.<br>入射光方向固定。</div><div class="rotation-bottom"><span id="incident-medium"></span><button id="level-interface" type="button">0°</button></div></div><div class="control" id="r-control" hidden><div class="control-head"><label for="r-number">Angle of refraction r<small>觀察所得折射角（隨 i 改變）</small></label><div class="number"><input id="r-number" type="number" min="0" max="90" step="0.1" value="28.1" readonly aria-label="Observed angle of refraction"><span>°</span></div></div><input hidden id="r-range" aria-label="Adjust known angle of refraction" type="range" min="0" max="90" step="0.1" value="28.1"><div class="scale"><span>Calculated from the ray · 由光線自動計算</span></div></div>
+<div class="rotation-control"><div class="control-head"><label for="rotation-number">Interface rotation<small>交界面旋轉</small></label><div class="number"><input id="rotation-number" type="number" min="-180" max="180" step="0.1" value="0" aria-label="Interface rotation in degrees clockwise"><span>°</span></div></div><input id="rotation-range" type="range" min="-180" max="180" step="0.1" value="0" aria-label="Rotate interface while keeping incident direction fixed"><div class="scale"><span>−180°</span><span>0°</span><span>+180°</span></div><div class="rotation-bottom"><span id="incident-medium"></span><button id="level-interface" type="button">0°</button></div></div><div class="control" id="r-control" hidden><div class="control-head"><label for="r-number">Angle of refraction r<small>折射角</small></label><div class="number"><input id="r-number" type="number" min="0" max="90" step="0.1" value="28.1" readonly aria-label="Observed angle of refraction"><span>°</span></div></div><input hidden id="r-range" aria-label="Adjust known angle of refraction" type="range" min="0" max="90" step="0.1" value="28.1"></div>
 <div class="actions" id="pair-actions"><button id="swap">Swap media 交換</button><button id="critical">Set i = c 臨界角</button></div><div id="error" role="status"></div>
 <div class="result" aria-live="polite"><div class="result-label" id="result-label"></div><div id="answer"></div><button class="primary" id="reveal" hidden>Show answer 顯示答案</button><div id="working"></div></div><div class="law"><span id="snell-law">n₁ sin i = n₂ sin r</span><small>Snell’s law · 史涅耳定律</small></div><div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="reset" id="reset">Reset all 全部重設</button></div></aside></div>
 
@@ -84,6 +84,18 @@ const materialLabels={'air-glass':['Air → Glass','空氣 → 玻璃'],'air-wat
 const wrap=a=>((a+180)%360+360)%360-180;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 function physics(nIn,nOut,i){i=Math.abs(i);const q=nIn/nOut*Math.sin(i*D),c=nIn>nOut?Math.asin(nOut/nIn)/D:null;const tir=q>1+1e-12;return {r:tir?null:Math.asin(clamp(q,0,1))/D,tir,c,critical:c!==null&&Math.abs(i-c)<1e-8};}
+// Lossless dielectric interface, unpolarized light: average s/p power reflectance.
+// https://www.rp-photonics.com/fresnel_equations.html
+function fresnelPower(nIn,nOut,i){
+ if(nIn===nOut)return {R:0,T:1};
+ const ci=Math.max(0,Math.cos(Math.abs(i)*D)),st=nIn/nOut*Math.sin(Math.abs(i)*D);
+ if(st>=1)return {R:1,T:0};
+ const ct=Math.sqrt(Math.max(0,1-st*st));
+ const rs=(nIn*ci-nOut*ct)/(nIn*ci+nOut*ct);
+ const rp=(nOut*ci-nIn*ct)/(nOut*ci+nIn*ct);
+ const R=clamp((rs*rs+rp*rp)/2,0,1);
+ return {R,T:1-R};
+}
 function solveIndex(n1,i,r,side=1){i=Math.abs(i);r=Math.abs(r);if(i<1e-9&&r<1e-9)return {kind:'indeterminate',n2:null};if(i<1e-9||r<1e-9)return {kind:'invalid',n2:null};const n2=side===1?n1*Math.sin(i*D)/Math.sin(r*D):n1*Math.sin(r*D)/Math.sin(i*D);return {kind:n2<1-1e-9?'outside':'valid',n2};}
 let result={},geom={};
 function compute(){
@@ -95,7 +107,7 @@ function compute(){
  if(Math.abs(state.i)<1e-9)state.i=0;
  const nIn=state.incidentSide===1?state.n1:state.n2,nOut=state.incidentSide===1?state.n2:state.n1;
  const physical=physics(nIn,nOut,state.i);
- result={...physical,grazing,nIn,nOut,side:state.incidentSide};
+ result={...physical,...fresnelPower(nIn,nOut,state.i),grazing,nIn,nOut,side:state.incidentSide};
  if(grazing){result.r=null;result.tir=false;result.critical=false;}
  state.r=result.r??0;
  result.inverse=grazing?{kind:'grazing',n2:null}:result.tir?{kind:'tir',n2:null}:solveIndex(state.n1,state.i,state.r,result.side);
@@ -107,14 +119,14 @@ function sync(){
  $('r-number').value=result.r===null?'':Number(state.r.toFixed(4));$('r-number').placeholder=result.r===null?'—':'';
 }
 function update(){
- compute();sync();renderMaterial();
+ compute();sync();renderMaterial();syncMediumSelectors();syncTicks();
  const inverse=state.mode==='find-n',visible=state.mode==='explore'||state.revealed;
  $('medium1-name').textContent=state.names?.[0]||'Medium 1 · 介質一';$('medium2-name').textContent=state.names?.[1]||'Medium 2 · 介質二';
  $('medium1').textContent='n₁ = '+state.n1.toFixed(2);
  $('medium2').textContent=inverse?(visible&&result.inverse.kind==='valid'?'n₂ ≈ '+result.inverse.n2.toFixed(3):'n₂ = ?'):'n₂ = '+state.n2.toFixed(2);
  $('n2-control').hidden=inverse;$('r-control').hidden=!inverse;$('preset-area').hidden=inverse;$('pair-actions').hidden=inverse;
  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===state.mode));
- $('mode-hint').textContent=state.mode==='explore'?'Change the media and observe the ray.\n改變介質，觀察光線。':inverse?'Change i and r. Find the unknown n₂.\n改變 i 與 r，求未知的 n₂。':'Predict r before revealing the answer.\n先估計 r，再顯示答案。';
+ $('mode-hint').textContent='';
  $('incident-medium').textContent=result.grazing?'Along the interface · 沿交界面':result.side===1?'Incident: medium 1 → 2 · 介質一 → 二':'Incident: medium 2 → 1 · 介質二 → 一';
  $('critical').disabled=result.c===null;$('critical').title=result.c===null?'Requires higher to lower refractive index 須由高折射率介質入射低折射率介質':'Set exact critical angle 設定精確臨界角';
  $('error').textContent='';
@@ -149,20 +161,26 @@ function sceneGeometry(){
  const {L}=geom,effective=state.rotation+(result.side===2?180:0),i=state.i*D,r=(result.r??0)*D,side=state.i<0?-1:1;
  return {effective,source:{x:geom.cx+L*Math.cos(state.sourceAngle*D),y:geom.cy+L*Math.sin(state.sourceAngle*D)},reflected:extendToEdge(world(L*Math.sin(i),-L*Math.cos(i),effective)),refracted:extendToEdge(world(side*L*Math.sin(r),L*Math.cos(r),effective)),normal:world(0,-L,effective),handle:world(Math.min(geom.w,geom.h)*.42,0)};
 }
+const diagramFont=()=>paper?'system-ui':'Oxanium, "Microsoft JhengHei", sans-serif';
 let paper=document.documentElement.dataset.style==='paper';
 window.addEventListener('lab-theme-change',()=>{paper=document.documentElement.dataset.style==='paper';draw()});
+document.fonts.ready.then(()=>draw());
 function line(x1,y1,x2,y2,color,width=2,dash=[]){ctx.beginPath();ctx.setLineDash(dash);ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();ctx.setLineDash([]);}
 function label(text,x,y,color='#e4f2ff',size=13){
- text=labLanguage.label(text);ctx.font=`600 ${size}px system-ui`;const w=ctx.measureText(text).width;
+ text=labLanguage.label(text);ctx.font=`600 ${size}px ${diagramFont()}`;const w=ctx.measureText(text).width;
  x=clamp(x,w/2+7,geom.w-w/2-7);y=clamp(y,14,geom.h-14);
  ctx.fillStyle=paper?'#fffaf0':'#0b182be8';ctx.fillRect(x-w/2-5,y-11,w+10,23);ctx.fillStyle=paper?'#304a3d':color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y);
 }
-function ray(x1,y1,x2,y2,dash=[],ink='#98472e'){
+function ray(x1,y1,x2,y2,dash=[],ink='#98472e',power=1){
+ if(power<=0)return;
+ ctx.save();
+ // Perceptual display mapping keeps weak rays visible; R and T remain physical power fractions.
+ ctx.globalAlpha*=Math.sqrt(clamp(power,0,1));
  const rayInk=paper?ink:'#ffd45a';
  if(!paper)drawGoldenBeamHalo(ctx,x1,y1,x2,y2);
  line(x1,y1,x2,y2,paper?ink:'#fff4b0',2.8,dash);
  ctx.save();ctx.translate(x1+(x2-x1)*.6,y1+(y2-y1)*.6);ctx.rotate(Math.atan2(y2-y1,x2-x1));
- ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-7,-4);ctx.lineTo(-7,4);ctx.closePath();ctx.fillStyle=rayInk;ctx.fill();ctx.restore();
+ ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-7,-4);ctx.lineTo(-7,4);ctx.closePath();ctx.fillStyle=rayInk;ctx.fill();ctx.restore();ctx.restore();
 }
 function arc(start,end,r,text,color='#a0efff'){
  ctx.beginPath();ctx.arc(geom.cx,geom.cy,r,start*D,end*D,end<start);ctx.strokeStyle=paper?"#496151":color;ctx.lineWidth=1.7;ctx.stroke();const mid=(start+end)/2*D;label(text,geom.cx+(r+25)*Math.cos(mid),geom.cy+(r+25)*Math.sin(mid),color,13);
@@ -173,7 +191,7 @@ function drawRayName(end,en,zh,ink,obstacles){
  // Keep text upright even when propagation points towards the left.
  const sign=dx < -1e-8 ? -1 : 1;
  const ux=sign*dx/len,uy=sign*dy/len;
- ctx.save();ctx.font='600 13px system-ui';
+ ctx.save();ctx.font='600 13px '+diagramFont();
  const halfWidth=Math.max(ctx.measureText(en).width,ctx.measureText(zh).width)/2+3;
  const halfHeight=20,bx=Math.abs(ux)*halfWidth+Math.abs(uy)*halfHeight,by=Math.abs(uy)*halfWidth+Math.abs(ux)*halfHeight;
  let best=null;
@@ -200,7 +218,9 @@ function positionMedia(){
   for(const x of [12,w-bw-12])for(const y of [18,h*.27,h*.5-bh/2,h*.73-bh,h-bh-18]){
    const corners=[[x,y],[x+bw,y],[x,y+bh],[x+bw,y+bh]];
    const margin=Math.min(...corners.map(([px,py])=>sgn*(-Math.sin(phi)*(px-cx)+Math.cos(phi)*(py-cy))));
-   if(margin<15)continue;
+   const g=sceneGeometry();
+   const hitsHandle=[g.source,g.handle,{x:cx,y:cy}].some(p=>p.x+23>x&&p.x-23<x+bw&&p.y+23>y&&p.y-23<y+bh);
+   if(margin<15||hitsHandle)continue;
    const score=margin+(x===12?18:0);if(!best||score>best.score)best={x,y,score};
   }
   if(!best){const p=world(0,sgn*Math.min(w,h)*.32);best={x:clamp(p.x-bw/2,8,w-bw-8),y:clamp(p.y-bh/2,8,h-bh-8)};}
@@ -221,20 +241,20 @@ function draw(){
  positionMedia();
 
  const normal=world(0,-Math.min(w,h)*.43,g.effective);label('Normal 法線',normal.x,normal.y,'#b4cadd',12);
- if($('protractor').checked){const radius=Math.min(w,h)*.29;for(let deg=0;deg<360;deg+=5){const ang=(deg-90+state.rotation)*D,major=deg%30===0;line(cx+(radius-(major?10:5))*Math.cos(ang),cy+(radius-(major?10:5))*Math.sin(ang),cx+radius*Math.cos(ang),cy+radius*Math.sin(ang),'#638399',1);if(major){const num=deg<=90?deg:deg<=180?180-deg:deg<=270?deg-180:360-deg;ctx.font='10px system-ui';ctx.fillStyle=paper?'#485c50':'#a2bdcf';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(num+'°',cx+(radius+14)*Math.cos(ang),cy+(radius+14)*Math.sin(ang));}}}
+ if($('protractor').checked){const radius=Math.min(w,h)*.29;for(let deg=0;deg<360;deg+=5){const ang=(deg-90+state.rotation)*D,major=deg%30===0;line(cx+(radius-(major?10:5))*Math.cos(ang),cy+(radius-(major?10:5))*Math.sin(ang),cx+radius*Math.cos(ang),cy+radius*Math.sin(ang),'#638399',1);if(major){const num=deg<=90?deg:deg<=180?180-deg:deg<=270?deg-180:360-deg;ctx.font='10px '+diagramFont();ctx.fillStyle=paper?'#485c50':'#a2bdcf';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(num+'°',cx+(radius+14)*Math.cos(ang),cy+(radius+14)*Math.sin(ang));}}}
  ray(g.source.x,g.source.y,cx,cy);
  ctx.beginPath();ctx.arc(g.source.x,g.source.y,8,0,Math.PI*2);ctx.fillStyle='#0c263a';ctx.fill();ctx.strokeStyle='#a6f4ff';ctx.lineWidth=3;ctx.stroke();
  const ir=Math.min(50,L*.34),rr=Math.min(74,L*.53),normalAngle=g.effective-90;
  if(Math.abs(state.i)>1e-8)arc(normalAngle,normalAngle-state.i,ir,'i = '+Math.abs(state.i).toFixed(1)+'°');else{const p=world(-48,-48,g.effective);label('i = 0°',p.x,p.y);}
  if(!result.grazing){
   if(result.tir||($('reflection').checked&&Math.abs(result.nIn-result.nOut)>1e-10)){
-   ray(cx,cy,g.reflected.x,g.reflected.y,[],'#795184');
+   ray(cx,cy,g.reflected.x,g.reflected.y,[],'#795184',result.R);
    if(Math.abs(state.i)>1e-8)arc(normalAngle,normalAngle+state.i,rr,'i′ = '+Math.abs(state.i).toFixed(1)+'°','#c4d9f0');
   }
-  if(!result.tir){ray(cx,cy,g.refracted.x,g.refracted.y,[],'#156355');const rt=state.mode==='find-r'&&!state.revealed?'r = ?':'r = '+result.r.toFixed(1)+'°';if(result.r>1e-8)arc(g.effective+90,g.effective+90-(state.i<0?-1:1)*result.r,ir,rt);else{const p=world(48,48,g.effective);label(rt,p.x,p.y);}}
+  if(!result.tir){ray(cx,cy,g.refracted.x,g.refracted.y,[],'#156355',result.T);const rt=state.mode==='find-r'&&!state.revealed?'r = ?':'r = '+result.r.toFixed(1)+'°';if(result.r>1e-8)arc(g.effective+90,g.effective+90-(state.i<0?-1:1)*result.r,ir,rt);else{const p=world(48,48,g.effective);label(rt,p.x,p.y);}}
  }
  ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);ctx.fillStyle='#efffff';ctx.fill();ctx.shadowBlur=0;
- ctx.beginPath();ctx.arc(g.handle.x,g.handle.y,10,0,Math.PI*2);ctx.fillStyle='#132b3d';ctx.fill();ctx.strokeStyle='#f1c878';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#ffe1a5';ctx.font='16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('↻',g.handle.x,g.handle.y);
+ ctx.beginPath();ctx.arc(g.handle.x,g.handle.y,10,0,Math.PI*2);ctx.fillStyle='#132b3d';ctx.fill();ctx.strokeStyle='#f1c878';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#ffe1a5';ctx.font='16px '+diagramFont();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('↻',g.handle.x,g.handle.y);
  if($('ray-labels').checked){
  const blocked=[...document.querySelectorAll('.medium')].map(el=>({l:el.offsetLeft,r:el.offsetLeft+el.offsetWidth,t:el.offsetTop,b:el.offsetTop+el.offsetHeight}));
  blocked.push({l:cx-45,r:cx+45,t:cy-45,b:cy+45});
@@ -242,10 +262,43 @@ function draw(){
  if(!result.grazing&&(result.tir||($('reflection').checked&&Math.abs(result.nIn-result.nOut)>1e-10))){
   drawRayName(g.reflected,result.tir?'Reflected ray (TIR)':'Reflected ray',result.tir?'反射線（全內反射）':'反射線','#6c407a',blocked);
  }
- if(!result.grazing&&!result.tir)drawRayName(g.refracted,'Refracted ray','折射線','#156355',blocked);
+ if(!result.grazing&&!result.tir&&result.T>0)drawRayName(g.refracted,'Refracted ray','折射線','#156355',blocked);
  }
+ canvas.dataset.reflectance=result.grazing?'':String(result.R);
+ canvas.dataset.transmittance=result.grazing?'':String(result.T);
  canvas.setAttribute('aria-label',`Ray diagram. Interface rotation ${state.rotation.toFixed(1)} degrees clockwise. Incident from medium ${result.side}; i ${Math.abs(state.i).toFixed(1)} degrees. ${result.grazing?'Ray along interface.':state.mode==='find-r'&&!state.revealed?'Predict r.':result.tir?'Total internal reflection.':'r '+result.r.toFixed(1)+' degrees.'} Drag blue handle to move the ray, gold handle to rotate interface. Arrow keys move the ray; Alt plus arrow rotates interface.`);
 }
+
+const mediumChoices={air:{n:1,name:'Air · 空氣'},water:{n:1.33,name:'Water · 水'},glass:{n:1.5,name:'Glass · 玻璃'},diamond:{n:2.42,name:'Diamond · 鑽石'}};
+function syncMediumSelectors(){
+ for(const k of [1,2]){
+  const el=$('medium'+k+'-select');
+  el.value=Object.keys(mediumChoices).find(key=>mediumChoices[key].name===state.names?.[k-1]&&mediumChoices[key].n===state['n'+k])||'custom';
+  el.disabled=k===2&&state.mode==='find-n';
+  if(el.disabled)el.value='custom';
+ }
+}
+for(const k of [1,2])$('medium'+k+'-select').addEventListener('change',e=>{
+ const material=mediumChoices[e.target.value];
+ if(!material){state.names=state.names?.slice()||[null,null];state.names[k-1]=null;}
+ else{state['n'+k]=material.n;state.names=state.names?.slice()||[null,null];state.names[k-1]=material.name;}
+ $('preset').value=Object.keys(pairNames).find(key=>pairNames[key].every((name,j)=>name===state.names?.[j]))||'custom';
+ state.revealed=false;update();
+ if(!material){$('n'+k+'-number').focus();$('n'+k+'-number').select();}
+});
+const tickValues={n1:[1,1.5,2,2.5],n2:[1,1.5,2,2.5],i:[-60,-30,0,30,60],rotation:[-180,-90,0,90,180]};
+for(const [key,values] of Object.entries(tickValues)){
+ const range=$(key+'-range'),scale=range.nextElementSibling;
+ scale.className='slider-ticks';scale.replaceChildren();
+ for(const value of values){
+  const button=document.createElement('button');button.type='button';button.dataset.tick=key;button.dataset.value=value;
+  button.style.left=(100*(value-Number(range.min))/(Number(range.max)-Number(range.min)))+'%';
+  button.textContent=String(value)+(key==='i'||key==='rotation'?'°':'');
+  button.setAttribute('aria-label',key+' = '+value);button.addEventListener('click',()=>change(key,value));scale.append(button);
+ }
+}
+function syncTicks(){for(const b of document.querySelectorAll('[data-tick]'))b.setAttribute('aria-pressed',String(Math.abs(state[b.dataset.tick]-Number(b.dataset.value))<1e-6));}
+
 function renderMaterial(){const parts=materialLabels[$('preset').value]||materialLabels.custom;if($('material-selected').textContent!==parts[0]+';'+parts[1])$('material-selected').replaceChildren(...[parts[0],';',parts[1]].map(t=>{const el=document.createElement('span');el.textContent=t;return el;}));document.querySelectorAll('[data-material]').forEach(b=>b.setAttribute('aria-current',b.dataset.material===$('preset').value));}
 function closeMaterials(){ $('material-options').hidden=true;$('material-toggle').setAttribute('aria-expanded','false'); }
 $('material-toggle').addEventListener('click',()=>{const open=$('material-options').hidden;$('material-options').hidden=!open;$('material-toggle').setAttribute('aria-expanded',String(open));});
@@ -289,7 +342,7 @@ $('swap').addEventListener('click',()=>{[state.n1,state.n2]=[state.n2,state.n1];
 $('critical').addEventListener('click',()=>{if(result.c!==null)change('i',(state.i<0?-1:1)*result.c);});
 $('level-interface').addEventListener('click',()=>change('rotation',0));
 $('reveal').addEventListener('click',()=>{state.revealed=!state.revealed;update();});
-$('reset').addEventListener('click',()=>{Object.assign(state,defaults());$('preset').value='air-glass';$('reflection').checked=false;$('protractor').checked=false;closeMaterials();update();});
+$('reset').addEventListener('click',()=>{Object.assign(state,defaults());$('preset').value='air-glass';$('reflection').checked=true;$('protractor').checked=false;closeMaterials();update();});
 for(const id of ['reflection','protractor'])$(id).addEventListener('change',draw);
 let dragging=null;
 function point(e){const b=canvas.getBoundingClientRect();return {x:e.clientX-b.left,y:e.clientY-b.top};}

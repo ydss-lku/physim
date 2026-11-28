@@ -1,0 +1,30 @@
+/* Snell controls: compact readouts and direct material selection. */
+html[data-page=snells-law] .number { flex:0 0 auto; width:auto; }
+html[data-page=snells-law] .number input[type=number] { width:72px; min-width:0; max-width:72px; min-height:36px!important; height:36px; padding:4px 6px; font-size:15px; }
+html[data-page=snells-law] .control { margin:12px 0; }
+html[data-page=snells-law] .rotation-control { padding:10px 0; margin:12px 0; }
+html[data-page=snells-law] #mode-hint:empty { display:none; }
+html[data-page=snells-law] .section-title { letter-spacing:0; font-size:12px; }
+html[data-page=snells-law] .medium { pointer-events:auto; max-width:220px; padding:5px 7px; z-index:3; }
+html[data-page=snells-law] .medium select { display:block; width:100%; min-height:44px; padding:3px 24px 3px 7px; font-size:19px; font-weight:650; border:1px solid #597881; border-radius:3px; color:var(--ink); background:#15272e; }
+html[data-page=snells-law][data-style=paper] .medium select { background:#fffaf0; }
+html[data-page=snells-law] .medium select:disabled { opacity:1; border-color:transparent; appearance:none; padding-right:5px; cursor:default; }
+html[data-page=snells-law] .medium strong { padding:3px 7px; font-size:21px; pointer-events:none; }
+html[data-page=snells-law] .slider-ticks { position:relative; height:36px; margin:0 10px; }
+html[data-page=snells-law] .slider-ticks button { position:absolute; top:0; transform:translateX(-50%); width:44px; min-height:36px!important; height:36px; padding:9px 0 0; border:0!important; border-radius:3px; background:transparent!important; color:var(--muted)!important; font-size:12px; font-weight:500; box-shadow:none!important; }
+html[data-page=snells-law] .slider-ticks button::before { content:''; position:absolute; width:1px; height:7px; top:0; left:50%; background:currentColor; }
+html[data-page=snells-law] .slider-ticks button:hover { background:#6b9fa822; color:var(--ink); }
+html[data-page=snells-law] .slider-ticks button[aria-pressed=true] { color:var(--ink); font-weight:750; background:#6b9fa822; }
+html[data-page=snells-law][data-theme=tech] :is(.panel,.toolbar,.medium) { font-family:Oxanium,"Microsoft JhengHei",sans-serif; }
+html[data-page=snells-law][data-theme=tech] :is(.number input,.control-head label,.section-title,#answer,.law) { font-family:Oxanium,"Microsoft JhengHei",sans-serif; }
+html[data-page=snells-law][data-theme=tech] :is(.control-head label small,.tabs small) { font-family:"Microsoft JhengHei",sans-serif; }
+html[data-page=snells-law][data-theme=tech] .slider-ticks button[aria-pressed=true] { color:#fcee0a!important; }
+@media(pointer:coarse) {
+ html[data-page=snells-law] .number input[type=number] { min-height:44px!important; height:44px; }
+ html[data-page=snells-law] .slider-ticks,html[data-page=snells-law] .slider-ticks button { height:44px; min-height:44px!important; }
+}
+@media(max-width:600px) {
+ html[data-page=snells-law] .medium { max-width:175px; }
+ html[data-page=snells-law] .medium select { font-size:16px; }
+ html[data-page=snells-law] .medium strong { font-size:18px; }
+}
