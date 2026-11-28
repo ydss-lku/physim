@@ -42,6 +42,8 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   const sliderTime = document.getElementById("sliderTime");
 
   const valTheta = document.getElementById("valTheta");
+  const speedPresets=document.querySelectorAll('[data-slider="sliderV0"] button');
+  let displayedPresetSpeed;
   const valV0 = document.getElementById("valV0");
   const valY0 = document.getElementById("valY0");
 
@@ -842,6 +844,10 @@ window.addEventListener("lab-theme-change", refreshChartInk);
   function updateUI() {
 
     valTheta.textContent = `${draft.theta > 0 ? "+" : ""}${draft.theta}°`;
+    if(displayedPresetSpeed!==draft.v0){
+      for(const preset of speedPresets)preset.setAttribute('aria-pressed',String(Number(preset.value)===draft.v0));
+      displayedPresetSpeed=draft.v0;
+    }
     valV0.textContent = `${draft.v0} m/s`;
     valY0.textContent = draft.y0;
 
