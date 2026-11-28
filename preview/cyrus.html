@@ -39,11 +39,25 @@
     .palette{position:absolute;right:6px;bottom:6px;color:white;font:13px system-ui}.palette summary{cursor:pointer;background:#132232;border:1px solid #8aa5be;border-radius:4px;padding:6px;list-style:none}
     .picker{position:absolute;right:0;bottom:100%;width:178px;background:#15202b;padding:9px;border-radius:6px}
     .wheel{display:block;width:64px;height:64px;margin:auto;border-radius:50%;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);border:2px solid white;touch-action:none;cursor:crosshair}
+    main {box-sizing:border-box;aspect-ratio:627/322;grid-template-columns:minmax(0,378fr) minmax(0,174fr);grid-template-rows:minmax(0,1fr);gap:3%;padding:4.3% 4% 5% 5%;align-items:stretch}
+    body {container-type:inline-size}
+    main {padding:min(4.3vw,44px) min(4vw,41px) min(5vw,51px) min(5vw,51px)}
+    .stage,.controls {width:100%;min-width:0;min-height:0}
+    .stage .frame {height:100%;aspect-ratio:auto}
+    .controls {box-sizing:border-box;border:1px solid #65798e;padding:8px;grid-template-columns:minmax(0,1fr);align-content:start;overflow:auto}
+    #fullscreen {position:absolute;right:6px;top:6px;background:#132232;color:white;border:1px solid #8aa5be;border-radius:4px;padding:6px;cursor:pointer}
+    main:fullscreen,main.expanded {width:100%;height:100dvh;max-width:none;aspect-ratio:auto}
+    main.expanded {position:fixed;inset:0;z-index:10}
+    @media(max-width:600px) and (orientation:portrait) {
+      main {aspect-ratio:auto;padding:8px;grid-template-columns:100%;grid-template-rows:auto auto;gap:8px}
+      .stage {aspect-ratio:378/263}
+      main:fullscreen,main.expanded {align-content:start;overflow:auto}
+    }
     </style>
 </head>
 <body>
   <main aria-label="Simulation area">
-    <div class="stage"><svg class="frame" viewBox="0 0 640 360" aria-label="Reflection at a plane mirror">
+    <div class="stage"><svg class="frame" viewBox="0 -43 640 446" aria-label="Reflection at a plane mirror">
       <defs>
         <filter id="rayGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="640" height="360">
           <feGaussianBlur stdDeviation="5"/>
@@ -71,6 +85,7 @@
       </g>
       <g id="dial" display="none" style="touch-action:none" fill="none"><circle r="39" stroke="#8ed275" stroke-width="2"/><g id="arm"><path d="M0 0 H39" stroke="#9fea6e" stroke-width="4"/><circle cx="39" r="9" fill="#9fea6e" stroke="white"/></g><circle r="40" stroke="transparent" stroke-width="22"/><text id="dialValue" y="5" text-anchor="middle" fill="white" stroke="#182018" stroke-width="3" paint-order="stroke" font-size="13"></text></g>
     </g></svg>
+    <button id="fullscreen" type="button">Full screen</button>
     <details class="palette"><summary>Laser colour</summary><div class="picker"><div class="wheel" aria-hidden="true"></div><label>Hue<input type="range" id="hue" min="0" max="359" value="355"></label><label>Saturation<input type="range" id="sat" min="0" max="100" value="80"></label><output id="colourValue"></output></div></details></div>
     <section class="controls" aria-label="Simulation controls">
       <output id="angle"></output>
@@ -85,6 +100,24 @@
   </main>
   <script>
     const slider = document.querySelector('#rotation');
+    const simulation = document.querySelector('main');
+    const fullButton = document.querySelector('#fullscreen');
+    function syncFullscreen() {
+      fullButton.textContent = document.fullscreenElement || simulation.classList.contains('expanded') ? 'Exit full screen' : 'Full screen';
+    }
+    fullButton.onclick = async () => {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (simulation.classList.contains('expanded')) simulation.classList.remove('expanded');
+      else {
+        try { await simulation.requestFullscreen(); }
+        catch { simulation.classList.add('expanded'); }
+      }
+      syncFullscreen();
+    };
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { simulation.classList.remove('expanded'); syncFullscreen(); }
+    });
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
     // Two-degree divisions span 1 mm of arc at the nominal 640 CSS pixel width.
     const radius = (96 / 25.4) / (2 * Math.PI / 180);
