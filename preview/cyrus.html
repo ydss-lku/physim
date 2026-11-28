@@ -35,17 +35,21 @@
       aspect-ratio: 16 / 9;
       border: 2px solid #438dff;
     }
-  </style>
+    .stage{position:relative;width:90%}.stage .frame{width:100%}
+    .palette{position:absolute;right:6px;bottom:6px;color:white;font:13px system-ui}.palette summary{cursor:pointer;background:#132232;border:1px solid #8aa5be;border-radius:4px;padding:6px;list-style:none}
+    .picker{position:absolute;right:0;bottom:100%;width:178px;background:#15202b;padding:9px;border-radius:6px}
+    .wheel{display:block;width:64px;height:64px;margin:auto;border-radius:50%;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);border:2px solid white;touch-action:none;cursor:crosshair}
+    </style>
 </head>
 <body>
   <main aria-label="Simulation area">
-    <svg class="frame" viewBox="0 0 640 360" aria-label="Reflection at a plane mirror">
+    <div class="stage"><svg class="frame" viewBox="0 0 640 360" aria-label="Reflection at a plane mirror">
       <defs>
         <filter id="rayGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="640" height="360">
           <feGaussianBlur stdDeviation="5"/>
         </filter>
       </defs>
-      <g fill="currentColor" text-anchor="middle">
+      <g id="world"><g fill="currentColor" text-anchor="middle">
         <rect x="36" y="36" width="568" height="288" fill="none" stroke="#bac7d5" opacity=".32" stroke-dasharray="2 5"/>
         <path id="mirror" d="M166 180 H474" stroke="#9bd8f0" stroke-width="5"/>
         <g id="guide">
@@ -65,10 +69,11 @@
         <text pointer-events="none" id="outgoingLabel">Reflected ray</text>
       </g>
       <g id="dial" display="none" style="touch-action:none" fill="none"><circle r="39" stroke="#8ed275" stroke-width="2"/><g id="arm"><path d="M0 0 H39" stroke="#9fea6e" stroke-width="4"/><circle cx="39" r="9" fill="#9fea6e" stroke="white"/></g><circle r="40" stroke="transparent" stroke-width="22"/><text id="dialValue" y="5" text-anchor="middle" fill="white" stroke="#182018" stroke-width="3" paint-order="stroke" font-size="13"></text></g>
-    </svg>
+    </g></svg>
+    <details class="palette"><summary>Laser colour</summary><div class="picker"><div class="wheel" aria-hidden="true"></div><label>Hue<input type="range" id="hue" min="0" max="359" value="355"></label><label>Saturation<input type="range" id="sat" min="0" max="100" value="80"></label><output id="colourValue"></output></div></details></div>
     <section class="controls" aria-label="Simulation controls">
       <output id="angle"></output>
-      <span style="grid-column:1/-1;text-align:center">Drag to move. Hold the source or mirror, then drag the green handle to rotate.</span><details style="grid-column:1/-1"><summary>Fine adjustments</summary><label>Source X<input id="sx" type="range" min="62" max="578" value="270"></label>
+      <span style="grid-column:1/-1;text-align:center">Drag empty space to pan. Pinch and twist with two fingers to zoom and rotate. With a mouse, scroll to zoom or Shift-drag to rotate. Drag an object to move it. Hold the source or mirror, then drag the green handle to rotate.</span><details style="grid-column:1/-1"><summary>Fine adjustments</summary><label>Source X<input id="sx" type="range" min="62" max="578" value="270"></label>
       <label>Source Y<input id="sy" type="range" min="62" max="298" value="280"></label>
       <label>Rotate source <output id="sourceAngle"></output><input id="rotation" type="range" min="-180" max="180" step="0.1" value="20"></label>
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
@@ -177,13 +182,14 @@
     }
     document.querySelectorAll('input').forEach(input => input.addEventListener('input',draw));
     byId('reset').addEventListener('click', () => {
-      selected = null;
+      camera = new DOMMatrix(); applyCamera(); byId('hue').value=355; byId('sat').value=80; paint(); selected = null;
       for (const input of document.querySelectorAll('.controls input')) input.value = input.defaultValue;
       draw();
     });
     const lamp = byId('lamp');
     const svg = lamp.ownerSVGElement;
-    const pointer = event => new DOMPoint(event.clientX,event.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    const screenPoint = event => new DOMPoint(event.clientX,event.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    const pointer = event => screenPoint(event).matrixTransform(camera.inverse());
     const dial = byId('dial');
     let selected = null, drag, holdTimer;
     function centre(target) {
@@ -203,7 +209,7 @@
       byId('dialValue').textContent=angle.toFixed(source?1:0)+'°';
     }
     svg.addEventListener('pointerdown', event => {
-      if (drag) return;
+      if (drag || fingers.size) return;
       const rotating = dial.contains(event.target);
       const target = rotating ? selected : lamp.contains(event.target) ? 'lamp' : event.target.id==='mirrorTouch' ? 'mirror' : null;
       if (!rotating) selected=null;
@@ -237,6 +243,53 @@
       draw();
     });
     svg.addEventListener('lostpointercapture',()=>{clearTimeout(holdTimer);drag=null;});
+    const world=byId('world'), fingers=new Map();
+    let camera=new DOMMatrix();
+    function applyCamera(){world.setAttribute('transform',camera.toString().replace(/,/g,' '));}
+    function transformView(from,to,angle,ratio){
+      const scale=Math.hypot(camera.a,camera.b);
+      ratio=Math.min(6,Math.max(.3,scale*ratio))/scale;
+      camera=new DOMMatrix().translate(to.x,to.y).rotate(angle).scale(ratio).translate(-from.x,-from.y).multiply(camera);
+      applyCamera();
+    }
+    svg.addEventListener('pointerdown',e=>{
+      if(drag || fingers.size>=2) return;
+      fingers.set(e.pointerId,screenPoint(e)); svg.setPointerCapture(e.pointerId);
+    });
+    svg.addEventListener('pointermove',e=>{
+      if(!fingers.has(e.pointerId)) return;
+      const old=fingers.get(e.pointerId), next=screenPoint(e);
+      fingers.set(e.pointerId,next);
+      const other=[...fingers].find(([id])=>id!==e.pointerId)?.[1];
+      if(other){
+        const length=p=>Math.hypot(p.x-other.x,p.y-other.y);
+        const angle=p=>Math.atan2(p.y-other.y,p.x-other.x)*180/Math.PI;
+        if(length(old)>0.1 && length(next)>0.1) transformView(other,other,angle(next)-angle(old),length(next)/length(old));
+      }else if(e.shiftKey){transformView({x:320,y:180},{x:320,y:180},(next.x-old.x)*0.5,1);}
+      else transformView(old,next,0,1);
+    });
+    svg.addEventListener('lostpointercapture',e=>fingers.delete(e.pointerId));
+    svg.addEventListener('wheel',e=>{
+      e.preventDefault();const p=screenPoint(e);transformView(p,p,0,Math.exp(-e.deltaY*.002));
+    },{passive:false});
+    function paint(){
+      const h=+byId('hue').value,s=+byId('sat').value/100;
+      const channel=n=>{const k=(n+h/60)%6;return Math.round(255*(1-s*Math.max(0,Math.min(k,4-k,1))));};
+      const rgb=[channel(5),channel(3),channel(1)];
+      const hex='#'+rgb.map(c=>c.toString(16).padStart(2,'0')).join('').toUpperCase();
+      byId('incident').parentElement.setAttribute('stroke',hex);
+      byId('halo').setAttribute('stroke',hex);byId('arrows').setAttribute('fill',hex);
+      byId('colourValue').textContent='RGB '+rgb.join(', ')+' · '+hex;
+    }
+    for(const id of ['hue','sat']) byId(id).addEventListener('input',paint);
+    const wheel=document.querySelector('.wheel');
+    function pick(e){
+      const r=wheel.getBoundingClientRect(), dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2;
+      byId('hue').value=(Math.atan2(dx,-dy)*180/Math.PI+360)%360;paint();
+    }
+    wheel.onpointerdown=e=>{wheel.setPointerCapture(e.pointerId);pick(e)};
+    wheel.onpointermove=e=>{if(wheel.hasPointerCapture(e.pointerId))pick(e)};
+    paint();
     motion.addEventListener('change', draw);
     draw();
   </script>
