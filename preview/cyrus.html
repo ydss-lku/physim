@@ -90,8 +90,8 @@
       </defs>
       <g id="world"><g fill="currentColor" text-anchor="middle">
         <rect x="36" y="36" width="568" height="288" fill="none" stroke="#bac7d5" opacity=".32" stroke-dasharray="2 5"/>
-        <path id="mirrorFace" fill="#487184" fill-opacity=".75" stroke="#b4dce7" pointer-events="none"/><path id="mirror" d="M166 180 H474" stroke="#9bd8f0" stroke-width="5"/>
-        <path id="mirrorTouch" fill="none" stroke="transparent" stroke-width="24" pointer-events="stroke" style="touch-action:none;cursor:ns-resize"/><g id="opticalPlane"><g id="guide">
+        <path id="floorTrace" fill="none" stroke="#91a7b7" stroke-width="1" stroke-dasharray="4 5" pointer-events="none"/><path id="heightEdges" fill="none" stroke="#91a7b7" stroke-width="1" stroke-dasharray="2 4" pointer-events="none"/><path id="mirrorFace" fill="#487184" fill-opacity=".75" stroke="#b4dce7" pointer-events="none"/><path id="mirror" d="M166 180 H474" stroke="#9bd8f0" stroke-width="5"/>
+        <path id="mirrorTouch" fill="none" stroke="transparent" stroke-width="24" pointer-events="stroke" style="touch-action:none;cursor:ns-resize"/><path id="topGrip" fill="none" stroke="#bfedf3" stroke-width="5" style="cursor:ns-resize;touch-action:none"><title>Drag to change mirror height</title></path><g id="opticalPlane"><g id="guide">
         <g id="meter" fill="#a2b2c4" font-size="10" aria-label="Protractor, zero at the normal"></g>
         <path d="M320 56 V220" stroke="#abbaca" stroke-dasharray="7 5"/>
         <text x="320" y="234">Normal</text>
@@ -115,7 +115,7 @@
     <section class="controls" aria-label="Simulation controls">
       <output id="angle"></output>
       <button id="openTutorial" type="button"><svg class="bookIcon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6 Q8 3 2 4 V19 Q8 18 12 21 Q17 18 22 19 V4 Q17 3 12 6 Z M12 6 V21"/></svg> Tutorial</button><details style="grid-column:1/-1"><summary>Fine adjustments</summary><label>Source X<input id="sx" type="range" min="62" max="578" value="270"></label>
-      <label>Source Y<input id="sy" type="range" min="62" max="298" value="280"></label>
+      <label><span id="depthLabel">Source Y</span><input id="sy" type="range" min="62" max="298" value="280"></label>
       <label>Rotate source <output id="sourceAngle"></output><input id="rotation" type="range" min="-180" max="180" step="0.1" value="20"></label>
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
       <label>Mirror Y<input id="mirrorY" type="range" min="36" max="324" value="180"></label>
@@ -275,10 +275,16 @@
       const offset=elevation(spatial?level:0);
       byId('opticalPlane').setAttribute('transform','translate('+offset.x+' '+offset.y+')');
       byId('sourceLevel').textContent=level; byId('mirrorLevel').textContent=ceiling;
+      byId('depthLabel').textContent=spatial?'Source depth (Z)':'Source Y';
+      const palm=byId('gauntlet');
+      const palmUp=elevation(1), localRotation=new DOMMatrix().rotate(-degrees);
+      const tangent=new DOMPoint(ny,-nx,0,0).matrixTransform(localRotation);
+      const vertical=palmUp.matrixTransform(localRotation);
+      palm.setAttribute('transform',spatial?'matrix('+[tangent.x,tangent.y,-vertical.x,-vertical.y,0,0].join(' ')+')':'translate(0 0)');
       const depth=byId('sourceDepth');
       depth.style.display=spatial?'':'none';
       if(spatial){
-        const local=elevation(-1).matrixTransform(new DOMMatrix().rotate(-degrees));
+        const local=(byId('secret').getAttribute('aria-pressed')==='true'?new DOMPoint(nx,ny,0,0):elevation(-1)).matrixTransform(localRotation);
         if(!depth.childElementCount){
           for(let n=8;n>=1;n--){const slice=document.createElementNS(depth.namespaceURI,'use');depth.append(slice);}
         }
@@ -291,6 +297,7 @@
       const up=elevation();
       byId('mirrorFace').setAttribute('d',spatial?'M'+left+' L'+right+' l'+up.x+' '+up.y+' L'+(left[0]+up.x)+' '+(left[1]+up.y)+' Z':'');
       byId('sourceAngle').textContent = degrees.toFixed(1)+'°';
+      byId('topGrip').setAttribute('d',spatial?'M'+(left[0]+up.x)+' '+(left[1]+up.y)+' L'+(right[0]+up.x)+' '+(right[1]+up.y):'');
       const halfThickness = Number(byId('mirror').getAttribute('stroke-width')) / 2;
       const normalOffset = (x-320)*nx + (y-mirrorY)*ny;
       const along = (x-320)*ny - (y-mirrorY)*nx;
@@ -329,6 +336,11 @@
       }
       updateDial();
       applyCamera();
+      const segments=rays.map(([ax,ay,vx,vy])=>'M'+ax+' '+ay+' l'+vx+' '+vy);
+      byId('floorTrace').setAttribute('d',spatial?segments.join(' '):'');
+      const last=rays[rays.length-1];
+      const anchors=[[x,y],[hx,hy],[last[0]+last[2],last[1]+last[3]]];
+      byId('heightEdges').setAttribute('d',spatial?anchors.map(([px,py])=>'M'+px+' '+py+' l'+offset.x+' '+offset.y).join(' '):'');
       cancelAnimationFrame(frame);
       animate(performance.now());
     }
@@ -363,15 +375,15 @@
     svg.addEventListener('pointerdown', event => {
       if (drag || fingers.size) return;
       const rotating = dial.contains(event.target);
-      const target = rotating ? selected : lamp.contains(event.target) ? 'lamp' : event.target.id==='mirrorTouch' ? 'mirror' : null;
+      const target = rotating ? selected : lamp.contains(event.target) ? 'lamp' : event.target.id==='topGrip' ? 'height' : event.target.id==='mirrorTouch' ? 'mirror' : null;
       if (!rotating) selected=null;
       updateDial();
       if (!target) return;
       event.preventDefault();
       const p=pointer(event);
-      drag={id:event.pointerId,target,p,origin:centre(target),rotating};
+      drag={id:event.pointerId,target,p,origin:centre(target),rotating,level:+byId(target==="height"?"mirrorHeight":"sourceHeight").value};
       svg.setPointerCapture(event.pointerId);
-      if (!rotating) holdTimer=setTimeout(()=>{
+      if (!rotating && target!=="height") holdTimer=setTimeout(()=>{
         if (!drag) return;
         selected=target; drag.rotating=true; updateDial();
       },380);
@@ -389,6 +401,16 @@
       } else {
         if(!drag.moved && Math.hypot(dx,dy)<4) return;
         drag.moved=true; clearTimeout(holdTimer);
+        if(spatial && (drag.target==='lamp'||drag.target==='height')){
+          const movement=new DOMPoint(dx,dy,0,0).matrixTransform(floorProjection);
+          if(drag.target==='height') byId('mirrorHeight').value=drag.level-movement.y;
+          else {
+            const floorX=movement.x/floorProjection.a;
+            byId('sx').value=x+floorX;
+            byId('sourceHeight').value=drag.level+floorProjection.b*floorX-movement.y;
+          }
+          draw(); return;
+        }
         if(drag.target==='lamp') byId('sx').value=x+dx;
         byId(drag.target==='lamp'?'sy':'mirrorY').value=y+dy;
       }
