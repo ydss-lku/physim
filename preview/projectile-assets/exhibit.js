@@ -413,7 +413,9 @@ function createProjectileExhibit(canvas) {
       return {x:(pt.x+1)*rect.width/2,y:(1-pt.y)*rect.height/2};
     }
     const angle=(pendingSetup.visible?pendingBarrel:barrel).rotation.z;
-    return {speedPoint:v=>screen((1.86+v*.16)*Math.cos(angle),(1.86+v*.16)*Math.sin(angle),0),liftBadge:screen(-3,-.358,.64),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),0),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
+    const tip=initialVector.cone.getWorldPosition(new T.Vector3()).project(flightCamera);
+    const speedTip={x:(tip.x+1)*rect.width/2,y:(1-tip.y)*rect.height/2};
+    return {speedTip,liftBadge:screen(-3,-.358,.64),onArc:(offset,radius)=>screen(radius*Math.cos(angle+offset),radius*Math.sin(angle+offset),0),muzzle:screen(1.86*Math.cos(angle),1.86*Math.sin(angle),0),rear:screen(-2.2,-.9,0),base:screen(-.65,-1.118,1),pivot:screen(0,0,0),speed:screen(1,-.45,1)};
   };
   render.dragCoordinates=function(){
     const cam=flightCamera.clone(),root=pendingSetup.visible?pendingSetup:rig;

@@ -373,7 +373,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       const r=icon.getBoundingClientRect();
       if(event.clientX>=r.left && event.clientX<=r.right && event.clientY>=r.top && event.clientY<=r.bottom)return key;
     }
-    const {muzzle,speedPoint}=renderExhibit.controlAnchor(),end=speedPoint(draft.v0);
+    const {muzzle,speedTip:end}=renderExhibit.controlAnchor();
     const rect=trajCanvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
     const dx=end.x-muzzle.x,dy=end.y-muzzle.y;
     const t=Math.max(.15,Math.min(1,((x-muzzle.x)*dx+(y-muzzle.y)*dy)/(dx*dx+dy*dy||1)));
@@ -385,7 +385,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     dragHints.theta.hidden=dragHints.y0.hidden=hide;
     angleValue.hidden=true;
     if(hide)return;
-    const {muzzle,rear,pivot,base,onArc,liftBadge}=renderExhibit.controlAnchor();
+    const {muzzle,rear,pivot,base,onArc,liftBadge,speedTip}=renderExhibit.controlAnchor();
     if(pivot.x<0||pivot.x>w||pivot.y<0||pivot.y>h){
       dragHints.theta.hidden=dragHints.y0.hidden=true;return;
     }
@@ -425,10 +425,17 @@ window.addEventListener("lab-theme-change", refreshChartInk);
       angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,liftBadge.y-angleValue.offsetHeight-15))+'px';
     }
     if(modelDrag?.key==='v0'){
-      const end=renderExhibit.controlAnchor().speedPoint(draft.v0);
       angleValue.hidden=false;angleValue.textContent='v₀ = '+draft.v0+' m/s';
-      angleValue.style.left=Math.max(2,Math.min(w-angleValue.offsetWidth-2,end.x+8))+'px';
-      angleValue.style.top=Math.max(2,Math.min(h-angleValue.offsetHeight-2,end.y+8))+'px';
+      const width=angleValue.offsetWidth,height=angleValue.offsetHeight;
+      const dx=speedTip.x-muzzle.x,dy=speedTip.y-muzzle.y;
+      const length=Math.hypot(dx,dy)||1;
+      // Dock the nearest edge of the readout just beyond the projected arrowhead.
+      const gap=4;
+      const reach=gap+Math.min(width*length/(2*Math.abs(dx)||1e-6),height*length/(2*Math.abs(dy)||1e-6));
+      const left=speedTip.x+dx/length*reach-width/2;
+      const top=speedTip.y+dy/length*reach-height/2;
+      angleValue.style.left=Math.max(2,Math.min(w-width-2,left))+'px';
+      angleValue.style.top=Math.max(2,Math.min(h-height-2,top))+'px';
     }
   }
   const previewLabel=document.createElement('output');
