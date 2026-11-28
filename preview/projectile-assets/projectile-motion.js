@@ -822,6 +822,23 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const speedAt=time=>Math.hypot(p.vx,p.vy0-gravity*time);
     const ceiling=Math.max(5,5*Math.ceil(Math.max(speedAt(0),speedAt(p.T))/5));
     const x=time=>49+278*(p.T?time/p.T:0),y=time=>100-84*speedAt(time)/ceiling;
+    const minimumTime=Math.max(0,Math.min(p.T,p.vy0/gravity));
+    const guides=speedChart.querySelector('.minimum');
+    const reveal=t>minimumTime+1e-9;
+    guides.setAttribute('display',reveal?'inline':'none');
+    if(reveal){
+      const mx=x(minimumTime),my=y(minimumTime);
+      guides.querySelector('path').setAttribute('d',`M49 ${my}H${mx}V100`);
+      const speedLabel=guides.querySelector('.min-speed'),timeLabel=guides.querySelector('.min-time');
+      speedLabel.setAttribute('y',my+3);
+      speedLabel.textContent=speedAt(minimumTime).toFixed(2);
+      timeLabel.setAttribute('x',mx);
+      timeLabel.setAttribute('text-anchor',mx<70?'start':mx>300?'end':'middle');
+      timeLabel.textContent=minimumTime.toFixed(2)+' s';
+    }
+    for(const [selector,tickY] of [['.upper',16],['.mid',58],['.zero-speed',100]]){
+      speedChart.querySelector(selector).style.visibility=reveal&&Math.abs(y(minimumTime)-tickY)<12?'hidden':'visible';
+    }
     const times=[0];
     if(t>0){
       for(let i=1;i<=64;i++)times.push(t*i/64);
