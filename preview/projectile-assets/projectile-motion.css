@@ -188,3 +188,8 @@ main .observation .viewport{height:clamp(360px,41vw,595px);border:1px solid var(
 @media(max-width:760px){.fine-sliders{grid-template-columns:1fr}}
 
 .fine-sliders .setting{grid-template-rows: minmax(1.8em,auto) 28px 44px;align-content:start}
+
+.fine-settings{container-type:inline-size}
+.scale-ticks[data-slider=sliderV0] button{width:min(44px,12.5%);min-width:0;padding-inline:0}
+@container (max-width:760px){.fine-sliders{grid-template-columns:1fr}}
+@media(max-width:600px){.launch-settings aside{grid-template-columns:minmax(0,1fr)}}
