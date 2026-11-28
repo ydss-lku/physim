@@ -809,7 +809,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
 
   // ====== 更新介面數據與重繪 ======
   const flightPhase=document.getElementById('flightPhase');
-  const flightCharts=[...document.querySelectorAll('.flight-charts .flight-chart')];
+  const flightCharts=[...document.querySelectorAll('.flight-charts .flight-chart:not(.speed-chart)')];
   document.getElementById('jumpPeak')?.addEventListener('click',()=>{
     state.playing=false;
     stopAnimationLoop();
@@ -890,6 +890,7 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const cur = posAtTime(curT, p);
 
     updateFlightPanels(p,curT,cur.vy);
+    drawSpeedChart(p,curT);
     timeLabel.textContent = `${curT.toFixed(2)} / ${p.T.toFixed(2)} s`;
     livePosTag.textContent = `t = ${curT.toFixed(2)} s ｜ x = ${cur.x.toFixed(1)} m, y = ${cur.y.toFixed(1)} m`;
 
