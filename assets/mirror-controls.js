@@ -29,6 +29,56 @@
     return svg;
   }
   function init() {
+    const presets = {
+      width:[2,8,14], position:[-3,0,3], objectX:[-7,0,7], distance:[1.5,4,8],
+      mirrorBottom:[0,2,4], mirrorHeight:[1,2,4], eyeDistance:[1,3,5],
+      eyeHeight:[0.5,2,4], postDistance:[1,5,10,15], postHeight:[1,3,6],
+    };
+    const scales = [];
+    for (const slider of document.querySelectorAll('aside input[type="range"]')) {
+      const scale = document.createElement('div');
+      scale.className = 'mirror-scale-ticks';
+      scale.dataset.slider = slider.id;
+      const minimum = Number(slider.min), maximum = Number(slider.max);
+      const unit = document.documentElement.dataset.page === 'mirror-image-2' ? ' m' : '';
+      // Buttons must sit outside the input's label so tapping a tick never also toggles a label.
+      const label = slider.closest('label');
+      if (label) {
+        label.classList.add('mirror-slider-label');
+        label.after(scale);
+      } else slider.after(scale);
+      for (const value of presets[slider.id]) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.value = String(value);
+        button.textContent = value + unit;
+        const description = slider.getAttribute('aria-label') || label.querySelector('.bilingual').textContent.trim();
+        button.setAttribute('aria-label', description + ': ' + value + unit);
+        button.style.left = (100 * (value - minimum) / (maximum - minimum)) + '%';
+        button.addEventListener('click', () => {
+          slider.value = button.value;
+          slider.dispatchEvent(new Event('input', {bubbles:true}));
+        });
+        scale.append(button);
+      }
+      scales.push([slider, scale]);
+    }
+    function syncPresets() {
+      for (const [slider, scale] of scales) {
+        for (const button of scale.children) {
+          const value = Number(button.value);
+          const disabled = (slider.id === 'postDistance' && value < Number(document.getElementById('eyeDistance').value)) ||
+            (slider.id === 'eyeDistance' && value > Number(document.getElementById('postDistance').value));
+          if (button.disabled !== disabled) button.disabled = disabled;
+          const selected = String(Math.abs(Number(slider.value) - value) < 0.001);
+          if (button.getAttribute('aria-pressed') !== selected) button.setAttribute('aria-pressed', selected);
+        }
+      }
+    }
+    document.querySelector('main').addEventListener('input', syncPresets);
+    document.querySelector('main').addEventListener('pointermove', syncPresets);
+    document.getElementById('reset').addEventListener('click', syncPresets);
+    syncPresets();
     const guide = document.createElement('details');
     guide.className = 'mirror-control-guide';
     guide.innerHTML = '<summary><span lang="en">Control guide</span><small lang="zh-HK">圖示說明</small></summary><div class="mirror-guide-items"></div>';

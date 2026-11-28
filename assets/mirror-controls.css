@@ -45,3 +45,45 @@ html[data-theme=tech] .mirror-toggle[style]::after {
 html[data-theme=tech] body main .mirror-toggle:focus-within,
 html[data-theme=tech] body main .mirror-view-button:focus-visible { outline-color:#77f5ef; }
 html[data-theme=tech] .mirror-control-guide { color:#c7dadc; }
+
+/* Compact parameter rows with directly selectable scale values. */
+html body main aside .mirror-slider-label {
+ display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 8px;
+}
+html body main aside .mirror-slider-label > .bilingual {flex:1}
+html body main aside input[type=range] {display:block;width:100%;flex-basis:100%;padding:0}
+html body main aside .mirror-scale-ticks {position:relative}
+html body main aside .mirror-scale-ticks button {
+ position:absolute;top:0;transform:translateX(-50%);width:44px;min-width:44px;
+ margin:0;border-radius:0;
+}
+html body main aside .mirror-scale-ticks button::before {
+ content:'';position:absolute;left:50%;top:1px;height:5px;border-left:1px solid currentColor;
+}
+html body main aside .mirror-scale-ticks button:disabled {opacity:.35;cursor:not-allowed}
+html body main .mirror-toggle {width:44px;height:44px;min-width:44px;min-height:44px}
+html body main .mirror-control-guide {margin:6px 0 0}
+/* Override the shared instrument's generous desktop control spacing on these two pages. */
+html[data-theme] body main > aside {padding:10px 12px!important}
+html[data-theme] body main aside section {margin-top:8px!important;padding-top:6px!important}
+html[data-theme] body main aside h2 {margin:0 0 4px!important;line-height:1.25!important}
+html[data-theme] body main aside .row {margin:0!important;padding:0!important}
+html[data-theme] body main aside .row label {margin:0!important;min-height:30px!important;line-height:1.2!important}
+html[data-theme] body main aside input[type=number] {height:30px!important;min-height:30px!important;padding:3px 5px!important}
+html[data-theme] body main aside input[type=range] {height:20px!important;min-height:20px!important;margin:0!important}
+html[data-theme] body main aside .mirror-slider-label {margin:0!important;line-height:1.2!important}
+html[data-theme] body main aside .mirror-scale-ticks {height:32px!important;margin:0 9px 2px!important}
+html[data-theme] body main aside .mirror-scale-ticks button {
+ height:32px!important;min-height:32px!important;padding:6px 0 0!important;
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ color:inherit!important;font-size:12px!important;font-weight:500;line-height:1.1;
+}
+html[data-theme=tech] body main aside .mirror-scale-ticks button[aria-pressed=true] {color:#fcee0a!important;font-weight:750}
+html[data-theme=paper] body main aside .mirror-scale-ticks button[aria-pressed=true] {color:#235b43!important;font-weight:750}
+html[data-theme] body main aside .mirror-scale-ticks button:hover {background:#7faca622!important}
+html[data-theme] body main .mirror-ray-row,html[data-theme] body main .mirror-toggle-row,
+html[data-theme] body #rayControls,html[data-theme] body #displayControls {margin:4px 0!important;gap:6px!important}
+@media(pointer:coarse) {
+ html[data-theme] body main aside .mirror-scale-ticks,html[data-theme] body main aside .mirror-scale-ticks button {height:44px!important;min-height:44px!important}
+ html[data-theme] body main aside input[type=number] {height:44px!important;min-height:44px!important}
+}
