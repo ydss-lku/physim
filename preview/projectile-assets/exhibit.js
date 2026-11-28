@@ -71,15 +71,26 @@ function createProjectileExhibit(canvas) {
     }
     cylinder(rig,.12,.12,.36,graphite,0,y,z);
   }
-  const pendingBarrel=barrel.clone();
-  const ghostMaterial=new T.MeshBasicMaterial({color:0x70ebe0,transparent:true,opacity:.34,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2});
-  pendingBarrel.traverse(part=>{
-    if(part.isMesh){part.material=ghostMaterial;part.castShadow=false;part.receiveShadow=false;}
+  const pendingRig=rig.clone(),pendingBarrel=pendingRig.children[rig.children.indexOf(barrel)];
+  const previewMaterials=new Map();
+  pendingRig.traverse(mesh=>{
+    if(!mesh.isMesh)return;
+    if(!previewMaterials.has(mesh.material)){
+      const tint=mesh.material.color.clone().lerp(new T.Color(0x59e9d9),.65);
+      previewMaterials.set(mesh.material,new T.MeshStandardMaterial({color:tint,roughness:.55,
+        emissive:tint,emissiveIntensity:.21,transparent:true,opacity:.48,depthWrite:false,
+        polygonOffset:true,polygonOffsetFactor:-2}));
+    }
+    mesh.material=previewMaterials.get(mesh.material);mesh.castShadow=false;mesh.receiveShadow=false;
   });
+  const platformGeometry=new T.BoxGeometry(3.35,1,2.1);
+  const pendingPlatform=new T.Mesh(platformGeometry,new T.MeshBasicMaterial({color:0x68ddcd,transparent:true,opacity:.19,depthWrite:false}));
+  pendingPlatform.add(new T.LineSegments(new T.EdgesGeometry(platformGeometry),new T.LineBasicMaterial({color:0x93f4e6,transparent:true,opacity:.65})));
+  const pendingSetup=new T.Group();pendingSetup.add(pendingRig,pendingPlatform);scene.add(pendingSetup);
   const initialVector=new T.ArrowHelper(new T.Vector3(1,0,0),new T.Vector3(1.86,0,0),1,0x70ebe0);
   initialVector.line.material.transparent=initialVector.cone.material.transparent=true;
   initialVector.line.material.opacity=initialVector.cone.material.opacity=.85;
-  pendingBarrel.add(initialVector);scene.add(pendingBarrel);
+  pendingBarrel.add(initialVector);
   const ball=part(scene,new T.SphereGeometry(1,48,32),alloy);
   for(const angle of [-.32,.32]){
     const belt=part(ball,new T.TorusGeometry(Math.cos(angle),.027,8,64),graphite,0,Math.sin(angle),0);
@@ -148,6 +159,21 @@ function createProjectileExhibit(canvas) {
       const q=new T.Vector3(x,y,z).sub(rig.position).applyQuaternion(inverse);
       points.push(q);bounds.expandByPoint(q);
     }
+    if(preview){
+      const tilt=preview.theta*Math.PI/180;
+      const field=my-flight.y0*size-ball.scale.x;
+      const floor=Math.min(field-.35*size,rig.position.y-1.118*size);
+      pendingSetup.position.set(mx-1.86*Math.cos(tilt)*size,my+(preview.y0-flight.y0-1.86*Math.sin(tilt))*size,0);
+      pendingSetup.scale.setScalar(size);
+      pendingBarrel.rotation.z=tilt;
+      const wheelBottom=-1.118;
+      const rise=Math.max(.07,wheelBottom-(floor-pendingSetup.position.y)/size);
+      pendingPlatform.scale.y=rise;pendingPlatform.position.set(-.65,wheelBottom-rise/2,0);
+      const length=preview.v0*.16;
+      initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
+      const extent=new T.Box3().setFromObject(pendingSetup);
+      for(const x of [extent.min.x,extent.max.x])for(const y of [extent.min.y,extent.max.y])for(const z of [extent.min.z,extent.max.z])include(x,y,z);
+    }
     const carriage=new T.Box3().setFromObject(rig,true);
     for(const x of [carriage.min.x,carriage.max.x])for(const y of [carriage.min.y,carriage.max.y])for(const z of [carriage.min.z,carriage.max.z])include(x,y,z);
     for(let i=0;i<=32;i++){
@@ -168,7 +194,7 @@ function createProjectileExhibit(canvas) {
       (Math.abs(q.y-aim.y)+.24*size)/(tan*spread)));
     flightCamera.position.set(aim.x,aim.y,distance).applyQuaternion(flightCamera.quaternion).add(rig.position);
     flightCamera.zoom=view.zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
-    pendingBarrel.visible=false;
+    pendingSetup.visible=false;
     if(inset){
       const iw=inset.w, ih=inset.h;
       const radius=Math.min(32,ih*.095,iw*.08);
@@ -188,16 +214,7 @@ function createProjectileExhibit(canvas) {
       rig.visible=showRig;
 
     }
-    if(preview){
-      const angle=preview.theta*Math.PI/180;
-      pendingBarrel.scale.setScalar(size);
-      pendingBarrel.rotation.z=angle;
-      pendingBarrel.position.set(mx-1.86*Math.cos(angle)*size,
-        my+(preview.y0-flight.y0-1.86*Math.sin(angle))*size,0);
-      const length=preview.v0*.16;
-      initialVector.setLength(length,Math.min(.52,length*.29),Math.min(.30,length*.18));
-      pendingBarrel.visible=true;
-    }
+    pendingSetup.visible=Boolean(preview);
     renderer.render(scene,flightCamera);
     return function project(horizontal,height){
       v.set(mx+horizontal*size,my+(height-flight.y0)*size,0).project(flightCamera);

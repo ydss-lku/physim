@@ -431,9 +431,9 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     const toPxX = x => start+x*scale;
     const toPxY = y => floor-y*scale;
     const inset=ballInset.hidden?null:setupCanvas(insetCanvas);
-    const preview=draft.theta!==state.theta || draft.v0!==state.v0 ? draft : null;
+    const preview=draft.theta!==state.theta || draft.v0!==state.v0 || draft.y0!==state.y0 ? draft : null;
     previewLabel.hidden=!preview;
-    if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽")+"  ·  θ "+preview.theta+"°   ·   v₀ "+preview.v0+" m/s";
+    if(preview)previewLabel.textContent=labLanguage.pick("Preview","預覽")+"  ·  θ "+preview.theta+"°   ·   v₀ "+preview.v0+" m/s   ·   y₀ "+preview.y0+" m";
     const project=renderExhibit?renderExhibit({ready,preview,w,h,start,muzzleY:toPxY(state.y0),x:toPxX(pos.x),y:toPxY(pos.y),theta:state.theta,size:scale,view,inset,flight:{...p,time:state.t,y0:state.y0,g:state.g}}):
       (x,y)=>({x:toPxX(x),y:toPxY(y)});
     hideProbe();
