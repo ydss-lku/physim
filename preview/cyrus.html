@@ -91,7 +91,7 @@
       <g id="world"><g fill="currentColor" text-anchor="middle">
         <rect x="36" y="36" width="568" height="288" fill="none" stroke="#bac7d5" opacity=".32" stroke-dasharray="2 5"/>
         <path id="mirrorFace" fill="#487184" fill-opacity=".75" stroke="#b4dce7" pointer-events="none"/><path id="mirror" d="M166 180 H474" stroke="#9bd8f0" stroke-width="5"/>
-        <g id="guide">
+        <path id="mirrorTouch" fill="none" stroke="transparent" stroke-width="24" pointer-events="stroke" style="touch-action:none;cursor:ns-resize"/><g id="opticalPlane"><g id="guide">
         <g id="meter" fill="#a2b2c4" font-size="10" aria-label="Protractor, zero at the normal"></g>
         <path d="M320 56 V220" stroke="#abbaca" stroke-dasharray="7 5"/>
         <text x="320" y="234">Normal</text>
@@ -103,10 +103,10 @@
           <path id="incident"/><path id="reflected"/>
         </g>
         <path id="filament" display="none" fill="none" stroke-width="1.2" stroke-linejoin="round"/>
-        <g id="arrows" fill="#ffc2bf"></g><use href="#mirror" pointer-events="none"/>
-        <path id="mirrorTouch" fill="none" stroke="transparent" stroke-width="24" pointer-events="stroke" style="touch-action:none;cursor:ns-resize"/><g id="lamp"><circle r="22" fill="transparent"/><g id="standardSource"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g><g id="gauntlet" display="none" stroke="#41242a" stroke-width="1.1" stroke-linejoin="round"><g fill="#b73839"><path d="M-10 -4 L-15 -14 Q-16 -18 -13 -18 L-6 -9 L-9 -22 Q-9 -25 -6 -24 L-2 -11 L-3 -25 Q-2 -28 1 -25 L3 -11 L4 -23 Q6 -26 8 -22 L7 -7 L11 -13 Q15 -15 14 -10 L10 2 L8 9 L6 21 L-6 21 L-8 9 Z"/></g><path fill="#d6a657" d="M-9 -4 L-3 -8 L6 -6 L9 0 L5 8 L-5 9 L-9 3 Z M-6 12 L6 11 L5 18 L-5 19 Z"/><path fill="none" d="M-12 -13 l3 -2 M-8 -17 l4 -1 M-3 -19 h4 M4 -17 h4 M-6 14 l11 -1"/><circle r="4.8" fill="#272932"/><circle id="core" r="3.4" stroke="none"/></g></g>
+        <g id="arrows" fill="#ffc2bf"></g>
+        <g id="lamp"><circle r="22" fill="transparent"/><g id="sourceDepth" pointer-events="none" style="filter:brightness(.53)"></g><g id="standardSource"><rect x="-10" y="-3" width="20" height="27" rx="4" fill="#b8c6d6"/><path d="M-9 -3 H9" stroke="#fff0b8" stroke-width="4"/></g><g id="gauntlet" display="none" stroke="#41242a" stroke-width="1.1" stroke-linejoin="round"><g fill="#b73839"><path d="M-10 -4 L-15 -14 Q-16 -18 -13 -18 L-6 -9 L-9 -22 Q-9 -25 -6 -24 L-2 -11 L-3 -25 Q-2 -28 1 -25 L3 -11 L4 -23 Q6 -26 8 -22 L7 -7 L11 -13 Q15 -15 14 -10 L10 2 L8 9 L6 21 L-6 21 L-8 9 Z"/></g><path fill="#d6a657" d="M-9 -4 L-3 -8 L6 -6 L9 0 L5 8 L-5 9 L-9 3 Z M-6 12 L6 11 L5 18 L-5 19 Z"/><path fill="none" d="M-12 -13 l3 -2 M-8 -17 l4 -1 M-3 -19 h4 M4 -17 h4 M-6 14 l11 -1"/><circle r="4.8" fill="#272932"/><circle id="core" r="3.4" stroke="none"/></g></g>
         <text pointer-events="none" id="incomingLabel">Incident ray</text>
-        <text pointer-events="none" id="outgoingLabel">Reflected ray</text>
+        <text pointer-events="none" id="outgoingLabel">Reflected ray</text></g>
       </g>
       <g id="dial" display="none" style="touch-action:none" fill="none"><circle r="39" stroke="#8ed275" stroke-width="2"/><g id="arm"><path d="M0 0 H39" stroke="#9fea6e" stroke-width="4"/><circle cx="39" r="9" fill="#9fea6e" stroke="white"/></g><circle r="40" stroke="transparent" stroke-width="22"/><text id="dialValue" y="5" text-anchor="middle" fill="white" stroke="#182018" stroke-width="3" paint-order="stroke" font-size="13"></text></g>
     </g></svg>
@@ -120,7 +120,7 @@
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
       <label>Mirror Y<input id="mirrorY" type="range" min="36" max="324" value="180"></label>
       <button id="secret" type="button" aria-label="Switch light source" aria-pressed="false">???</button></details><label>Mirror length<input id="mirrorLength" type="range" min="80" max="620" value="308"></label>
-      <label id="heightControl" hidden>Mirror height<input id="mirrorHeight" type="range" min="10" max="150" value="65"></label>
+      <label id="sourceHeightControl" hidden>Source height (Y) <output id="sourceLevel"></output><input id="sourceHeight" type="range" min="0" max="160" value="30"></label><label id="heightControl" hidden>Mirror height <output id="mirrorLevel"></output><input id="mirrorHeight" type="range" min="10" max="150" value="65"></label>
       <button id="reset" type="button">Restore defaults</button>
     </section>
     <dialog id="tutorial" aria-labelledby="demoTitle"><h2 id="demoTitle"></h2>
@@ -246,15 +246,15 @@
     let spatial=false;
     const floorProjection=new DOMMatrix([.94,.28,-.34,.64,80,-18]);
     const planeMatrix=()=>spatial?floorProjection:new DOMMatrix();
-    function elevation(){
-      const z=+byId('mirrorHeight').value;
+    function elevation(z=+byId('mirrorHeight').value){
+
       return new DOMPoint(0,-z,0,0).matrixTransform(floorProjection.inverse());
     }
     function switchView(value){
       spatial=value;
       byId('view2').setAttribute('aria-pressed',String(!value));
       byId('view3').setAttribute('aria-pressed',String(value));
-      byId('heightControl').hidden=!value;
+      byId('heightControl').hidden=!value; byId('sourceHeightControl').hidden=!value;
       draw();
     }
     byId('view2').onclick=()=>switchView(false);
@@ -271,15 +271,32 @@
       byId('mirror').setAttribute('d','M'+(320-halfLength)+' 180 H'+(320+halfLength));
       const left=[320-halfLength*ny,mirrorY+halfLength*nx];
       const right=[320+halfLength*ny,mirrorY-halfLength*nx];
+      const level=+byId('sourceHeight').value, ceiling=+byId('mirrorHeight').value;
+      const offset=elevation(spatial?level:0);
+      byId('opticalPlane').setAttribute('transform','translate('+offset.x+' '+offset.y+')');
+      byId('sourceLevel').textContent=level; byId('mirrorLevel').textContent=ceiling;
+      const depth=byId('sourceDepth');
+      depth.style.display=spatial?'':'none';
+      if(spatial){
+        const local=elevation(-1).matrixTransform(new DOMMatrix().rotate(-degrees));
+        if(!depth.childElementCount){
+          for(let n=8;n>=1;n--){const slice=document.createElementNS(depth.namespaceURI,'use');depth.append(slice);}
+        }
+        const shape=byId('secret').getAttribute('aria-pressed')==='true'?'#gauntlet':'#standardSource';
+        [...depth.children].forEach((slice,index)=>{
+          slice.setAttribute('href',shape);
+          slice.setAttribute('transform','translate('+local.x*(8-index)+' '+local.y*(8-index)+')');
+        });
+      }
       const up=elevation();
       byId('mirrorFace').setAttribute('d',spatial?'M'+left+' L'+right+' l'+up.x+' '+up.y+' L'+(left[0]+up.x)+' '+(left[1]+up.y)+' Z':'');
       byId('sourceAngle').textContent = degrees.toFixed(1)+'°';
       const halfThickness = Number(byId('mirror').getAttribute('stroke-width')) / 2;
       const normalOffset = (x-320)*nx + (y-mirrorY)*ny;
       const along = (x-320)*ny - (y-mirrorY)*nx;
-      const inside = Math.abs(normalOffset)<halfThickness && Math.abs(along)<=halfLength;
+      const inside = level<=ceiling && Math.abs(normalOffset)<halfThickness && Math.abs(along)<=halfLength;
       const distance = Math.abs(dot)>1e-9 ? (-Math.sign(dot)*halfThickness-normalOffset)/dot : Infinity;
-      const hit = !inside && distance >= 0 && Number.isFinite(distance) &&
+      const hit = level<=ceiling && !inside && distance >= 0 && Number.isFinite(distance) &&
         distance <= edge(x,y,dx,dy) &&
         Math.abs((x+distance*dx-320)*ny - (y+distance*dy-mirrorY)*nx) <= halfLength+1e-6;
       const length = inside ? 0 : hit ? distance : edge(x,y,dx,dy);
@@ -308,7 +325,7 @@
         const angle = cosine => (Math.acos(Math.min(1,Math.abs(cosine)))/rad).toFixed(1);
         byId('angle').textContent = 'Incidence i = '+angle(dot)+'° · Reflection r = '+angle(rx*nx+ry*ny)+'°';
       } else {
-        byId('angle').textContent = inside ? 'Move the source outside the mirror' : 'Beam misses the mirror';
+        byId('angle').textContent = inside ? 'Move the source outside the mirror' : level>ceiling ? 'Beam is above the mirror' : 'Beam misses the mirror';
       }
       updateDial();
       applyCamera();
@@ -336,7 +353,7 @@
       hit.setAttribute('transform',byId('mirror').getAttribute('transform'));
       dial.setAttribute('display',selected ? 'inline' : 'none');
       if (!selected) return;
-      const [x,y] = centre(selected);
+      const [baseX,baseY] = centre(selected); const offset=elevation(spatial && selected==='lamp'?+byId('sourceHeight').value:0); const x=baseX+offset.x,y=baseY+offset.y;
       const source = selected === 'lamp';
       const angle = +(source ? slider : byId('tilt')).value;
       dial.setAttribute('transform','translate('+x+' '+y+')');
@@ -366,7 +383,7 @@
       if (drag.rotating) {
         if (Math.hypot(p.x-x,p.y-y)<12) return;
         const source=drag.target==='lamp';
-        let angle=Math.atan2(p.y-y,p.x-x)*180/Math.PI+(source?90:0);
+        const offset=elevation(spatial && source?+byId('sourceHeight').value:0); let angle=Math.atan2(p.y-y-offset.y,p.x-x-offset.x)*180/Math.PI+(source?90:0);
         if(angle>180) angle-=360;
         (source?slider:byId('tilt')).value=angle;
       } else {
@@ -399,7 +416,7 @@
       const points=[];
       for(const [id,angle] of [['lamp',+slider.value],['mirror',+byId('tilt').value]]){
         const [x,y]=centre(id), length=+byId('mirrorLength').value/2;
-        const base=camera.multiply(planeMatrix()); const transform=base.translate(x,y).rotate(angle);
+        const base=camera.multiply(planeMatrix()); const lift=elevation(spatial && id==='lamp'?+byId('sourceHeight').value:0); const transform=base.translate(x+lift.x,y+lift.y).rotate(angle);
         const bounds=id==='lamp'?[-18,18,-28,26]:[-length,length,-3,3];
         for(const px of bounds.slice(0,2))for(const py of bounds.slice(2)){const corner=new DOMPoint(px,py).matrixTransform(transform);points.push(corner);if(spatial && id==="mirror"){const up=elevation().matrixTransform(base);points.push(new DOMPoint(corner.x+up.x,corner.y+up.y));}}
       }
