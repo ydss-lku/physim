@@ -120,7 +120,7 @@
       <label>Rotate plane mirror <output id="tiltValue"></output><input id="tilt" type="range" min="-90" max="90" value="0"></label>
       <label>Mirror Y<input id="mirrorY" type="range" min="36" max="324" value="180"></label>
       <button id="secret" type="button" aria-label="Switch light source" aria-pressed="false">???</button></details><label>Mirror length<input id="mirrorLength" type="range" min="80" max="620" value="308"></label>
-      <label id="sourceHeightControl" hidden>Source height (Y) <output id="sourceLevel"></output><input id="sourceHeight" type="range" min="0" max="160" value="30"></label><label id="heightControl" hidden>Mirror height <output id="mirrorLevel"></output><input id="mirrorHeight" type="range" min="10" max="150" value="65"></label>
+      <label id="pitchControl" hidden>Source pitch <output id="pitchValue"></output><input id="pitch" type="range" min="-85" max="85" step="0.1" value="0"></label><label id="sourceHeightControl" hidden>Source height (Y) <output id="sourceLevel"></output><input id="sourceHeight" type="range" min="0" max="150" value="30"></label><label id="heightControl" hidden>Mirror height <output id="mirrorLevel"></output><input id="mirrorHeight" type="range" min="10" max="150" value="65"></label>
       <button id="reset" type="button">Restore defaults</button>
     </section>
     <dialog id="tutorial" aria-labelledby="demoTitle"><h2 id="demoTitle"></h2>
@@ -254,7 +254,7 @@
       spatial=value;
       byId('view2').setAttribute('aria-pressed',String(!value));
       byId('view3').setAttribute('aria-pressed',String(value));
-      byId('heightControl').hidden=!value; byId('sourceHeightControl').hidden=!value;
+      byId('pitchControl').hidden=!value; byId('heightControl').hidden=!value; byId('sourceHeightControl').hidden=!value;
       draw();
     }
     byId('view2').onclick=()=>switchView(false);
@@ -272,12 +272,17 @@
       const left=[320-halfLength*ny,mirrorY+halfLength*nx];
       const right=[320+halfLength*ny,mirrorY-halfLength*nx];
       const level=+byId('sourceHeight').value, ceiling=+byId('mirrorHeight').value;
+      const pitch=+byId('pitch').value*rad;
+      const slope=Math.tan(pitch);
+      byId('pitchValue').textContent=(pitch/rad).toFixed(1)+'°';
       const offset=elevation(spatial?level:0);
       byId('opticalPlane').setAttribute('transform','translate('+offset.x+' '+offset.y+')');
       byId('sourceLevel').textContent=level; byId('mirrorLevel').textContent=ceiling;
       byId('depthLabel').textContent=spatial?'Source depth (Z)':'Source Y';
       const palm=byId('gauntlet');
       const palmUp=elevation(1), localRotation=new DOMMatrix().rotate(-degrees);
+      const rise=elevation(spatial?Math.sin(pitch):0).matrixTransform(localRotation);
+      byId('standardSource').setAttribute('transform',spatial?'matrix(1 0 '+(-rise.x)+' '+(Math.cos(pitch)-rise.y)+' 0 0)':'translate(0 0)');
       const tangent=new DOMPoint(ny,-nx,0,0).matrixTransform(localRotation);
       const vertical=palmUp.matrixTransform(localRotation);
       palm.setAttribute('transform',spatial?'matrix('+[tangent.x,tangent.y,-vertical.x,-vertical.y,0,0].join(' ')+')':'translate(0 0)');
@@ -303,10 +308,12 @@
       const along = (x-320)*ny - (y-mirrorY)*nx;
       const inside = level<=ceiling && Math.abs(normalOffset)<halfThickness && Math.abs(along)<=halfLength;
       const distance = Math.abs(dot)>1e-9 ? (-Math.sign(dot)*halfThickness-normalOffset)/dot : Infinity;
-      const hit = level<=ceiling && !inside && distance >= 0 && Number.isFinite(distance) &&
+      const contactHeight=level+distance*slope;
+      const floorLimit=slope<0 ? -level/slope : Infinity;
+      const hit = contactHeight>=-1e-6 && contactHeight<=ceiling+1e-6 && !inside && distance >= 0 && Number.isFinite(distance) &&
         distance <= edge(x,y,dx,dy) &&
         Math.abs((x+distance*dx-320)*ny - (y+distance*dy-mirrorY)*nx) <= halfLength+1e-6;
-      const length = inside ? 0 : hit ? distance : edge(x,y,dx,dy);
+      const length = inside ? 0 : hit ? distance : Math.min(floorLimit,edge(x,y,dx,dy));
       const hx = x+dx*length, hy = y+dy*length;
       byId('mirror').setAttribute('transform', 'translate(0 '+(mirrorY-180)+') rotate('+tilt+' 320 180)');
       byId('tiltValue').textContent = tilt+'°';
@@ -324,23 +331,36 @@
       label('incomingLabel',x+dx*length*.35-48,y+dy*length*.35);
       if (hit) {
         const rx = dx-2*dot*nx, ry = dy-2*dot*ny;
-        const reach = edge(hx,hy,rx,ry);
+        const reach = Math.min(edge(hx,hy,rx,ry),slope<0 ? Math.max(0,-contactHeight/slope) : Infinity);
         rays.push([hx,hy,rx*reach,ry*reach]);
         byId('reflected').setAttribute('d','M'+hx+' '+hy+' l'+rx*reach+' '+ry*reach);
         byId('guide').setAttribute('transform','translate('+hx+' '+hy+') rotate('+(tilt+(dot>0?180:0))+') scale(.97) translate(-320 -56)');
         label('outgoingLabel',hx+rx*reach*.62+48,hy+ry*reach*.62);
-        const angle = cosine => (Math.acos(Math.min(1,Math.abs(cosine)))/rad).toFixed(1);
+        const angle = cosine => (Math.acos(Math.min(1,Math.abs(cosine)*Math.cos(pitch)))/rad).toFixed(1);
         byId('angle').textContent = 'Incidence i = '+angle(dot)+'° · Reflection r = '+angle(rx*nx+ry*ny)+'°';
       } else {
-        byId('angle').textContent = inside ? 'Move the source outside the mirror' : level>ceiling ? 'Beam is above the mirror' : 'Beam misses the mirror';
+        byId('angle').textContent = inside ? 'Move the source outside the mirror' : contactHeight>ceiling && distance>0 ? 'Beam passes above the mirror' : 'Beam misses the mirror';
       }
       updateDial();
       applyCamera();
       const segments=rays.map(([ax,ay,vx,vy])=>'M'+ax+' '+ay+' l'+vx+' '+vy);
       byId('floorTrace').setAttribute('d',spatial?segments.join(' '):'');
-      const last=rays[rays.length-1];
-      const anchors=[[x,y],[hx,hy],[last[0]+last[2],last[1]+last[3]]];
-      byId('heightEdges').setAttribute('d',spatial?anchors.map(([px,py])=>'M'+px+' '+py+' l'+offset.x+' '+offset.y).join(' '):'');
+      let travelled=0;
+      const guides=[];
+      for(let i=0;i<rays.length;i++){
+        const [ax,ay,vx,vy]=rays[i];
+        const startLift=elevation(spatial?travelled*slope:0);
+        travelled+=Math.hypot(vx,vy);
+        const endLift=elevation(spatial?travelled*slope:0);
+        const a=ax+startLift.x,b=ay+startLift.y,c=ax+vx+endLift.x,d=ay+vy+endLift.y;
+        rays[i]=[a,b,c-a,d-b];
+        byId(i?'reflected':'incident').setAttribute('d','M'+a+' '+b+' L'+c+' '+d);
+        guides.push('M'+(ax+vx)+' '+(ay+vy)+' L'+(c+offset.x)+' '+(d+offset.y));
+        label(i?'outgoingLabel':'incomingLabel',(a+c)/2+(i?48:-48),(b+d)/2);
+        if(i===0 && hit)byId('guide').setAttribute('transform','translate('+c+' '+d+') rotate('+(tilt+(dot>0?180:0))+') scale(.97) translate(-320 -56)');
+      }
+      byId('meter').style.visibility=Math.abs(pitch)>1e-9?'hidden':'visible';
+      byId('heightEdges').setAttribute('d',spatial?guides.join(' '):'');
       cancelAnimationFrame(frame);
       animate(performance.now());
     }
