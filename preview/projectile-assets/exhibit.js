@@ -145,6 +145,33 @@ function createProjectileExhibit(canvas) {
     }
     const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;return texture;
   }
+  // Paint a broken warm rim around a darker contact stain. Its centre stays open.
+  const stamp=document.createElement('canvas');stamp.width=stamp.height=192;
+  const paint=stamp.getContext('2d'),pixels=paint.createImageData(192,192);
+  function grit(x,y){const h=Math.sin(x*127.1+y*311.7)*43758.5453;return h-Math.floor(h);}
+  for(let y=0;y<192;y++)for(let x=0;x<192;x++){
+    const dx=(x-95.5)/94,dy=(y-95.5)/94,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
+    const n=grit(x,y),edge=.72+.05*Math.sin(7*a)+.026*Math.sin(17*a);
+    const rim=Math.exp(-((r-edge)**2)/.0016)*(.42+.58*n);
+    const ash=Math.exp(-((r-.50)**2)/.036)*(.50+.50*n);
+    const i=(192*y+x)*4;
+    pixels.data[i]=32+201*rim;pixels.data[i+1]=32+131*rim;pixels.data[i+2]=33+36*rim;
+    pixels.data[i+3]=Math.round(230*Math.min(1,ash+rim));
+  }
+  paint.putImageData(pixels,0,0);
+  const stainMap=new T.CanvasTexture(stamp);stainMap.colorSpace=T.SRGBColorSpace;
+  const stain=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:stainMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,toneMapped:false}));
+  stain.rotation.x=-Math.PI/2;scene.add(stain);stain.visible=false;
+  const contactView=new T.Vector3();
+  function frameStain(camera,height,size,age,landed){
+    stain.visible=landed;if(!landed)return;
+    stain.position.copy(ball.position);stain.position.y-=ball.scale.y-.022*size;
+    camera.updateMatrixWorld();
+    const depth=-contactView.copy(stain.position).applyMatrix4(camera.matrixWorldInverse).z;
+    const pixel=2*depth/(height*camera.projectionMatrix.elements[5]);
+    const diameter=Math.max(20*pixel,Math.min(44*pixel,1.6*size));
+    stain.scale.setScalar(diameter*(age>=0?.78+.22*Math.min(1,age/.24):1));
+  }
   const flashMap=puffTexture(false),dustMap=puffTexture(true);
   function particle(map,color,bright){
     const sprite=new T.Sprite(new T.SpriteMaterial({map,color,transparent:true,depthWrite:false,
@@ -154,6 +181,7 @@ function createProjectileExhibit(canvas) {
   const core=particle(flashMap,0xffffff,true);
   const sparks=Array.from({length:13},()=>particle(flashMap,0xffd486,true));
   const dust=Array.from({length:6},()=>particle(dustMap,0x8b8581,false));
+  const drift=Array.from({length:9},()=>particle(dustMap,0xbb987b,false));
   function drawImpact(age,size){
     burst.visible=age>=0 && age<1;
     if(!burst.visible)return;
@@ -166,7 +194,13 @@ function createProjectileExhibit(canvas) {
       const a=i*2.4,speed=.85+(i%5)*.43;
       const up=.10+(1.7+i%4*.68)*age-4.4*age*age;
       spark.position.set(Math.cos(a)*speed*age,Math.max(0,up),Math.sin(a)*speed*age);
-      spark.scale.setScalar(.075+.04*(i%3));spark.material.opacity=up>0?Math.max(0,1-age/.62):0;
+      spark.scale.set(.048+.02*(i%3),.14*(1-age)+.055,1);spark.material.rotation=-Math.cos(a)*age*1.8;spark.material.opacity=up>0?Math.max(0,1-age/.62):0;
+    });
+    drift.forEach((puff,i)=>{
+      const a=i*2.399,spread=(1-Math.exp(-age*6))*(.72+.07*(i%4));
+      puff.position.set(Math.cos(a)*spread,.10+.13*age,Math.sin(a)*spread);
+      puff.scale.set(.44+.50*age,.13+.20*age,1);
+      puff.material.opacity=.57*Math.min(1,age/.055)*(1-age)**2;
     });
     dust.forEach((puff,i)=>{
       const a=i*2.4;
@@ -240,7 +274,8 @@ function createProjectileExhibit(canvas) {
       (Math.abs(q.y-aim.y)+.24*size)/(tan*spread)));
     flightCamera.position.set(aim.x,aim.y,distance).applyQuaternion(flightCamera.quaternion).add(rig.position);
     flightCamera.zoom=view.zoom;flightCamera.updateProjectionMatrix();flightCamera.updateMatrixWorld();
-    drawImpact(impactAge,size);
+    const landed=!ready && flight.T>0 && flight.time>=flight.T;
+    drawImpact(landed?impactAge:-1,size);
     pendingSetup.visible=false;
     if(inset){
       const iw=inset.w, ih=inset.h;
@@ -252,6 +287,7 @@ function createProjectileExhibit(canvas) {
       const showRig=rig.visible;
       rig.visible=false;
       renderer.setViewport(0,0,iw,ih);renderer.setScissor(0,0,iw,ih);renderer.setScissorTest(true);
+      frameStain(portraitCamera,ih,size,impactAge,landed);
       renderer.render(scene,portraitCamera);
       const source=renderer.domElement;
       const sw=Math.floor(iw*ratio),sh=Math.floor(ih*ratio);
@@ -262,6 +298,7 @@ function createProjectileExhibit(canvas) {
 
     }
     pendingSetup.visible=Boolean(preview);
+    frameStain(flightCamera,h,size,impactAge,landed);
     renderer.render(scene,flightCamera);
     return function project(horizontal,height){
       v.set(mx+horizontal*size,my+(height-flight.y0)*size,0).project(flightCamera);
