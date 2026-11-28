@@ -544,6 +544,15 @@ window.addEventListener("lab-theme-change", refreshChartInk);
     if(reference && launched)path(reference,Math.min(state.t,reference.T),chartInk.guide,[6,5]);
 
     path(p,state.t,chartInk.trace,[],0,1.8,true);
+    if(launched){
+      ctx.save();
+      ctx.fillStyle='#ffe1a2';ctx.strokeStyle='#384344';ctx.lineWidth=1;
+      for(let t=.5;t<=state.t;t+=.5){
+        const sample=posAtTime(t,p),dot=project(sample.x,sample.y);
+        ctx.beginPath();ctx.arc(dot.x,dot.y,3,0,2*Math.PI);ctx.fill();ctx.stroke();
+      }
+      ctx.restore();
+    }
     const fieldRadius=renderExhibit?Math.max(4,.235*scale):6;
     if(launched && state.t>0 && state.t<p.T){
       drawFireTrail(ctx,p,state.t,scale,toPxX,toPxY,w,h,fieldRadius,project);
